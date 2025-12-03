@@ -44,8 +44,8 @@ func ResourceCatalog() common.Resource {
 			for _, v := range []string{"name", "connection_name", "share_name", "provider_name"} {
 				common.CustomizeSchemaPath(s, v).SetCustomSuppressDiff(common.EqualFoldDiffSuppress)
 			}
-			// can only have one of provider_name + share_name, connection_name or storage_root
-			common.CustomizeSchemaPath(s, "connection_name").SetConflictsWith([]string{"storage_root", "provider_name", "share_name"}).SetForceNew()
+			// can only have one of provider_name + share_name, connection_name
+			common.CustomizeSchemaPath(s, "connection_name").SetConflictsWith([]string{"provider_name", "share_name"}).SetForceNew()
 			for _, v := range []string{"provider_name", "share_name"} {
 				common.CustomizeSchemaPath(s, v).SetConflictsWith([]string{"connection_name", "storage_root"}).SetForceNew()
 			}
@@ -54,7 +54,7 @@ func ResourceCatalog() common.Resource {
 				validation.StringInSlice([]string{"DISABLE", "ENABLE", "INHERIT"}, false),
 			)
 			for _, v := range []string{"catalog_type", "created_at", "created_by",
-				"updated_at", "updated_by", "securable_type", "full_name"} {
+				"updated_at", "updated_by", "securable_type", "full_name", "storage_location"} {
 				common.CustomizeSchemaPath(s, v).SetReadOnly()
 			}
 			common.CustomizeSchemaPath(s, "effective_predictive_optimization_flag").SetComputed().SetSuppressDiff()
@@ -115,6 +115,12 @@ func ResourceCatalog() common.Resource {
 			ci, err := w.Catalogs.GetByName(ctx, d.Id())
 			if err != nil {
 				return err
+			}
+			var origCatalogData catalog.CatalogInfo
+			common.DataToStructPointer(d, catalogSchema, &origCatalogData)
+			if (origCatalogData.ShareName != "" || origCatalogData.ConnectionName != "" || origCatalogData.ProviderName != "") &&
+				string(origCatalogData.EnablePredictiveOptimization) == "" {
+				ci.EnablePredictiveOptimization = origCatalogData.EnablePredictiveOptimization
 			}
 			return common.StructToData(ci, catalogSchema, d)
 		},
@@ -216,7 +222,7 @@ func ResourceCatalog() common.Resource {
 			}
 			return w.Catalogs.Delete(ctx, catalog.DeleteCatalogRequest{Force: force, Name: d.Id()})
 		},
-		CustomizeDiff: func(ctx context.Context, d *schema.ResourceDiff) error {
+		CustomizeDiff: func(ctx context.Context, d *schema.ResourceDiff, c *common.DatabricksClient) error {
 			// The only scenario in which we can update options is for the `authorized_paths` key. Any
 			// other changes to the options field will result in an error.
 			if d.HasChange("options") {

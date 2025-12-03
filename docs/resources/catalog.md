@@ -26,7 +26,7 @@ resource "databricks_catalog" "sandbox" {
 The following arguments are required:
 
 * `name` - Name of Catalog relative to parent metastore.
-* `storage_root` - (Optional if `storage_root` is specified for the metastore) Managed location of the catalog. Location in cloud storage where data for managed tables will be stored. If not specified, the location will default to the metastore root location. Change forces creation of a new resource.
+* `storage_root` - (Optional if `storage_root` is specified for the metastore) Managed location of the catalog. Location in cloud storage where data for managed tables will be stored.  If the URL contains special characters, such as space, `&`, etc., they should be percent-encoded (space -> `%20`, etc.). If not specified, the location will default to the metastore root location. Change forces creation of a new resource.
 * `provider_name` - (Optional) For Delta Sharing Catalogs: the name of the delta sharing provider. Change forces creation of a new resource.
 * `share_name` - (Optional) For Delta Sharing Catalogs: the name of the share under the share provider. Change forces creation of a new resource.
 * `connection_name` - (Optional) For Foreign Catalogs: the name of the connection to an external data source. Changes forces creation of a new resource.
@@ -44,6 +44,13 @@ In addition to all arguments above, the following attributes are exported:
 
 * `id` - ID of this catalog - same as the `name`.
 * `metastore_id` - ID of the parent metastore.
+* `storage_location` - effective storage Location URL (full path) for managed tables within catalog.
+* `catalog_type` - the type of the catalog.
+* `created_at` - time at which this catalog was created, in epoch milliseconds.
+* `created_by` - username of catalog creator.
+* `securable_type` - the type of Unity Catalog securable.
+* `updated_at` - time at which this catalog was last modified, in epoch milliseconds..
+* `updated_by` - username of user who last modified catalog.
 
 ## Import
 

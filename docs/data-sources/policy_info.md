@@ -2,9 +2,25 @@
 subcategory: "Unity Catalog"
 ---
 # databricks_policy_info Data Source
+[![Public Preview](https://img.shields.io/badge/Release_Stage-Public_Preview-yellowgreen)](https://docs.databricks.com/aws/en/release-notes/release-types)
+
+Retrieves information about a specific ABAC (Attribute-Based Access Control) policy in Unity Catalog. Use this data source to query details of an existing policy by its securable type, securable name, and policy name.
+
+ABAC policies provide governance for enforcing compliance through data attributes, allowing flexible and comprehensive access control based on conditions rather than specific resources.
+
 
 
 ## Example Usage
+### Get Policy Information
+
+```hcl
+data "databricks_policy_info" "pii_policy" {
+  on_securable_type     = "catalog"
+  on_securable_fullname = "main"
+  name                  = "pii_data_policy"
+}
+```
+
 
 
 ## Arguments
@@ -16,7 +32,6 @@ The following arguments are supported:
 * `on_securable_type` (string, required) - Type of the securable on which the policy is defined.
   Only `CATALOG`, `SCHEMA` and `TABLE` are supported at this moment.
   Required on create and ignored on update. Possible values are: `CATALOG`, `CLEAN_ROOM`, `CONNECTION`, `CREDENTIAL`, `EXTERNAL_LOCATION`, `EXTERNAL_METADATA`, `FUNCTION`, `METASTORE`, `PIPELINE`, `PROVIDER`, `RECIPIENT`, `SCHEMA`, `SHARE`, `STAGING_TABLE`, `STORAGE_CREDENTIAL`, `TABLE`, `VOLUME`
-* `workspace_id` (string, optional) - Workspace ID of the resource
 
 ## Attributes
 The following attributes are exported:

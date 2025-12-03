@@ -2,6 +2,8 @@
 subcategory: "Database Instances"
 ---
 # databricks_database_synced_database_tables Data Source
+[![Private Preview](https://img.shields.io/badge/Release_Stage-Private_Preview-blueviolet)](https://docs.databricks.com/aws/en/release-notes/release-types)
+
 
 
 ## Example Usage
@@ -11,7 +13,6 @@ subcategory: "Database Instances"
 The following arguments are supported:
 * `instance_name` (string, required) - Name of the instance to get synced tables for
 * `page_size` (integer, optional) - Upper bound for items returned
-* `workspace_id` (string, optional) - Workspace ID of the resource
 
 
 ## Attributes
@@ -46,6 +47,7 @@ This data source exports a single attribute, `synced_tables`. It is a list of re
 * `delta_commit_version` (integer) - The Delta Lake commit version that was last successfully synced
 
 ### NewPipelineSpec
+* `budget_policy_id` (string) - Budget policy to set on the newly created pipeline
 * `storage_catalog` (string) - This field needs to be specified if the destination catalog is a managed postgres catalog.
   
   UC catalog for the pipeline to store intermediate files (checkpoints, event logs etc).

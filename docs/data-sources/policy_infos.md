@@ -2,9 +2,24 @@
 subcategory: "Unity Catalog"
 ---
 # databricks_policy_infos Data Source
+[![Public Preview](https://img.shields.io/badge/Release_Stage-Public_Preview-yellowgreen)](https://docs.databricks.com/aws/en/release-notes/release-types)
+
+Retrieves a list of all ABAC (Attribute-Based Access Control) policies defined on a specific securable in Unity Catalog. Use this data source to query all policies for a given securable type and name.
+
+ABAC policies provide governance for enforcing compliance through data attributes, allowing flexible and comprehensive access control based on conditions rather than specific resources.
+
 
 
 ## Example Usage
+### List All Policies on a Securable
+
+```hcl
+data "databricks_policy_infos" "catalog_policies" {
+  on_securable_type     = "catalog"
+  on_securable_fullname = "main"
+}
+```
+
 
 
 ## Arguments
@@ -16,7 +31,6 @@ The following arguments are supported:
 * `max_results` (integer, optional) - Optional.  Maximum number of policies to return on a single page (page length).
   - When not set or set to 0, the page length is set to a server configured value (recommended);
   - When set to a value greater than 0, the page length is the minimum of this value and a server configured value;
-* `workspace_id` (string, optional) - Workspace ID of the resource
 
 
 ## Attributes

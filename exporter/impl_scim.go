@@ -3,8 +3,11 @@ package exporter
 import (
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 
+	"github.com/databricks/terraform-provider-databricks/access"
+	"github.com/databricks/terraform-provider-databricks/mws"
 	"github.com/databricks/terraform-provider-databricks/scim"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"golang.org/x/exp/maps"
@@ -44,6 +47,16 @@ func searchGroup(ic *importContext, r *resource) error {
 	return nil
 }
 
+func setDataForDataScimBlock(r *resource) {
+	r.Mode = "data"
+	r.Data.Set("workspace_access", false)
+	r.Data.Set("workspace_consume", false)
+	r.Data.Set("databricks_sql_access", false)
+	r.Data.Set("allow_instance_pool_create", false)
+	r.Data.Set("allow_cluster_create", false)
+	r.Data.Set("external_id", "")
+}
+
 func importGroup(ic *importContext, r *resource) error {
 	groupName := r.Data.Get("display_name").(string)
 	if err := ic.cacheGroups(); err != nil {
@@ -63,11 +76,7 @@ func importGroup(ic *importContext, r *resource) error {
 	if (!ic.accountLevel && (isAccountLevelGroup || groupName == "admins" || groupName == "users")) ||
 		(ic.accountLevel && groupName == "account users") {
 		// Workspace admins & users or Account users are to be imported through "data block"
-		r.Mode = "data"
-		r.Data.Set("workspace_access", false)
-		r.Data.Set("databricks_sql_access", false)
-		r.Data.Set("allow_instance_pool_create", false)
-		r.Data.Set("allow_cluster_create", false)
+		setDataForDataScimBlock(r)
 		r.Data.State().Set(&terraform.InstanceState{
 			ID: r.ID,
 			Attributes: map[string]string{
@@ -142,6 +151,7 @@ func importGroup(ic *importContext, r *resource) error {
 				})
 				if !builtInUserGroup {
 					id := fmt.Sprintf("%s|%s", group.ID, x.Value)
+					// TODO: emit group_member only if it's a workspace-level group
 					ic.Emit(&resource{
 						Resource: "databricks_group_member",
 						ID:       id,
@@ -195,13 +205,8 @@ func importUser(ic *importContext, r *resource) error {
 	username := r.Data.Get("user_name").(string)
 	if ic.currentMetastore != nil {
 		// Users are maintained on account level and are referenced via data sources
-		r.Mode = "data"
-		r.Data.Set("workspace_access", false)
-		r.Data.Set("databricks_sql_access", false)
-		r.Data.Set("allow_instance_pool_create", false)
-		r.Data.Set("allow_cluster_create", false)
+		setDataForDataScimBlock(r)
 		r.Data.Set("display_name", "")
-		r.Data.Set("external_id", "")
 		r.Data.State().Set(&terraform.InstanceState{
 			ID: r.ID,
 			Attributes: map[string]string{
@@ -248,13 +253,8 @@ func importServicePrincipal(ic *importContext, r *resource) error {
 	applicationID := r.Data.Get("application_id").(string)
 	if ic.currentMetastore != nil {
 		// Users are maintained on account level and are referenced via data sources
-		r.Mode = "data"
-		r.Data.Set("workspace_access", false)
-		r.Data.Set("databricks_sql_access", false)
-		r.Data.Set("allow_instance_pool_create", false)
-		r.Data.Set("allow_cluster_create", false)
+		setDataForDataScimBlock(r)
 		r.Data.Set("display_name", "")
-		r.Data.Set("external_id", "")
 		r.Data.State().Set(&terraform.InstanceState{
 			ID: r.ID,
 			Attributes: map[string]string{
@@ -277,5 +277,144 @@ func importServicePrincipal(ic *importContext, r *resource) error {
 				ic.Client.Config.AccountID, applicationID),
 		})
 	}
+	if ic.accountLevel {
+		err = emitServicePrincipalFederationPolicies(ic, u.ID)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func isWorkspaceLevelGroup(ic *importContext, groupName string) bool {
+	if ic.accountLevel {
+		return false
+	}
+	err := ic.cacheGroups()
+	if err != nil {
+		return false
+	}
+	for _, g := range ic.allGroups {
+		if g.DisplayName == groupName {
+			return g.Meta != nil && g.Meta.ResourceType == "WorkspaceGroup"
+		}
+	}
+	return false
+}
+
+func listWorkspacePermissionAssignments(ic *importContext) error {
+	log.Printf("[DEBUG] Listing workspace-level permission assignments")
+	api := access.NewPermissionAssignmentAPI(ic.Context, ic.Client)
+	paList, err := api.List()
+	if err != nil {
+		log.Printf("[ERROR] listing workspace permission assignments: %s", err.Error())
+		return err
+	}
+	for _, pa := range paList.PermissionAssignments {
+		perm := "unknown"
+		if len(pa.Permissions) > 0 {
+			perm = pa.Permissions[0]
+		}
+		nm := fmt.Sprintf("pa_%s_%s", pa.Principal.DisplayName, perm)
+		// We generate Data directly to avoid calling APIs
+		data := access.ResourcePermissionAssignment().ToResource().TestResourceData()
+		data = ic.generateNewData(data, "databricks_permission_assignment", strconv.FormatInt(pa.Principal.PrincipalID, 10), pa)
+		// Set the appropriate name field instead of principal_id
+		if pa.Principal.ServicePrincipalName != "" {
+			data.Set("service_principal_name", pa.Principal.ServicePrincipalName)
+		} else if pa.Principal.UserName != "" {
+			data.Set("user_name", pa.Principal.UserName)
+		} else if pa.Principal.GroupName != "" {
+			if isWorkspaceLevelGroup(ic, pa.Principal.GroupName) {
+				log.Printf("[DEBUG] Skipping workspace-level group %s", pa.Principal.GroupName)
+				continue
+			}
+			data.Set("group_name", pa.Principal.GroupName)
+		}
+		data.Set("permissions", pa.Permissions)
+		data.SetId(strconv.FormatInt(pa.Principal.PrincipalID, 10))
+		paResource := &resource{
+			Resource: "databricks_permission_assignment",
+			ID:       strconv.FormatInt(pa.Principal.PrincipalID, 10),
+			Name:     nameNormalizationRegex.ReplaceAllString(nm, "_"),
+			Data:     data,
+		}
+		ic.Emit(paResource)
+		dependsOn := []*resource{paResource}
+		// Emit principals by name
+		if pa.Principal.ServicePrincipalName != "" {
+			ic.Emit(&resource{
+				Resource:  "databricks_service_principal",
+				Attribute: "application_id",
+				Value:     pa.Principal.ServicePrincipalName,
+				DependsOn: dependsOn,
+			})
+		} else if pa.Principal.UserName != "" {
+			ic.Emit(&resource{
+				Resource:  "databricks_user",
+				Attribute: "user_name",
+				Value:     pa.Principal.UserName,
+				DependsOn: dependsOn,
+			})
+		} else if pa.Principal.GroupName != "" {
+			ic.Emit(&resource{
+				Resource:  "databricks_group",
+				Attribute: "display_name",
+				Value:     pa.Principal.GroupName,
+				DependsOn: dependsOn,
+			})
+		}
+	}
+
+	return nil
+}
+
+func emitIdfedAndUsersSpsGroups(ic *importContext, workspaceId int64) error {
+	log.Printf("[DEBUG] Emitting permission assignments for workspace %d", workspaceId)
+	pas, err := ic.accountClient.WorkspaceAssignment.ListByWorkspaceId(ic.Context, workspaceId)
+	if err != nil {
+		log.Printf("[ERROR] listing workspace permission assignments for workspace %d: %s",
+			workspaceId, err.Error())
+		return err
+	}
+	for _, pa := range pas.PermissionAssignments {
+		perm := "unknown"
+		if len(pa.Permissions) > 0 {
+			perm = pa.Permissions[0].String()
+		}
+		nm := fmt.Sprintf("mws_pa_%d_%s_%s_%d", workspaceId, pa.Principal.DisplayName,
+			perm, pa.Principal.PrincipalId)
+		// We  generate Data directly to avoid calling APIs
+		data := mws.ResourceMwsPermissionAssignment().ToResource().TestResourceData()
+		paId := fmt.Sprintf("%d|%d", workspaceId, pa.Principal.PrincipalId)
+		data = ic.generateNewData(data, "databricks_mws_permission_assignment", paId, pa)
+		data.Set("workspace_id", workspaceId)
+		data.Set("principal_id", pa.Principal.PrincipalId)
+		ic.Emit(&resource{
+			Resource: "databricks_mws_permission_assignment",
+			ID:       paId,
+			Name:     nameNormalizationRegex.ReplaceAllString(nm, "_"),
+			Data:     data,
+		})
+		// Emit principals
+		strPrincipalId := strconv.FormatInt(pa.Principal.PrincipalId, 10)
+		if pa.Principal.ServicePrincipalName != "" {
+			ic.Emit(&resource{
+				Resource: "databricks_service_principal",
+				ID:       strPrincipalId,
+			})
+		} else if pa.Principal.UserName != "" {
+			ic.Emit(&resource{
+				Resource: "databricks_user",
+				ID:       strPrincipalId,
+			})
+		} else if pa.Principal.GroupName != "" {
+			ic.Emit(&resource{
+				Resource: "databricks_group",
+				ID:       strPrincipalId,
+			})
+		}
+	}
+
 	return nil
 }

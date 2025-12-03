@@ -64,6 +64,7 @@ type SqlTableInfo struct {
 	ClusterID           string            `json:"cluster_id,omitempty" tf:"computed"`
 	WarehouseID         string            `json:"warehouse_id,omitempty"`
 	Owner               string            `json:"owner,omitempty" tf:"computed"`
+	TableID             string            `json:"table_id" tf:"computed"`
 
 	exec    common.CommandExecutor
 	sqlExec sql.StatementExecutionInterface
@@ -186,7 +187,7 @@ func (ti *SqlTableInfo) getOrCreateCluster(clusterName string, clustersAPI clust
 	sparkVersion := clusters.LatestSparkVersionOrDefault(clustersAPI.Context(), clustersAPI.WorkspaceClient(), compute.SparkVersionRequest{
 		Latest: true,
 	})
-	nodeType := clustersAPI.GetSmallestNodeType(compute.NodeTypeRequest{LocalDisk: true})
+	nodeType := clustersAPI.GetSmallestNodeType(clusters.NodeTypeRequest{NodeTypeRequest: compute.NodeTypeRequest{LocalDisk: true}})
 	aclCluster, err := clustersAPI.GetOrCreateRunningCluster(
 		clusterName, clusters.Cluster{
 			ClusterName:            clusterName,
@@ -610,7 +611,7 @@ func ResourceSqlTable() common.Resource {
 	tableSchema := common.StructToSchema(SqlTableInfo{}, nil)
 	return common.Resource{
 		Schema: tableSchema,
-		CustomizeDiff: func(ctx context.Context, d *schema.ResourceDiff) error {
+		CustomizeDiff: func(ctx context.Context, d *schema.ResourceDiff, c *common.DatabricksClient) error {
 			if d.HasChange("column") {
 				var newTableStruct SqlTableInfo
 				common.DiffToStructPointer(d, tableSchema, &newTableStruct)
