@@ -6,7 +6,6 @@ import (
 	"context"
 	"reflect"
 
-	"github.com/databricks/databricks-sdk-go/apierr"
 	"github.com/databricks/databricks-sdk-go/service/ml"
 	"github.com/databricks/terraform-provider-databricks/internal/providers/pluginfw/autogen"
 	pluginfwcontext "github.com/databricks/terraform-provider-databricks/internal/providers/pluginfw/context"
@@ -34,6 +33,9 @@ type MaterializedFeatureDataSource struct {
 
 // MaterializedFeatureData extends the main model with additional fields.
 type MaterializedFeatureData struct {
+	// The quartz cron expression that defines the schedule of the
+	// materialization pipeline. The schedule is evaluated in the UTC timezone.
+	CronSchedule types.String `tfsdk:"cron_schedule"`
 	// The full name of the feature in Unity Catalog.
 	FeatureName types.String `tfsdk:"feature_name"`
 	// The timestamp when the pipeline last ran and updated the materialized
@@ -76,6 +78,7 @@ func (m MaterializedFeatureData) ToObjectValue(ctx context.Context) basetypes.Ob
 	return types.ObjectValueMust(
 		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
 		map[string]attr.Value{
+			"cron_schedule":             m.CronSchedule,
 			"feature_name":              m.FeatureName,
 			"last_materialization_time": m.LastMaterializationTime,
 			"materialized_feature_id":   m.MaterializedFeatureId,
@@ -92,6 +95,7 @@ func (m MaterializedFeatureData) ToObjectValue(ctx context.Context) basetypes.Ob
 func (m MaterializedFeatureData) Type(ctx context.Context) attr.Type {
 	return types.ObjectType{
 		AttrTypes: map[string]attr.Type{
+			"cron_schedule":             types.StringType,
 			"feature_name":              types.StringType,
 			"last_materialization_time": types.StringType,
 			"materialized_feature_id":   types.StringType,
@@ -104,6 +108,7 @@ func (m MaterializedFeatureData) Type(ctx context.Context) attr.Type {
 }
 
 func (m MaterializedFeatureData) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["cron_schedule"] = attrs["cron_schedule"].SetComputed()
 	attrs["feature_name"] = attrs["feature_name"].SetComputed()
 	attrs["last_materialization_time"] = attrs["last_materialization_time"].SetComputed()
 	attrs["materialized_feature_id"] = attrs["materialized_feature_id"].SetRequired()
@@ -156,11 +161,6 @@ func (r *MaterializedFeatureDataSource) Read(ctx context.Context, req datasource
 
 	response, err := client.FeatureEngineering.GetMaterializedFeature(ctx, readRequest)
 	if err != nil {
-		if apierr.IsMissing(err) {
-			resp.State.RemoveResource(ctx)
-			return
-		}
-
 		resp.Diagnostics.AddError("failed to get feature_engineering_materialized_feature", err.Error())
 		return
 	}
