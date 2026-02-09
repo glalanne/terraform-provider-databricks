@@ -65,6 +65,8 @@ type AlertV2 struct {
 	// The workspace path of the folder containing the alert. Can only be set on
 	// create, and cannot be updated.
 	ParentPath types.String `tfsdk:"parent_path"`
+	// Purge the resource on delete
+	PurgeOnDelete types.Bool `tfsdk:"purge_on_delete"`
 	// Text of the query to be run.
 	QueryText types.String `tfsdk:"query_text"`
 	// Specifies the identity that will be used to run the alert. This field
@@ -124,6 +126,7 @@ func (m AlertV2) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
 			"lifecycle_state":    m.LifecycleState,
 			"owner_user_name":    m.OwnerUserName,
 			"parent_path":        m.ParentPath,
+			"purge_on_delete":    m.PurgeOnDelete,
 			"query_text":         m.QueryText,
 			"run_as":             m.RunAs,
 			"run_as_user_name":   m.RunAsUserName,
@@ -148,6 +151,7 @@ func (m AlertV2) Type(ctx context.Context) attr.Type {
 			"lifecycle_state":    types.StringType,
 			"owner_user_name":    types.StringType,
 			"parent_path":        types.StringType,
+			"purge_on_delete":    types.BoolType,
 			"query_text":         types.StringType,
 			"run_as":             sql_tf.AlertV2RunAs{}.Type(ctx),
 			"run_as_user_name":   types.StringType,
@@ -180,6 +184,7 @@ func (to *AlertV2) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from Aler
 			}
 		}
 	}
+	to.PurgeOnDelete = from.PurgeOnDelete
 	if !from.RunAs.IsNull() && !from.RunAs.IsUnknown() {
 		if toRunAs, ok := to.GetRunAs(ctx); ok {
 			if fromRunAs, ok := from.GetRunAs(ctx); ok {
@@ -220,6 +225,7 @@ func (to *AlertV2) SyncFieldsDuringRead(ctx context.Context, from AlertV2) {
 			}
 		}
 	}
+	to.PurgeOnDelete = from.PurgeOnDelete
 	if !from.RunAs.IsNull() && !from.RunAs.IsUnknown() {
 		if toRunAs, ok := to.GetRunAs(ctx); ok {
 			if fromRunAs, ok := from.GetRunAs(ctx); ok {
@@ -255,6 +261,7 @@ func (m AlertV2) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBu
 	attrs["schedule"] = attrs["schedule"].SetRequired()
 	attrs["update_time"] = attrs["update_time"].SetComputed()
 	attrs["warehouse_id"] = attrs["warehouse_id"].SetRequired()
+	attrs["purge_on_delete"] = attrs["purge_on_delete"].SetOptional()
 
 	attrs["id"] = attrs["id"].(tfschema.StringAttributeBuilder).AddPlanModifier(stringplanmodifier.UseStateForUnknown()).(tfschema.AttributeBuilder)
 	return attrs
@@ -377,44 +384,6 @@ func (r *AlertV2Resource) Configure(ctx context.Context, req resource.ConfigureR
 	r.Client = autogen.ConfigureResource(req, resp)
 }
 
-func (r *AlertV2Resource) update(ctx context.Context, plan AlertV2, diags *diag.Diagnostics, state *tfsdk.State) {
-	var alert_v2 sql.AlertV2
-
-	diags.Append(converters.TfSdkToGoSdkStruct(ctx, plan, &alert_v2)...)
-	if diags.HasError() {
-		return
-	}
-
-	updateRequest := sql.UpdateAlertV2Request{
-		Alert:      alert_v2,
-		Id:         plan.Id.ValueString(),
-		UpdateMask: "custom_description,custom_summary,display_name,evaluation,parent_path,query_text,run_as,run_as_user_name,schedule,warehouse_id",
-	}
-
-	client, clientDiags := r.Client.GetWorkspaceClient()
-
-	diags.Append(clientDiags...)
-	if diags.HasError() {
-		return
-	}
-	response, err := client.AlertsV2.UpdateAlert(ctx, updateRequest)
-	if err != nil {
-		diags.AddError("failed to update alert_v2", err.Error())
-		return
-	}
-
-	var newState AlertV2
-
-	diags.Append(converters.GoSdkToTfSdkStruct(ctx, response, &newState)...)
-
-	if diags.HasError() {
-		return
-	}
-
-	newState.SyncFieldsDuringCreateOrUpdate(ctx, plan)
-	diags.Append(state.Set(ctx, newState)...)
-}
-
 func (r *AlertV2Resource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	ctx = pluginfwcontext.SetUserAgentInResourceContext(ctx, resourceName)
 
@@ -506,6 +475,44 @@ func (r *AlertV2Resource) Read(ctx context.Context, req resource.ReadRequest, re
 	resp.Diagnostics.Append(resp.State.Set(ctx, newState)...)
 }
 
+func (r *AlertV2Resource) update(ctx context.Context, plan AlertV2, diags *diag.Diagnostics, state *tfsdk.State) {
+	var alert_v2 sql.AlertV2
+
+	diags.Append(converters.TfSdkToGoSdkStruct(ctx, plan, &alert_v2)...)
+	if diags.HasError() {
+		return
+	}
+
+	updateRequest := sql.UpdateAlertV2Request{
+		Alert:      alert_v2,
+		Id:         plan.Id.ValueString(),
+		UpdateMask: "custom_description,custom_summary,display_name,evaluation,parent_path,query_text,run_as,run_as_user_name,schedule,warehouse_id",
+	}
+
+	client, clientDiags := r.Client.GetWorkspaceClient()
+
+	diags.Append(clientDiags...)
+	if diags.HasError() {
+		return
+	}
+	response, err := client.AlertsV2.UpdateAlert(ctx, updateRequest)
+	if err != nil {
+		diags.AddError("failed to update alert_v2", err.Error())
+		return
+	}
+
+	var newState AlertV2
+
+	diags.Append(converters.GoSdkToTfSdkStruct(ctx, response, &newState)...)
+
+	if diags.HasError() {
+		return
+	}
+
+	newState.SyncFieldsDuringCreateOrUpdate(ctx, plan)
+	diags.Append(state.Set(ctx, newState)...)
+}
+
 func (r *AlertV2Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	ctx = pluginfwcontext.SetUserAgentInResourceContext(ctx, resourceName)
 
@@ -531,6 +538,9 @@ func (r *AlertV2Resource) Delete(ctx context.Context, req resource.DeleteRequest
 	resp.Diagnostics.Append(converters.TfSdkToGoSdkStruct(ctx, state, &deleteRequest)...)
 	if resp.Diagnostics.HasError() {
 		return
+	}
+	if !state.PurgeOnDelete.IsNull() && !state.PurgeOnDelete.IsUnknown() {
+		deleteRequest.Purge = state.PurgeOnDelete.ValueBool()
 	}
 
 	client, clientDiags := r.Client.GetWorkspaceClient()

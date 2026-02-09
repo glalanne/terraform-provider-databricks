@@ -41,7 +41,7 @@ type TagAssignmentResource struct {
 type TagAssignment struct {
 	// The identifier of the entity to which the tag is assigned
 	EntityId types.String `tfsdk:"entity_id"`
-	// The type of entity to which the tag is assigned. Allowed values are
+	// The type of entity to which the tag is assigned. Allowed values are apps,
 	// dashboards, geniespaces
 	EntityType types.String `tfsdk:"entity_type"`
 	// The key of the tag. The characters , . : / - = and leading/trailing
@@ -135,46 +135,6 @@ func (r *TagAssignmentResource) Configure(ctx context.Context, req resource.Conf
 	r.Client = autogen.ConfigureResource(req, resp)
 }
 
-func (r *TagAssignmentResource) update(ctx context.Context, plan TagAssignment, diags *diag.Diagnostics, state *tfsdk.State) {
-	var tag_assignment tags.TagAssignment
-
-	diags.Append(converters.TfSdkToGoSdkStruct(ctx, plan, &tag_assignment)...)
-	if diags.HasError() {
-		return
-	}
-
-	updateRequest := tags.UpdateTagAssignmentRequest{
-		TagAssignment: tag_assignment,
-		EntityId:      plan.EntityId.ValueString(),
-		EntityType:    plan.EntityType.ValueString(),
-		TagKey:        plan.TagKey.ValueString(),
-		UpdateMask:    "tag_value",
-	}
-
-	client, clientDiags := r.Client.GetWorkspaceClient()
-
-	diags.Append(clientDiags...)
-	if diags.HasError() {
-		return
-	}
-	response, err := client.WorkspaceEntityTagAssignments.UpdateTagAssignment(ctx, updateRequest)
-	if err != nil {
-		diags.AddError("failed to update workspace_entity_tag_assignment", err.Error())
-		return
-	}
-
-	var newState TagAssignment
-
-	diags.Append(converters.GoSdkToTfSdkStruct(ctx, response, &newState)...)
-
-	if diags.HasError() {
-		return
-	}
-
-	newState.SyncFieldsDuringCreateOrUpdate(ctx, plan)
-	diags.Append(state.Set(ctx, newState)...)
-}
-
 func (r *TagAssignmentResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	ctx = pluginfwcontext.SetUserAgentInResourceContext(ctx, resourceName)
 
@@ -264,6 +224,46 @@ func (r *TagAssignmentResource) Read(ctx context.Context, req resource.ReadReque
 	newState.SyncFieldsDuringRead(ctx, existingState)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, newState)...)
+}
+
+func (r *TagAssignmentResource) update(ctx context.Context, plan TagAssignment, diags *diag.Diagnostics, state *tfsdk.State) {
+	var tag_assignment tags.TagAssignment
+
+	diags.Append(converters.TfSdkToGoSdkStruct(ctx, plan, &tag_assignment)...)
+	if diags.HasError() {
+		return
+	}
+
+	updateRequest := tags.UpdateTagAssignmentRequest{
+		TagAssignment: tag_assignment,
+		EntityId:      plan.EntityId.ValueString(),
+		EntityType:    plan.EntityType.ValueString(),
+		TagKey:        plan.TagKey.ValueString(),
+		UpdateMask:    "tag_value",
+	}
+
+	client, clientDiags := r.Client.GetWorkspaceClient()
+
+	diags.Append(clientDiags...)
+	if diags.HasError() {
+		return
+	}
+	response, err := client.WorkspaceEntityTagAssignments.UpdateTagAssignment(ctx, updateRequest)
+	if err != nil {
+		diags.AddError("failed to update workspace_entity_tag_assignment", err.Error())
+		return
+	}
+
+	var newState TagAssignment
+
+	diags.Append(converters.GoSdkToTfSdkStruct(ctx, response, &newState)...)
+
+	if diags.HasError() {
+		return
+	}
+
+	newState.SyncFieldsDuringCreateOrUpdate(ctx, plan)
+	diags.Append(state.Set(ctx, newState)...)
 }
 
 func (r *TagAssignmentResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
