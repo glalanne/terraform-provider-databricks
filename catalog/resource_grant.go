@@ -131,8 +131,13 @@ func parseSecurableId(d *schema.ResourceData) (string, string, string, error) {
 	return split[0], split[1], split[2], nil
 }
 
+type GrantSchemaStruct struct {
+	permissions.UnityCatalogPrivilegeAssignment
+	common.Namespace
+}
+
 func ResourceGrant() common.Resource {
-	s := common.StructToSchema(permissions.UnityCatalogPrivilegeAssignment{},
+	s := common.StructToSchema(GrantSchemaStruct{},
 		func(m map[string]*schema.Schema) map[string]*schema.Schema {
 			common.CustomizeSchemaPath(m, "principal").SetForceNew()
 
@@ -155,13 +160,14 @@ func ResourceGrant() common.Resource {
 					ConflictsWith: permissions.SliceWithoutString(allFields, field),
 				}
 			}
+			common.NamespaceCustomizeSchemaMap(m)
 			return m
 		})
 
 	return common.Resource{
 		Schema: s,
 		Create: func(ctx context.Context, d *schema.ResourceData, c *common.DatabricksClient) error {
-			w, err := c.WorkspaceClient()
+			w, err := c.WorkspaceClientUnifiedProvider(ctx, d)
 			if err != nil {
 				return err
 			}
@@ -180,7 +186,11 @@ func ResourceGrant() common.Resource {
 				},
 			}
 			securable, name := permissions.Mappings.KeyValue(d)
-			unityCatalogPermissionsAPI := permissions.NewUnityCatalogPermissionsAPI(ctx, c)
+			ws, err := c.WorkspaceClient()
+			if err != nil {
+				return err
+			}
+			unityCatalogPermissionsAPI := permissions.NewUnityCatalogPermissionsAPI(ctx, ws)
 			err = replacePermissionsForPrincipal(unityCatalogPermissionsAPI, securable, name, principal, grants)
 			if err != nil {
 				return err
@@ -193,7 +203,11 @@ func ResourceGrant() common.Resource {
 			if err != nil {
 				return err
 			}
-			grants, err := permissions.NewUnityCatalogPermissionsAPI(ctx, c).GetPermissions(permissions.Mappings.GetSecurableType(securable), name)
+			ws, err := c.WorkspaceClient()
+			if err != nil {
+				return err
+			}
+			grants, err := permissions.NewUnityCatalogPermissionsAPI(ctx, ws).GetPermissions(permissions.Mappings.GetSecurableType(securable), name)
 			if err != nil {
 				return err
 			}
@@ -208,7 +222,7 @@ func ResourceGrant() common.Resource {
 			return d.Set(securable, name)
 		},
 		Update: func(ctx context.Context, d *schema.ResourceData, c *common.DatabricksClient) error {
-			w, err := c.WorkspaceClient()
+			w, err := c.WorkspaceClientUnifiedProvider(ctx, d)
 			if err != nil {
 				return err
 			}
@@ -229,11 +243,15 @@ func ResourceGrant() common.Resource {
 					},
 				},
 			}
-			unityCatalogPermissionsAPI := permissions.NewUnityCatalogPermissionsAPI(ctx, c)
+			ws, err := c.WorkspaceClient()
+			if err != nil {
+				return err
+			}
+			unityCatalogPermissionsAPI := permissions.NewUnityCatalogPermissionsAPI(ctx, ws)
 			return replacePermissionsForPrincipal(unityCatalogPermissionsAPI, securable, name, principal, grants)
 		},
 		Delete: func(ctx context.Context, d *schema.ResourceData, c *common.DatabricksClient) error {
-			w, err := c.WorkspaceClient()
+			w, err := c.WorkspaceClientUnifiedProvider(ctx, d)
 			if err != nil {
 				return err
 			}
@@ -245,7 +263,11 @@ func ResourceGrant() common.Resource {
 			if err != nil {
 				return err
 			}
-			unityCatalogPermissionsAPI := permissions.NewUnityCatalogPermissionsAPI(ctx, c)
+			ws, err := c.WorkspaceClient()
+			if err != nil {
+				return err
+			}
+			unityCatalogPermissionsAPI := permissions.NewUnityCatalogPermissionsAPI(ctx, ws)
 			return replacePermissionsForPrincipal(unityCatalogPermissionsAPI, securable, name, principal, catalog.GetPermissionsResponse{})
 		},
 	}

@@ -3,6 +3,7 @@ package serving
 import (
 	"context"
 	"log"
+	"reflect"
 	"strings"
 	"time"
 
@@ -58,6 +59,105 @@ func suppressRouteModelEntityNameDiff(k, old, new string, d *schema.ResourceData
 	}
 
 	return false
+}
+
+// copySensitiveFields recursively copies sensitive plaintext fields from source to destination.
+// This is needed because the GET API doesn't return sensitive values, causing drift in Terraform state.
+// The function uses reflection to automatically handle all plaintext fields without manual enumeration.
+func copySensitiveFields(src, dst reflect.Value) {
+	// Handle nil pointers
+	if !src.IsValid() || !dst.IsValid() {
+		return
+	}
+
+	// Dereference pointers
+	if src.Kind() == reflect.Ptr {
+		if src.IsNil() {
+			return
+		}
+		src = src.Elem()
+	}
+	if dst.Kind() == reflect.Ptr {
+		if dst.IsNil() {
+			return
+		}
+		dst = dst.Elem()
+	}
+
+	// Only process structs
+	if src.Kind() != reflect.Struct || dst.Kind() != reflect.Struct {
+		return
+	}
+
+	// Ensure types match
+	if src.Type() != dst.Type() {
+		return
+	}
+
+	// Iterate through all fields
+	for i := 0; i < src.NumField(); i++ {
+		srcField := src.Field(i)
+		dstField := dst.Field(i)
+		fieldType := src.Type().Field(i)
+
+		// Skip unexported fields
+		if !dstField.CanSet() {
+			continue
+		}
+
+		fieldName := fieldType.Name
+
+		// Check if this is a sensitive plaintext field (ends with "Plaintext")
+		if strings.HasSuffix(fieldName, "Plaintext") && srcField.Kind() == reflect.String {
+			srcValue := srcField.String()
+			dstValue := dstField.String()
+
+			// Copy from source to destination if source has a value and destination is empty
+			if srcValue != "" && dstValue == "" {
+				dstField.SetString(srcValue)
+				log.Printf("[DEBUG] Copied sensitive field %s from state", fieldName)
+			}
+			continue
+		}
+
+		// Recursively process nested structs, pointers, slices, and maps
+		switch srcField.Kind() {
+		case reflect.Struct:
+			copySensitiveFields(srcField, dstField)
+		case reflect.Ptr:
+			if !srcField.IsNil() && !dstField.IsNil() {
+				copySensitiveFields(srcField, dstField)
+			}
+		case reflect.Slice:
+			// Process slice elements (e.g., served_entities)
+			if srcField.Len() > 0 && dstField.Len() > 0 {
+				minLen := srcField.Len()
+				if dstField.Len() < minLen {
+					minLen = dstField.Len()
+				}
+				for j := 0; j < minLen; j++ {
+					copySensitiveFields(srcField.Index(j), dstField.Index(j))
+				}
+			}
+		case reflect.Map:
+			// Process map values if needed in the future
+			continue
+		}
+	}
+}
+
+// copySensitiveExternalModelFields copies sensitive plaintext credential fields from the source
+// endpoint (from state) to the destination endpoint (from API response).
+func copySensitiveExternalModelFields(src, dst *serving.ServingEndpointDetailed) {
+	if src == nil || dst == nil {
+		return
+	}
+
+	// Use reflection to copy all sensitive fields recursively
+	srcVal := reflect.ValueOf(src)
+	dstVal := reflect.ValueOf(dst)
+
+	copySensitiveFields(srcVal, dstVal)
 }
 
 // updateConfig updates the configuration of the provided serving endpoint to the provided config.
@@ -248,9 +348,14 @@ func preserveConfigOrder(s map[string]*schema.Schema, d *schema.ResourceData, ap
 	}
 }
 
+type ModelServingSchemaStruct struct {
+	serving.CreateServingEndpoint
+	common.Namespace
+}
+
 func ResourceModelServing() common.Resource {
 	s := common.StructToSchema(
-		serving.CreateServingEndpoint{},
+		ModelServingSchemaStruct{},
 		func(m map[string]*schema.Schema) map[string]*schema.Schema {
 			// Use the newer CustomizeSchemaPath approach for better maintainability
 			common.CustomizeSchemaPath(m, "name").SetForceNew()
@@ -287,6 +392,20 @@ func ResourceModelServing() common.Resource {
 			common.MustSchemaPath(m, "ai_gateway", "guardrails", "output", "invalid_keywords").Deprecated = "Please use 'pii' and 'safety' instead."
 			common.MustSchemaPath(m, "ai_gateway", "guardrails", "output", "valid_topics").Deprecated = "Please use 'pii' and 'safety' instead."
 
+			// Mark all plaintext credential fields as sensitive so they are not displayed in plan/apply output
+			common.CustomizeSchemaPath(m, "config", "served_entities", "external_model", "ai21labs_config", "ai21labs_api_key_plaintext").SetSensitive()
+			common.CustomizeSchemaPath(m, "config", "served_entities", "external_model", "amazon_bedrock_config", "aws_access_key_id_plaintext").SetSensitive()
+			common.CustomizeSchemaPath(m, "config", "served_entities", "external_model", "amazon_bedrock_config", "aws_secret_access_key_plaintext").SetSensitive()
+			common.CustomizeSchemaPath(m, "config", "served_entities", "external_model", "anthropic_config", "anthropic_api_key_plaintext").SetSensitive()
+			common.CustomizeSchemaPath(m, "config", "served_entities", "external_model", "cohere_config", "cohere_api_key_plaintext").SetSensitive()
+			common.CustomizeSchemaPath(m, "config", "served_entities", "external_model", "databricks_model_serving_config", "databricks_api_token_plaintext").SetSensitive()
+			common.CustomizeSchemaPath(m, "config", "served_entities", "external_model", "google_cloud_vertex_ai_config", "private_key_plaintext").SetSensitive()
+			common.CustomizeSchemaPath(m, "config", "served_entities", "external_model", "openai_config", "openai_api_key_plaintext").SetSensitive()
+			common.CustomizeSchemaPath(m, "config", "served_entities", "external_model", "openai_config", "microsoft_entra_client_secret_plaintext").SetSensitive()
+			common.CustomizeSchemaPath(m, "config", "served_entities", "external_model", "palm_config", "palm_api_key_plaintext").SetSensitive()
+			common.CustomizeSchemaPath(m, "config", "served_entities", "external_model", "custom_provider_config", "api_key_auth", "value_plaintext").SetSensitive()
+			common.CustomizeSchemaPath(m, "config", "served_entities", "external_model", "custom_provider_config", "bearer_token_auth", "token_plaintext").SetSensitive()
+
 			// route_optimized cannot be updated.
 			common.CustomizeSchemaPath(m, "route_optimized").SetForceNew()
 
@@ -301,12 +420,16 @@ func ResourceModelServing() common.Resource {
 				Computed: true,
 				Type:     schema.TypeString,
 			}
+			common.NamespaceCustomizeSchemaMap(m)
 			return m
 		})
 
 	return common.Resource{
+		CustomizeDiff: func(ctx context.Context, d *schema.ResourceDiff, c *common.DatabricksClient) error {
+			return common.NamespaceCustomizeDiff(ctx, d, c)
+		},
 		Create: func(ctx context.Context, d *schema.ResourceData, c *common.DatabricksClient) error {
-			w, err := c.WorkspaceClient()
+			w, err := c.WorkspaceClientUnifiedProvider(ctx, d)
 			if err != nil {
 				return err
 			}
@@ -329,7 +452,7 @@ func ResourceModelServing() common.Resource {
 			return nil
 		},
 		Read: func(ctx context.Context, d *schema.ResourceData, c *common.DatabricksClient) error {
-			w, err := c.WorkspaceClient()
+			w, err := c.WorkspaceClientUnifiedProvider(ctx, d)
 			var sOrig serving.ServingEndpointDetailed
 			common.DataToStructPointer(d, s, &sOrig)
 			if err != nil {
@@ -339,6 +462,8 @@ func ResourceModelServing() common.Resource {
 			if err != nil {
 				return err
 			}
+			// Copy sensitive plaintext fields from state to API response to prevent drift
+			copySensitiveExternalModelFields(&sOrig, endpoint)
 			if sOrig.Config == nil {
 				// If it is a new resource, then we only return ServedEntities
 				if endpoint.Config != nil {
@@ -364,7 +489,7 @@ func ResourceModelServing() common.Resource {
 			return nil
 		},
 		Update: func(ctx context.Context, d *schema.ResourceData, c *common.DatabricksClient) error {
-			w, err := c.WorkspaceClient()
+			w, err := c.WorkspaceClientUnifiedProvider(ctx, d)
 			if err != nil {
 				return err
 			}
@@ -388,7 +513,7 @@ func ResourceModelServing() common.Resource {
 			return nil
 		},
 		Delete: func(ctx context.Context, d *schema.ResourceData, c *common.DatabricksClient) error {
-			w, err := c.WorkspaceClient()
+			w, err := c.WorkspaceClientUnifiedProvider(ctx, d)
 			if err != nil {
 				return err
 			}

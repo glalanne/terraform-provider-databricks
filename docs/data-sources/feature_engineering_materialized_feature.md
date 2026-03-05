@@ -12,9 +12,14 @@ subcategory: "Machine Learning"
 ## Arguments
 The following arguments are supported:
 * `materialized_feature_id` (string, required) - Unique identifier for the materialized feature
+* `provider_config` (ProviderConfig, optional) - Configure the provider for management through account provider.
+
+### ProviderConfig
+* `workspace_id` (string,required) - Workspace ID which the resource belongs to. This workspace must be part of the account which the provider is configured with.
 
 ## Attributes
 The following attributes are exported:
+* `cron_schedule` (string) - The quartz cron expression that defines the schedule of the materialization pipeline. The schedule is evaluated in the UTC timezone
 * `feature_name` (string) - The full name of the feature in Unity Catalog
 * `last_materialization_time` (string) - The timestamp when the pipeline last ran and updated the materialized feature values.
   If the pipeline has not run yet, this field will be null
@@ -31,8 +36,10 @@ The following attributes are exported:
   The materialized feature will be stored in a table with this prefix and a generated postfix
 
 ### OnlineStoreConfig
-* `catalog_name` (string) - The Unity Catalog catalog name. This name is also used as the Lakebase logical database name
+* `catalog_name` (string) - The Unity Catalog catalog name. This name is also used as the Lakebase logical database name.
+  Quoting is handled by the backend where needed, do not pre-quote it
 * `online_store_name` (string) - The name of the target online store
-* `schema_name` (string) - The Unity Catalog schema name
+* `schema_name` (string) - The Unity Catalog schema name. This name is also used as the Lakebase schema name under the database.
+  Quoting is handled by the backend where needed, do not pre-quote it
 * `table_name_prefix` (string) - Prefix for Unity Catalog table name.
   The materialized feature will be stored in a Lakebase table with this prefix and a generated postfix

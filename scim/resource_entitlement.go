@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/databricks/databricks-sdk-go/config"
 	"github.com/databricks/terraform-provider-databricks/common"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -26,12 +27,21 @@ func ResourceEntitlements() common.Resource {
 			return m
 		})
 	addEntitlementsToSchema(entitlementSchema)
+	common.AddNamespaceInSchema(entitlementSchema)
+	common.NamespaceCustomizeSchemaMap(entitlementSchema)
 	return common.Resource{
+		CustomizeDiff: func(ctx context.Context, d *schema.ResourceDiff, c *common.DatabricksClient) error {
+			return common.NamespaceCustomizeDiff(ctx, d, c)
+		},
 		Create: func(ctx context.Context, d *schema.ResourceData, c *common.DatabricksClient) error {
-			if c.Config.IsAccountClient() {
+			if c.Config.HostType() == config.AccountHost {
 				return fmt.Errorf("entitlements can only be managed with a provider configured at the workspace-level")
 			}
-			err := patchEntitlements(ctx, d, c, "replace")
+			newClient, err := c.DatabricksClientForUnifiedProvider(ctx, d)
+			if err != nil {
+				return err
+			}
+			err = patchEntitlements(ctx, d, newClient, "replace")
 			if err != nil {
 				return err
 			}
@@ -39,13 +49,17 @@ func ResourceEntitlements() common.Resource {
 			return nil
 		},
 		Read: func(ctx context.Context, d *schema.ResourceData, c *common.DatabricksClient) error {
+			newClient, err := c.DatabricksClientForUnifiedProvider(ctx, d)
+			if err != nil {
+				return err
+			}
 			split := strings.SplitN(d.Id(), "/", 2)
 			if len(split) != 2 {
 				return fmt.Errorf("ID must be two elements: %s", d.Id())
 			}
 			switch strings.ToLower(split[0]) {
 			case "group":
-				group, err := NewGroupsAPI(ctx, c).Read(split[1], "entitlements")
+				group, err := NewGroupsAPI(ctx, newClient).Read(split[1], "entitlements")
 				if err != nil {
 					return err
 				}
@@ -53,7 +67,7 @@ func ResourceEntitlements() common.Resource {
 				group.Entitlements.generateEmpty(d)
 				return group.Entitlements.readIntoData(d)
 			case "user":
-				user, err := NewUsersAPI(ctx, c).Read(split[1], "entitlements")
+				user, err := NewUsersAPI(ctx, newClient).Read(split[1], "entitlements")
 				if err != nil {
 					return err
 				}
@@ -61,7 +75,7 @@ func ResourceEntitlements() common.Resource {
 				user.Entitlements.generateEmpty(d)
 				return user.Entitlements.readIntoData(d)
 			case "spn":
-				spn, err := NewServicePrincipalsAPI(ctx, c).Read(split[1], "entitlements")
+				spn, err := NewServicePrincipalsAPI(ctx, newClient).Read(split[1], "entitlements")
 				if err != nil {
 					return err
 				}
@@ -72,10 +86,18 @@ func ResourceEntitlements() common.Resource {
 			return nil
 		},
 		Update: func(ctx context.Context, d *schema.ResourceData, c *common.DatabricksClient) error {
-			return patchEntitlements(ctx, d, c, "replace")
+			newClient, err := c.DatabricksClientForUnifiedProvider(ctx, d)
+			if err != nil {
+				return err
+			}
+			return patchEntitlements(ctx, d, newClient, "replace")
 		},
 		Delete: func(ctx context.Context, d *schema.ResourceData, c *common.DatabricksClient) error {
-			return patchEntitlements(ctx, d, c, "remove")
+			newClient, err := c.DatabricksClientForUnifiedProvider(ctx, d)
+			if err != nil {
+				return err
+			}
+			return patchEntitlements(ctx, d, newClient, "remove")
 		},
 		Schema: entitlementSchema,
 	}

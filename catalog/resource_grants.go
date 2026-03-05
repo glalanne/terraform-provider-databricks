@@ -24,6 +24,7 @@ type PrivilegeAssignment struct {
 // privilege_assignments column renamed to `grant` block for simplicity
 type PermissionsList struct {
 	Assignments []PrivilegeAssignment `json:"privilege_assignments" tf:"slice_set,alias:grant"`
+	common.Namespace
 }
 
 // diffPermissions returns an array of catalog.PermissionsChange of this permissions list with `diff` privileges removed
@@ -160,12 +161,13 @@ func ResourceGrants() common.Resource {
 			for field := range permissions.Mappings {
 				s[field].AtLeastOneOf = alof
 			}
+			common.NamespaceCustomizeSchemaMap(s)
 			return s
 		})
 	return common.Resource{
 		Schema: s,
 		Create: func(ctx context.Context, d *schema.ResourceData, c *common.DatabricksClient) error {
-			w, err := c.WorkspaceClient()
+			w, err := c.WorkspaceClientUnifiedProvider(ctx, d)
 			if err != nil {
 				return err
 			}
@@ -176,7 +178,11 @@ func ResourceGrants() common.Resource {
 			var grants PermissionsList
 			common.DataToStructPointer(d, s, &grants)
 			securable, name := permissions.Mappings.KeyValue(d)
-			unityCatalogPermissionsAPI := permissions.NewUnityCatalogPermissionsAPI(ctx, c)
+			ws, err := c.WorkspaceClient()
+			if err != nil {
+				return err
+			}
+			unityCatalogPermissionsAPI := permissions.NewUnityCatalogPermissionsAPI(ctx, ws)
 			err = replaceAllPermissions(unityCatalogPermissionsAPI, securable, name, grants.toSdkPermissionsList())
 			if err != nil {
 				return err
@@ -189,7 +195,11 @@ func ResourceGrants() common.Resource {
 			if err != nil {
 				return err
 			}
-			unityCatalogPermissionsAPI := permissions.NewUnityCatalogPermissionsAPI(ctx, c)
+			ws, err := c.WorkspaceClient()
+			if err != nil {
+				return err
+			}
+			unityCatalogPermissionsAPI := permissions.NewUnityCatalogPermissionsAPI(ctx, ws)
 			grants, err := unityCatalogPermissionsAPI.GetPermissions(permissions.Mappings.GetSecurableType(securable), name)
 			if err != nil {
 				return err
@@ -209,7 +219,7 @@ func ResourceGrants() common.Resource {
 			return d.Set(securable, name)
 		},
 		Update: func(ctx context.Context, d *schema.ResourceData, c *common.DatabricksClient) error {
-			w, err := c.WorkspaceClient()
+			w, err := c.WorkspaceClientUnifiedProvider(ctx, d)
 			if err != nil {
 				return err
 			}
@@ -223,11 +233,15 @@ func ResourceGrants() common.Resource {
 			}
 			var grants PermissionsList
 			common.DataToStructPointer(d, s, &grants)
-			unityCatalogPermissionsAPI := permissions.NewUnityCatalogPermissionsAPI(ctx, c)
+			ws, err := c.WorkspaceClient()
+			if err != nil {
+				return err
+			}
+			unityCatalogPermissionsAPI := permissions.NewUnityCatalogPermissionsAPI(ctx, ws)
 			return replaceAllPermissions(unityCatalogPermissionsAPI, securable, name, grants.toSdkPermissionsList())
 		},
 		Delete: func(ctx context.Context, d *schema.ResourceData, c *common.DatabricksClient) error {
-			w, err := c.WorkspaceClient()
+			w, err := c.WorkspaceClientUnifiedProvider(ctx, d)
 			if err != nil {
 				return err
 			}
@@ -239,7 +253,11 @@ func ResourceGrants() common.Resource {
 			if err != nil {
 				return err
 			}
-			unityCatalogPermissionsAPI := permissions.NewUnityCatalogPermissionsAPI(ctx, c)
+			ws, err := c.WorkspaceClient()
+			if err != nil {
+				return err
+			}
+			unityCatalogPermissionsAPI := permissions.NewUnityCatalogPermissionsAPI(ctx, ws)
 			return replaceAllPermissions(unityCatalogPermissionsAPI, securable, name, catalog.GetPermissionsResponse{})
 		},
 	}
