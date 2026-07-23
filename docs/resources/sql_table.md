@@ -3,6 +3,8 @@ subcategory: "Unity Catalog"
 ---
 # databricks_sql_table (Resource)
 
+[API Documentation](https://docs.databricks.com/api/workspace/tables)
+
 Within a metastore, Unity Catalog provides a 3-level namespace for organizing data: Catalogs, databases (also called schemas), and tables/views.
 
 A `databricks_sql_table` is contained within [databricks_schema](schema.md), and can represent either a managed table, an external table, or a view.
@@ -187,6 +189,8 @@ The following arguments are supported:
 * `comment` - (Optional) User-supplied free-form text. Changing the comment is not currently supported on the `VIEW` table type.
 * `options` - (Optional) Map of user defined table options. Change forces creation of a new resource.
 * `properties` - (Optional) A map of table properties.
+* `provider_config` - (Optional) Configure the provider for management through account provider. This block consists of the following fields:
+  * `workspace_id` - (Required) Workspace ID which the resource belongs to. This workspace must be part of the account which the provider is configured with.
 
 ### `column` configuration block
 
@@ -195,6 +199,8 @@ Currently, changing the column definitions for a table will require dropping and
 
 * `name` - User-visible name of column
 * `type` - Column type spec (with metadata) as SQL text. Not supported for `VIEW` table_type.
+
+  ~> **Note:** When using `MAP` column types, do not include whitespace after commas in the type definition. For example, use `MAP<STRING,STRING>` instead of `MAP<STRING, STRING>`.
 * `identity` - (Optional) Whether the field is an identity column. Can be `default`, `always`, or unset. It is unset by default.
 * `comment` - (Optional) User-supplied free-form text.
 * `nullable` - (Optional) Whether field is nullable (Default: `true`)

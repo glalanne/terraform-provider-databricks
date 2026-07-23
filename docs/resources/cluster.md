@@ -3,6 +3,8 @@ subcategory: "Compute"
 ---
 # databricks_cluster resource
 
+[API Documentation](https://docs.databricks.com/api/workspace/clusters)
+
 This resource allows you to manage [Databricks Clusters](https://docs.databricks.com/clusters/index.html).
 
 -> This resource can only be used with a workspace-level provider!
@@ -40,6 +42,8 @@ resource "databricks_cluster" "shared_autoscaling" {
 * `is_single_node` - (Optional, Boolean, only with `kind`) When set to true, Databricks will automatically set single node related `custom_tags`, `spark_conf`, and `num_workers`.
 * `driver_node_type_id` - (Optional) The node type of the Spark driver. This field is optional; if unset, API will set the driver node type to the same value as `node_type_id` defined above.
 * `node_type_id` - (Required - optional if `instance_pool_id` is given) Any supported [databricks_node_type](../data-sources/node_type.md) id. If `instance_pool_id` is specified, this field is not needed.
+* `driver_node_type_flexibility` - (Optional) a block describing the alternative driver node types if `driver_node_type_id` isn't available.
+* `worker_node_type_flexibility` - (Optional) a block describing the alternative driver node types if `node_type_id` isn't available.
 * `instance_pool_id` (Optional - required if `node_type_id` is not given) - To reduce cluster start time, you can attach a cluster to a [predefined pool of idle instances](instance_pool.md). When attached to a pool, a cluster allocates its driver and worker nodes from the pool. If the pool does not have sufficient idle resources to accommodate the cluster's request, it expands by allocating new instances from the instance provider. When an attached cluster changes its state to `TERMINATED`, the instances it used are returned to the pool and reused by a different cluster.
 * `driver_instance_pool_id` (Optional) - similar to `instance_pool_id`, but for driver node. If omitted, and `instance_pool_id` is specified, then the driver will be allocated from that pool.
 * `policy_id` - (Optional) Identifier of [Cluster Policy](cluster_policy.md) to validate cluster and preset certain defaults. *The primary use for cluster policies is to allow users to create policy-scoped clusters via UI rather than sharing configuration for API-created clusters.* For example, when you specify `policy_id` of [external metastore](https://docs.databricks.com/administration-guide/clusters/policies.html#external-metastore-policy) policy, you still have to fill in relevant keys for `spark_conf`.  If relevant fields aren't filled in, then it will cause the configuration drift detected on each plan/apply, and Terraform will try to apply the detected changes.
@@ -60,6 +64,7 @@ resource "databricks_cluster" "shared_autoscaling" {
 * `spark_conf` - (Optional) Map with key-value pairs to fine-tune Spark clusters, where you can provide custom [Spark configuration properties](https://spark.apache.org/docs/latest/configuration.html) in a cluster configuration.
 * `is_pinned` - (Optional) boolean value specifying if the cluster is pinned (not pinned by default). You must be a Databricks administrator to use this.  The pinned clusters' maximum number is [limited to 100](https://docs.databricks.com/clusters/clusters-manage.html#pin-a-cluster), so `apply` may fail if you have more than that (this number may change over time, so check Databricks documentation for actual number).
 * `no_wait` - (Optional) If true, the provider will not wait for the cluster to reach `RUNNING` state when creating the cluster, allowing cluster creation and library installation to continue asynchronously. Defaults to false (the provider will wait for cluster creation and library installation to succeed).
+* `clear_cloud_attributes_on_remove` - (Optional) If true, removing a cloud attributes block (`aws_attributes`, `azure_attributes`, or `gcp_attributes`) from the configuration clears it on the cluster instead of the removal being ignored. Defaults to false, in which case removing such a block is suppressed to avoid a perpetual diff caused by the platform returning default cloud attributes. Keeping the block, even partially specified, preserves the suppression; only removing the whole block clears.
 * `provider_config` - (Optional) Configure the provider for management through account provider. This block consists of the following fields:
   * `workspace_id` - (Required) Workspace ID which the resource belongs to. This workspace must be part of the account which the provider is configured with.
 
@@ -520,6 +525,12 @@ resource "databricks_cluster" "with_nfs" {
   }
 }
 ```
+
+### driver_node_type_flexibility and worker_node_type_flexibility blocks
+
+Consist of the following attributes:
+
+* `alternate_node_type_ids` - (Required) list of alternative node types that will be used if main node type isn't available.  Follow the [documentation](https://learn.microsoft.com/en-us/azure/databricks/compute/flexible-node-types#fallback-instance-type-requirements) for requirements on selection of alternative node types.
 
 ## Attribute Reference
 

@@ -3,6 +3,8 @@ subcategory: "Unity Catalog"
 ---
 # databricks_schema Resource
 
+[API Documentation](https://docs.databricks.com/api/workspace/schemas)
+
 Within a metastore, Unity Catalog provides a 3-level namespace for organizing data: Catalogs, Databases (also called Schemas), and Tables / Views.
 
 -> This resource can only be used with a workspace-level provider!
@@ -42,6 +44,8 @@ The following arguments are required:
 * `properties` - (Optional) Extensible Schema properties.
 * `enable_predictive_optimization` - (Optional) Whether predictive optimization should be enabled for this object and objects under it. Can be `ENABLE`, `DISABLE` or `INHERIT`
 * `force_destroy` - (Optional) Delete schema regardless of its contents.
+* `provider_config` - (Optional) Configure the provider for management through account provider. This block consists of the following fields:
+  * `workspace_id` - (Required) Workspace ID which the resource belongs to. This workspace must be part of the account which the provider is configured with.
 
 ## Attribute Reference
 

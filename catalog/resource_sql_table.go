@@ -15,6 +15,7 @@ import (
 	"github.com/databricks/databricks-sdk-go/apierr"
 	"github.com/databricks/databricks-sdk-go/service/catalog"
 	"github.com/databricks/databricks-sdk-go/service/compute"
+	"github.com/databricks/databricks-sdk-go/service/iam"
 	"github.com/databricks/databricks-sdk-go/service/sql"
 	"github.com/databricks/terraform-provider-databricks/clusters"
 	"github.com/databricks/terraform-provider-databricks/common"
@@ -65,6 +66,7 @@ type SqlTableInfo struct {
 	WarehouseID         string            `json:"warehouse_id,omitempty"`
 	Owner               string            `json:"owner,omitempty" tf:"computed"`
 	TableID             string            `json:"table_id" tf:"computed"`
+	common.Namespace
 
 	exec    common.CommandExecutor
 	sqlExec sql.StatementExecutionInterface
@@ -92,6 +94,7 @@ func (ti SqlTableInfo) CustomizeSchema(s *common.CustomizableSchema) *common.Cus
 	s.SchemaPath("column", "type").SetCustomSuppressDiff(func(k, old, new string, d *schema.ResourceData) bool {
 		return getColumnType(old) == getColumnType(new)
 	})
+	common.NamespaceCustomizeSchema(s)
 	return s
 }
 
@@ -105,7 +108,7 @@ func NewSqlTablesAPI(ctx context.Context, m any) SqlTablesAPI {
 }
 
 func (a SqlTablesAPI) getTable(name string) (ti SqlTableInfo, err error) {
-	err = a.client.Get(a.context, "/unity-catalog/tables/"+name, nil, &ti)
+	err = a.client.Get(a.context, "/unity-catalog/tables/"+name, nil, &ti, a.client.AddWorkspaceIdHeader)
 	// Copy returned properties & options to read-only attributes
 	ti.EffectiveProperties = ti.Properties
 	ti.Properties = nil
@@ -175,7 +178,7 @@ func (ti *SqlTableInfo) initCluster(ctx context.Context, d *schema.ResourceData,
 		}
 	}
 	ti.exec = c.CommandExecutor(ctx)
-	w, err := c.WorkspaceClient()
+	w, err := c.WorkspaceClientUnifiedProvider(ctx, d)
 	if err != nil {
 		return err
 	}
@@ -187,7 +190,10 @@ func (ti *SqlTableInfo) getOrCreateCluster(clusterName string, clustersAPI clust
 	sparkVersion := clusters.LatestSparkVersionOrDefault(clustersAPI.Context(), clustersAPI.WorkspaceClient(), compute.SparkVersionRequest{
 		Latest: true,
 	})
-	nodeType := clustersAPI.GetSmallestNodeType(clusters.NodeTypeRequest{NodeTypeRequest: compute.NodeTypeRequest{LocalDisk: true}})
+	nodeType, err := clustersAPI.GetSmallestNodeType(clusters.NodeTypeRequest{NodeTypeRequest: compute.NodeTypeRequest{LocalDisk: true}})
+	if err != nil {
+		return "", err
+	}
 	aclCluster, err := clustersAPI.GetOrCreateRunningCluster(
 		clusterName, clusters.Cluster{
 			ClusterName:            clusterName,
@@ -408,7 +414,14 @@ func (ti *SqlTableInfo) alterExistingColumnStatements(oldti *SqlTableInfo, state
 			statements = append(statements, fmt.Sprintf("ALTER %s %s RENAME COLUMN %s to %s", typestring, ti.SQLFullName(), oldCi.getWrappedColumnName(), ci.getWrappedColumnName()))
 		}
 		if ci.Comment != oldCi.Comment {
-			statements = append(statements, fmt.Sprintf("ALTER %s %s ALTER COLUMN %s COMMENT '%s'", typestring, ti.SQLFullName(), ci.getWrappedColumnName(), parseComment(ci.Comment)))
+			if ti.TableType == "VIEW" {
+				// ALTER VIEW ... ALTER COLUMN ... COMMENT is not valid Databricks SQL
+				// (it fails with PARSE_SYNTAX_ERROR). COMMENT ON COLUMN updates a view
+				// column comment in place.
+				statements = append(statements, fmt.Sprintf("COMMENT ON COLUMN %s.%s IS '%s'", ti.SQLFullName(), ci.getWrappedColumnName(), parseComment(ci.Comment)))
+			} else {
+				statements = append(statements, fmt.Sprintf("ALTER %s %s ALTER COLUMN %s COMMENT '%s'", typestring, ti.SQLFullName(), ci.getWrappedColumnName(), parseComment(ci.Comment)))
+			}
 		}
 		if ci.Nullable != oldCi.Nullable {
 			var keyWord string
@@ -612,6 +625,9 @@ func ResourceSqlTable() common.Resource {
 	return common.Resource{
 		Schema: tableSchema,
 		CustomizeDiff: func(ctx context.Context, d *schema.ResourceDiff, c *common.DatabricksClient) error {
+			if err := common.NamespaceCustomizeDiffNoForceNew(ctx, d, c); err != nil {
+				return err
+			}
 			if d.HasChange("column") {
 				var newTableStruct SqlTableInfo
 				common.DiffToStructPointer(d, tableSchema, &newTableStruct)
@@ -675,7 +691,7 @@ func ResourceSqlTable() common.Resource {
 				return err
 			}
 			if ti.Owner != "" {
-				w, err := c.WorkspaceClient()
+				w, err := c.WorkspaceClientUnifiedProvider(ctx, d)
 				if err != nil {
 					return err
 				}
@@ -695,7 +711,7 @@ func ResourceSqlTable() common.Resource {
 			if err != nil {
 				return err
 			}
-			w, err := c.WorkspaceClient()
+			w, err := c.WorkspaceClientUnifiedProvider(ctx, d)
 			if err != nil {
 				return err
 			}
@@ -729,7 +745,7 @@ func ResourceSqlTable() common.Resource {
 			return common.StructToData(ti, tableSchema, d)
 		},
 		Update: func(ctx context.Context, d *schema.ResourceData, c *common.DatabricksClient) error {
-			w, err := c.WorkspaceClient()
+			w, err := c.WorkspaceClientUnifiedProvider(ctx, d)
 			if err != nil {
 				return err
 			}
@@ -749,7 +765,7 @@ func ResourceSqlTable() common.Resource {
 			if d.HasChange("owner") {
 				// if new owner is not specified, set it to the current user
 				if newti.Owner == "" {
-					currentUser, err := w.CurrentUser.Me(ctx)
+					currentUser, err := w.CurrentUser.Me(ctx, iam.MeRequest{ExcludedAttributes: "entitlements"})
 					if err != nil {
 						return err
 					}

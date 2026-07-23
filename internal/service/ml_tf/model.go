@@ -17,6 +17,7 @@ import (
 	pluginfwcommon "github.com/databricks/terraform-provider-databricks/internal/providers/pluginfw/common"
 	"github.com/databricks/terraform-provider-databricks/internal/providers/pluginfw/tfschema"
 
+	"github.com/hashicorp/terraform-plugin-framework-timetypes/timetypes"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
@@ -135,6 +136,914 @@ func (m Activity) Type(ctx context.Context) attr.Type {
 			"user_id":                types.StringType,
 		},
 	}
+}
+
+// An aggregation function applied over a time window.
+type AggregationFunction struct {
+	ApproxCountDistinct types.Object `tfsdk:"approx_count_distinct"`
+
+	ApproxPercentile types.Object `tfsdk:"approx_percentile"`
+
+	Avg types.Object `tfsdk:"avg"`
+
+	CountFunction types.Object `tfsdk:"count_function"`
+
+	First types.Object `tfsdk:"first"`
+
+	FirstDistinct types.Object `tfsdk:"first_distinct"`
+
+	FirstN types.Object `tfsdk:"first_n"`
+
+	Last types.Object `tfsdk:"last"`
+
+	LastDistinct types.Object `tfsdk:"last_distinct"`
+
+	LastN types.Object `tfsdk:"last_n"`
+
+	Max types.Object `tfsdk:"max"`
+
+	Min types.Object `tfsdk:"min"`
+
+	StddevPop types.Object `tfsdk:"stddev_pop"`
+
+	StddevSamp types.Object `tfsdk:"stddev_samp"`
+
+	Sum types.Object `tfsdk:"sum"`
+	// The time window over which the aggregation is computed.
+	TimeWindow types.Object `tfsdk:"time_window"`
+
+	VarPop types.Object `tfsdk:"var_pop"`
+
+	VarSamp types.Object `tfsdk:"var_samp"`
+}
+
+func (to *AggregationFunction) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from AggregationFunction) {
+	if !from.ApproxCountDistinct.IsNull() && !from.ApproxCountDistinct.IsUnknown() {
+		if toApproxCountDistinct, ok := to.GetApproxCountDistinct(ctx); ok {
+			if fromApproxCountDistinct, ok := from.GetApproxCountDistinct(ctx); ok {
+				// Recursively sync the fields of ApproxCountDistinct
+				toApproxCountDistinct.SyncFieldsDuringCreateOrUpdate(ctx, fromApproxCountDistinct)
+				to.SetApproxCountDistinct(ctx, toApproxCountDistinct)
+			}
+		}
+	}
+	if !from.ApproxPercentile.IsNull() && !from.ApproxPercentile.IsUnknown() {
+		if toApproxPercentile, ok := to.GetApproxPercentile(ctx); ok {
+			if fromApproxPercentile, ok := from.GetApproxPercentile(ctx); ok {
+				// Recursively sync the fields of ApproxPercentile
+				toApproxPercentile.SyncFieldsDuringCreateOrUpdate(ctx, fromApproxPercentile)
+				to.SetApproxPercentile(ctx, toApproxPercentile)
+			}
+		}
+	}
+	if !from.Avg.IsNull() && !from.Avg.IsUnknown() {
+		if toAvg, ok := to.GetAvg(ctx); ok {
+			if fromAvg, ok := from.GetAvg(ctx); ok {
+				// Recursively sync the fields of Avg
+				toAvg.SyncFieldsDuringCreateOrUpdate(ctx, fromAvg)
+				to.SetAvg(ctx, toAvg)
+			}
+		}
+	}
+	if !from.CountFunction.IsNull() && !from.CountFunction.IsUnknown() {
+		if toCountFunction, ok := to.GetCountFunction(ctx); ok {
+			if fromCountFunction, ok := from.GetCountFunction(ctx); ok {
+				// Recursively sync the fields of CountFunction
+				toCountFunction.SyncFieldsDuringCreateOrUpdate(ctx, fromCountFunction)
+				to.SetCountFunction(ctx, toCountFunction)
+			}
+		}
+	}
+	if !from.First.IsNull() && !from.First.IsUnknown() {
+		if toFirst, ok := to.GetFirst(ctx); ok {
+			if fromFirst, ok := from.GetFirst(ctx); ok {
+				// Recursively sync the fields of First
+				toFirst.SyncFieldsDuringCreateOrUpdate(ctx, fromFirst)
+				to.SetFirst(ctx, toFirst)
+			}
+		}
+	}
+	if !from.FirstDistinct.IsNull() && !from.FirstDistinct.IsUnknown() {
+		if toFirstDistinct, ok := to.GetFirstDistinct(ctx); ok {
+			if fromFirstDistinct, ok := from.GetFirstDistinct(ctx); ok {
+				// Recursively sync the fields of FirstDistinct
+				toFirstDistinct.SyncFieldsDuringCreateOrUpdate(ctx, fromFirstDistinct)
+				to.SetFirstDistinct(ctx, toFirstDistinct)
+			}
+		}
+	}
+	if !from.FirstN.IsNull() && !from.FirstN.IsUnknown() {
+		if toFirstN, ok := to.GetFirstN(ctx); ok {
+			if fromFirstN, ok := from.GetFirstN(ctx); ok {
+				// Recursively sync the fields of FirstN
+				toFirstN.SyncFieldsDuringCreateOrUpdate(ctx, fromFirstN)
+				to.SetFirstN(ctx, toFirstN)
+			}
+		}
+	}
+	if !from.Last.IsNull() && !from.Last.IsUnknown() {
+		if toLast, ok := to.GetLast(ctx); ok {
+			if fromLast, ok := from.GetLast(ctx); ok {
+				// Recursively sync the fields of Last
+				toLast.SyncFieldsDuringCreateOrUpdate(ctx, fromLast)
+				to.SetLast(ctx, toLast)
+			}
+		}
+	}
+	if !from.LastDistinct.IsNull() && !from.LastDistinct.IsUnknown() {
+		if toLastDistinct, ok := to.GetLastDistinct(ctx); ok {
+			if fromLastDistinct, ok := from.GetLastDistinct(ctx); ok {
+				// Recursively sync the fields of LastDistinct
+				toLastDistinct.SyncFieldsDuringCreateOrUpdate(ctx, fromLastDistinct)
+				to.SetLastDistinct(ctx, toLastDistinct)
+			}
+		}
+	}
+	if !from.LastN.IsNull() && !from.LastN.IsUnknown() {
+		if toLastN, ok := to.GetLastN(ctx); ok {
+			if fromLastN, ok := from.GetLastN(ctx); ok {
+				// Recursively sync the fields of LastN
+				toLastN.SyncFieldsDuringCreateOrUpdate(ctx, fromLastN)
+				to.SetLastN(ctx, toLastN)
+			}
+		}
+	}
+	if !from.Max.IsNull() && !from.Max.IsUnknown() {
+		if toMax, ok := to.GetMax(ctx); ok {
+			if fromMax, ok := from.GetMax(ctx); ok {
+				// Recursively sync the fields of Max
+				toMax.SyncFieldsDuringCreateOrUpdate(ctx, fromMax)
+				to.SetMax(ctx, toMax)
+			}
+		}
+	}
+	if !from.Min.IsNull() && !from.Min.IsUnknown() {
+		if toMin, ok := to.GetMin(ctx); ok {
+			if fromMin, ok := from.GetMin(ctx); ok {
+				// Recursively sync the fields of Min
+				toMin.SyncFieldsDuringCreateOrUpdate(ctx, fromMin)
+				to.SetMin(ctx, toMin)
+			}
+		}
+	}
+	if !from.StddevPop.IsNull() && !from.StddevPop.IsUnknown() {
+		if toStddevPop, ok := to.GetStddevPop(ctx); ok {
+			if fromStddevPop, ok := from.GetStddevPop(ctx); ok {
+				// Recursively sync the fields of StddevPop
+				toStddevPop.SyncFieldsDuringCreateOrUpdate(ctx, fromStddevPop)
+				to.SetStddevPop(ctx, toStddevPop)
+			}
+		}
+	}
+	if !from.StddevSamp.IsNull() && !from.StddevSamp.IsUnknown() {
+		if toStddevSamp, ok := to.GetStddevSamp(ctx); ok {
+			if fromStddevSamp, ok := from.GetStddevSamp(ctx); ok {
+				// Recursively sync the fields of StddevSamp
+				toStddevSamp.SyncFieldsDuringCreateOrUpdate(ctx, fromStddevSamp)
+				to.SetStddevSamp(ctx, toStddevSamp)
+			}
+		}
+	}
+	if !from.Sum.IsNull() && !from.Sum.IsUnknown() {
+		if toSum, ok := to.GetSum(ctx); ok {
+			if fromSum, ok := from.GetSum(ctx); ok {
+				// Recursively sync the fields of Sum
+				toSum.SyncFieldsDuringCreateOrUpdate(ctx, fromSum)
+				to.SetSum(ctx, toSum)
+			}
+		}
+	}
+	if !from.TimeWindow.IsNull() && !from.TimeWindow.IsUnknown() {
+		if toTimeWindow, ok := to.GetTimeWindow(ctx); ok {
+			if fromTimeWindow, ok := from.GetTimeWindow(ctx); ok {
+				// Recursively sync the fields of TimeWindow
+				toTimeWindow.SyncFieldsDuringCreateOrUpdate(ctx, fromTimeWindow)
+				to.SetTimeWindow(ctx, toTimeWindow)
+			}
+		}
+	}
+	if !from.VarPop.IsNull() && !from.VarPop.IsUnknown() {
+		if toVarPop, ok := to.GetVarPop(ctx); ok {
+			if fromVarPop, ok := from.GetVarPop(ctx); ok {
+				// Recursively sync the fields of VarPop
+				toVarPop.SyncFieldsDuringCreateOrUpdate(ctx, fromVarPop)
+				to.SetVarPop(ctx, toVarPop)
+			}
+		}
+	}
+	if !from.VarSamp.IsNull() && !from.VarSamp.IsUnknown() {
+		if toVarSamp, ok := to.GetVarSamp(ctx); ok {
+			if fromVarSamp, ok := from.GetVarSamp(ctx); ok {
+				// Recursively sync the fields of VarSamp
+				toVarSamp.SyncFieldsDuringCreateOrUpdate(ctx, fromVarSamp)
+				to.SetVarSamp(ctx, toVarSamp)
+			}
+		}
+	}
+}
+
+func (to *AggregationFunction) SyncFieldsDuringRead(ctx context.Context, from AggregationFunction) {
+	if !from.ApproxCountDistinct.IsNull() && !from.ApproxCountDistinct.IsUnknown() {
+		if toApproxCountDistinct, ok := to.GetApproxCountDistinct(ctx); ok {
+			if fromApproxCountDistinct, ok := from.GetApproxCountDistinct(ctx); ok {
+				toApproxCountDistinct.SyncFieldsDuringRead(ctx, fromApproxCountDistinct)
+				to.SetApproxCountDistinct(ctx, toApproxCountDistinct)
+			}
+		}
+	}
+	if !from.ApproxPercentile.IsNull() && !from.ApproxPercentile.IsUnknown() {
+		if toApproxPercentile, ok := to.GetApproxPercentile(ctx); ok {
+			if fromApproxPercentile, ok := from.GetApproxPercentile(ctx); ok {
+				toApproxPercentile.SyncFieldsDuringRead(ctx, fromApproxPercentile)
+				to.SetApproxPercentile(ctx, toApproxPercentile)
+			}
+		}
+	}
+	if !from.Avg.IsNull() && !from.Avg.IsUnknown() {
+		if toAvg, ok := to.GetAvg(ctx); ok {
+			if fromAvg, ok := from.GetAvg(ctx); ok {
+				toAvg.SyncFieldsDuringRead(ctx, fromAvg)
+				to.SetAvg(ctx, toAvg)
+			}
+		}
+	}
+	if !from.CountFunction.IsNull() && !from.CountFunction.IsUnknown() {
+		if toCountFunction, ok := to.GetCountFunction(ctx); ok {
+			if fromCountFunction, ok := from.GetCountFunction(ctx); ok {
+				toCountFunction.SyncFieldsDuringRead(ctx, fromCountFunction)
+				to.SetCountFunction(ctx, toCountFunction)
+			}
+		}
+	}
+	if !from.First.IsNull() && !from.First.IsUnknown() {
+		if toFirst, ok := to.GetFirst(ctx); ok {
+			if fromFirst, ok := from.GetFirst(ctx); ok {
+				toFirst.SyncFieldsDuringRead(ctx, fromFirst)
+				to.SetFirst(ctx, toFirst)
+			}
+		}
+	}
+	if !from.FirstDistinct.IsNull() && !from.FirstDistinct.IsUnknown() {
+		if toFirstDistinct, ok := to.GetFirstDistinct(ctx); ok {
+			if fromFirstDistinct, ok := from.GetFirstDistinct(ctx); ok {
+				toFirstDistinct.SyncFieldsDuringRead(ctx, fromFirstDistinct)
+				to.SetFirstDistinct(ctx, toFirstDistinct)
+			}
+		}
+	}
+	if !from.FirstN.IsNull() && !from.FirstN.IsUnknown() {
+		if toFirstN, ok := to.GetFirstN(ctx); ok {
+			if fromFirstN, ok := from.GetFirstN(ctx); ok {
+				toFirstN.SyncFieldsDuringRead(ctx, fromFirstN)
+				to.SetFirstN(ctx, toFirstN)
+			}
+		}
+	}
+	if !from.Last.IsNull() && !from.Last.IsUnknown() {
+		if toLast, ok := to.GetLast(ctx); ok {
+			if fromLast, ok := from.GetLast(ctx); ok {
+				toLast.SyncFieldsDuringRead(ctx, fromLast)
+				to.SetLast(ctx, toLast)
+			}
+		}
+	}
+	if !from.LastDistinct.IsNull() && !from.LastDistinct.IsUnknown() {
+		if toLastDistinct, ok := to.GetLastDistinct(ctx); ok {
+			if fromLastDistinct, ok := from.GetLastDistinct(ctx); ok {
+				toLastDistinct.SyncFieldsDuringRead(ctx, fromLastDistinct)
+				to.SetLastDistinct(ctx, toLastDistinct)
+			}
+		}
+	}
+	if !from.LastN.IsNull() && !from.LastN.IsUnknown() {
+		if toLastN, ok := to.GetLastN(ctx); ok {
+			if fromLastN, ok := from.GetLastN(ctx); ok {
+				toLastN.SyncFieldsDuringRead(ctx, fromLastN)
+				to.SetLastN(ctx, toLastN)
+			}
+		}
+	}
+	if !from.Max.IsNull() && !from.Max.IsUnknown() {
+		if toMax, ok := to.GetMax(ctx); ok {
+			if fromMax, ok := from.GetMax(ctx); ok {
+				toMax.SyncFieldsDuringRead(ctx, fromMax)
+				to.SetMax(ctx, toMax)
+			}
+		}
+	}
+	if !from.Min.IsNull() && !from.Min.IsUnknown() {
+		if toMin, ok := to.GetMin(ctx); ok {
+			if fromMin, ok := from.GetMin(ctx); ok {
+				toMin.SyncFieldsDuringRead(ctx, fromMin)
+				to.SetMin(ctx, toMin)
+			}
+		}
+	}
+	if !from.StddevPop.IsNull() && !from.StddevPop.IsUnknown() {
+		if toStddevPop, ok := to.GetStddevPop(ctx); ok {
+			if fromStddevPop, ok := from.GetStddevPop(ctx); ok {
+				toStddevPop.SyncFieldsDuringRead(ctx, fromStddevPop)
+				to.SetStddevPop(ctx, toStddevPop)
+			}
+		}
+	}
+	if !from.StddevSamp.IsNull() && !from.StddevSamp.IsUnknown() {
+		if toStddevSamp, ok := to.GetStddevSamp(ctx); ok {
+			if fromStddevSamp, ok := from.GetStddevSamp(ctx); ok {
+				toStddevSamp.SyncFieldsDuringRead(ctx, fromStddevSamp)
+				to.SetStddevSamp(ctx, toStddevSamp)
+			}
+		}
+	}
+	if !from.Sum.IsNull() && !from.Sum.IsUnknown() {
+		if toSum, ok := to.GetSum(ctx); ok {
+			if fromSum, ok := from.GetSum(ctx); ok {
+				toSum.SyncFieldsDuringRead(ctx, fromSum)
+				to.SetSum(ctx, toSum)
+			}
+		}
+	}
+	if !from.TimeWindow.IsNull() && !from.TimeWindow.IsUnknown() {
+		if toTimeWindow, ok := to.GetTimeWindow(ctx); ok {
+			if fromTimeWindow, ok := from.GetTimeWindow(ctx); ok {
+				toTimeWindow.SyncFieldsDuringRead(ctx, fromTimeWindow)
+				to.SetTimeWindow(ctx, toTimeWindow)
+			}
+		}
+	}
+	if !from.VarPop.IsNull() && !from.VarPop.IsUnknown() {
+		if toVarPop, ok := to.GetVarPop(ctx); ok {
+			if fromVarPop, ok := from.GetVarPop(ctx); ok {
+				toVarPop.SyncFieldsDuringRead(ctx, fromVarPop)
+				to.SetVarPop(ctx, toVarPop)
+			}
+		}
+	}
+	if !from.VarSamp.IsNull() && !from.VarSamp.IsUnknown() {
+		if toVarSamp, ok := to.GetVarSamp(ctx); ok {
+			if fromVarSamp, ok := from.GetVarSamp(ctx); ok {
+				toVarSamp.SyncFieldsDuringRead(ctx, fromVarSamp)
+				to.SetVarSamp(ctx, toVarSamp)
+			}
+		}
+	}
+}
+
+func (m AggregationFunction) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["approx_count_distinct"] = attrs["approx_count_distinct"].SetOptional()
+	attrs["approx_percentile"] = attrs["approx_percentile"].SetOptional()
+	attrs["avg"] = attrs["avg"].SetOptional()
+	attrs["count_function"] = attrs["count_function"].SetOptional()
+	attrs["first"] = attrs["first"].SetOptional()
+	attrs["first_distinct"] = attrs["first_distinct"].SetOptional()
+	attrs["first_n"] = attrs["first_n"].SetOptional()
+	attrs["last"] = attrs["last"].SetOptional()
+	attrs["last_distinct"] = attrs["last_distinct"].SetOptional()
+	attrs["last_n"] = attrs["last_n"].SetOptional()
+	attrs["max"] = attrs["max"].SetOptional()
+	attrs["min"] = attrs["min"].SetOptional()
+	attrs["stddev_pop"] = attrs["stddev_pop"].SetOptional()
+	attrs["stddev_samp"] = attrs["stddev_samp"].SetOptional()
+	attrs["sum"] = attrs["sum"].SetOptional()
+	attrs["time_window"] = attrs["time_window"].SetOptional()
+	attrs["var_pop"] = attrs["var_pop"].SetOptional()
+	attrs["var_samp"] = attrs["var_samp"].SetOptional()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in AggregationFunction.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m AggregationFunction) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{
+		"approx_count_distinct": reflect.TypeOf(ApproxCountDistinctFunction{}),
+		"approx_percentile":     reflect.TypeOf(ApproxPercentileFunction{}),
+		"avg":                   reflect.TypeOf(AvgFunction{}),
+		"count_function":        reflect.TypeOf(CountFunction{}),
+		"first":                 reflect.TypeOf(FirstFunction{}),
+		"first_distinct":        reflect.TypeOf(FirstDistinctFunction{}),
+		"first_n":               reflect.TypeOf(FirstNFunction{}),
+		"last":                  reflect.TypeOf(LastFunction{}),
+		"last_distinct":         reflect.TypeOf(LastDistinctFunction{}),
+		"last_n":                reflect.TypeOf(LastNFunction{}),
+		"max":                   reflect.TypeOf(MaxFunction{}),
+		"min":                   reflect.TypeOf(MinFunction{}),
+		"stddev_pop":            reflect.TypeOf(StddevPopFunction{}),
+		"stddev_samp":           reflect.TypeOf(StddevSampFunction{}),
+		"sum":                   reflect.TypeOf(SumFunction{}),
+		"time_window":           reflect.TypeOf(TimeWindow{}),
+		"var_pop":               reflect.TypeOf(VarPopFunction{}),
+		"var_samp":              reflect.TypeOf(VarSampFunction{}),
+	}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, AggregationFunction
+// only implements ToObjectValue() and Type().
+func (m AggregationFunction) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"approx_count_distinct": m.ApproxCountDistinct,
+			"approx_percentile":     m.ApproxPercentile,
+			"avg":                   m.Avg,
+			"count_function":        m.CountFunction,
+			"first":                 m.First,
+			"first_distinct":        m.FirstDistinct,
+			"first_n":               m.FirstN,
+			"last":                  m.Last,
+			"last_distinct":         m.LastDistinct,
+			"last_n":                m.LastN,
+			"max":                   m.Max,
+			"min":                   m.Min,
+			"stddev_pop":            m.StddevPop,
+			"stddev_samp":           m.StddevSamp,
+			"sum":                   m.Sum,
+			"time_window":           m.TimeWindow,
+			"var_pop":               m.VarPop,
+			"var_samp":              m.VarSamp,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m AggregationFunction) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"approx_count_distinct": ApproxCountDistinctFunction{}.Type(ctx),
+			"approx_percentile":     ApproxPercentileFunction{}.Type(ctx),
+			"avg":                   AvgFunction{}.Type(ctx),
+			"count_function":        CountFunction{}.Type(ctx),
+			"first":                 FirstFunction{}.Type(ctx),
+			"first_distinct":        FirstDistinctFunction{}.Type(ctx),
+			"first_n":               FirstNFunction{}.Type(ctx),
+			"last":                  LastFunction{}.Type(ctx),
+			"last_distinct":         LastDistinctFunction{}.Type(ctx),
+			"last_n":                LastNFunction{}.Type(ctx),
+			"max":                   MaxFunction{}.Type(ctx),
+			"min":                   MinFunction{}.Type(ctx),
+			"stddev_pop":            StddevPopFunction{}.Type(ctx),
+			"stddev_samp":           StddevSampFunction{}.Type(ctx),
+			"sum":                   SumFunction{}.Type(ctx),
+			"time_window":           TimeWindow{}.Type(ctx),
+			"var_pop":               VarPopFunction{}.Type(ctx),
+			"var_samp":              VarSampFunction{}.Type(ctx),
+		},
+	}
+}
+
+// GetApproxCountDistinct returns the value of the ApproxCountDistinct field in AggregationFunction as
+// a ApproxCountDistinctFunction value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *AggregationFunction) GetApproxCountDistinct(ctx context.Context) (ApproxCountDistinctFunction, bool) {
+	var e ApproxCountDistinctFunction
+	if m.ApproxCountDistinct.IsNull() || m.ApproxCountDistinct.IsUnknown() {
+		return e, false
+	}
+	var v ApproxCountDistinctFunction
+	d := m.ApproxCountDistinct.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetApproxCountDistinct sets the value of the ApproxCountDistinct field in AggregationFunction.
+func (m *AggregationFunction) SetApproxCountDistinct(ctx context.Context, v ApproxCountDistinctFunction) {
+	vs := v.ToObjectValue(ctx)
+	m.ApproxCountDistinct = vs
+}
+
+// GetApproxPercentile returns the value of the ApproxPercentile field in AggregationFunction as
+// a ApproxPercentileFunction value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *AggregationFunction) GetApproxPercentile(ctx context.Context) (ApproxPercentileFunction, bool) {
+	var e ApproxPercentileFunction
+	if m.ApproxPercentile.IsNull() || m.ApproxPercentile.IsUnknown() {
+		return e, false
+	}
+	var v ApproxPercentileFunction
+	d := m.ApproxPercentile.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetApproxPercentile sets the value of the ApproxPercentile field in AggregationFunction.
+func (m *AggregationFunction) SetApproxPercentile(ctx context.Context, v ApproxPercentileFunction) {
+	vs := v.ToObjectValue(ctx)
+	m.ApproxPercentile = vs
+}
+
+// GetAvg returns the value of the Avg field in AggregationFunction as
+// a AvgFunction value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *AggregationFunction) GetAvg(ctx context.Context) (AvgFunction, bool) {
+	var e AvgFunction
+	if m.Avg.IsNull() || m.Avg.IsUnknown() {
+		return e, false
+	}
+	var v AvgFunction
+	d := m.Avg.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetAvg sets the value of the Avg field in AggregationFunction.
+func (m *AggregationFunction) SetAvg(ctx context.Context, v AvgFunction) {
+	vs := v.ToObjectValue(ctx)
+	m.Avg = vs
+}
+
+// GetCountFunction returns the value of the CountFunction field in AggregationFunction as
+// a CountFunction value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *AggregationFunction) GetCountFunction(ctx context.Context) (CountFunction, bool) {
+	var e CountFunction
+	if m.CountFunction.IsNull() || m.CountFunction.IsUnknown() {
+		return e, false
+	}
+	var v CountFunction
+	d := m.CountFunction.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetCountFunction sets the value of the CountFunction field in AggregationFunction.
+func (m *AggregationFunction) SetCountFunction(ctx context.Context, v CountFunction) {
+	vs := v.ToObjectValue(ctx)
+	m.CountFunction = vs
+}
+
+// GetFirst returns the value of the First field in AggregationFunction as
+// a FirstFunction value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *AggregationFunction) GetFirst(ctx context.Context) (FirstFunction, bool) {
+	var e FirstFunction
+	if m.First.IsNull() || m.First.IsUnknown() {
+		return e, false
+	}
+	var v FirstFunction
+	d := m.First.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetFirst sets the value of the First field in AggregationFunction.
+func (m *AggregationFunction) SetFirst(ctx context.Context, v FirstFunction) {
+	vs := v.ToObjectValue(ctx)
+	m.First = vs
+}
+
+// GetFirstDistinct returns the value of the FirstDistinct field in AggregationFunction as
+// a FirstDistinctFunction value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *AggregationFunction) GetFirstDistinct(ctx context.Context) (FirstDistinctFunction, bool) {
+	var e FirstDistinctFunction
+	if m.FirstDistinct.IsNull() || m.FirstDistinct.IsUnknown() {
+		return e, false
+	}
+	var v FirstDistinctFunction
+	d := m.FirstDistinct.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetFirstDistinct sets the value of the FirstDistinct field in AggregationFunction.
+func (m *AggregationFunction) SetFirstDistinct(ctx context.Context, v FirstDistinctFunction) {
+	vs := v.ToObjectValue(ctx)
+	m.FirstDistinct = vs
+}
+
+// GetFirstN returns the value of the FirstN field in AggregationFunction as
+// a FirstNFunction value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *AggregationFunction) GetFirstN(ctx context.Context) (FirstNFunction, bool) {
+	var e FirstNFunction
+	if m.FirstN.IsNull() || m.FirstN.IsUnknown() {
+		return e, false
+	}
+	var v FirstNFunction
+	d := m.FirstN.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetFirstN sets the value of the FirstN field in AggregationFunction.
+func (m *AggregationFunction) SetFirstN(ctx context.Context, v FirstNFunction) {
+	vs := v.ToObjectValue(ctx)
+	m.FirstN = vs
+}
+
+// GetLast returns the value of the Last field in AggregationFunction as
+// a LastFunction value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *AggregationFunction) GetLast(ctx context.Context) (LastFunction, bool) {
+	var e LastFunction
+	if m.Last.IsNull() || m.Last.IsUnknown() {
+		return e, false
+	}
+	var v LastFunction
+	d := m.Last.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetLast sets the value of the Last field in AggregationFunction.
+func (m *AggregationFunction) SetLast(ctx context.Context, v LastFunction) {
+	vs := v.ToObjectValue(ctx)
+	m.Last = vs
+}
+
+// GetLastDistinct returns the value of the LastDistinct field in AggregationFunction as
+// a LastDistinctFunction value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *AggregationFunction) GetLastDistinct(ctx context.Context) (LastDistinctFunction, bool) {
+	var e LastDistinctFunction
+	if m.LastDistinct.IsNull() || m.LastDistinct.IsUnknown() {
+		return e, false
+	}
+	var v LastDistinctFunction
+	d := m.LastDistinct.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetLastDistinct sets the value of the LastDistinct field in AggregationFunction.
+func (m *AggregationFunction) SetLastDistinct(ctx context.Context, v LastDistinctFunction) {
+	vs := v.ToObjectValue(ctx)
+	m.LastDistinct = vs
+}
+
+// GetLastN returns the value of the LastN field in AggregationFunction as
+// a LastNFunction value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *AggregationFunction) GetLastN(ctx context.Context) (LastNFunction, bool) {
+	var e LastNFunction
+	if m.LastN.IsNull() || m.LastN.IsUnknown() {
+		return e, false
+	}
+	var v LastNFunction
+	d := m.LastN.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetLastN sets the value of the LastN field in AggregationFunction.
+func (m *AggregationFunction) SetLastN(ctx context.Context, v LastNFunction) {
+	vs := v.ToObjectValue(ctx)
+	m.LastN = vs
+}
+
+// GetMax returns the value of the Max field in AggregationFunction as
+// a MaxFunction value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *AggregationFunction) GetMax(ctx context.Context) (MaxFunction, bool) {
+	var e MaxFunction
+	if m.Max.IsNull() || m.Max.IsUnknown() {
+		return e, false
+	}
+	var v MaxFunction
+	d := m.Max.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetMax sets the value of the Max field in AggregationFunction.
+func (m *AggregationFunction) SetMax(ctx context.Context, v MaxFunction) {
+	vs := v.ToObjectValue(ctx)
+	m.Max = vs
+}
+
+// GetMin returns the value of the Min field in AggregationFunction as
+// a MinFunction value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *AggregationFunction) GetMin(ctx context.Context) (MinFunction, bool) {
+	var e MinFunction
+	if m.Min.IsNull() || m.Min.IsUnknown() {
+		return e, false
+	}
+	var v MinFunction
+	d := m.Min.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetMin sets the value of the Min field in AggregationFunction.
+func (m *AggregationFunction) SetMin(ctx context.Context, v MinFunction) {
+	vs := v.ToObjectValue(ctx)
+	m.Min = vs
+}
+
+// GetStddevPop returns the value of the StddevPop field in AggregationFunction as
+// a StddevPopFunction value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *AggregationFunction) GetStddevPop(ctx context.Context) (StddevPopFunction, bool) {
+	var e StddevPopFunction
+	if m.StddevPop.IsNull() || m.StddevPop.IsUnknown() {
+		return e, false
+	}
+	var v StddevPopFunction
+	d := m.StddevPop.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetStddevPop sets the value of the StddevPop field in AggregationFunction.
+func (m *AggregationFunction) SetStddevPop(ctx context.Context, v StddevPopFunction) {
+	vs := v.ToObjectValue(ctx)
+	m.StddevPop = vs
+}
+
+// GetStddevSamp returns the value of the StddevSamp field in AggregationFunction as
+// a StddevSampFunction value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *AggregationFunction) GetStddevSamp(ctx context.Context) (StddevSampFunction, bool) {
+	var e StddevSampFunction
+	if m.StddevSamp.IsNull() || m.StddevSamp.IsUnknown() {
+		return e, false
+	}
+	var v StddevSampFunction
+	d := m.StddevSamp.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetStddevSamp sets the value of the StddevSamp field in AggregationFunction.
+func (m *AggregationFunction) SetStddevSamp(ctx context.Context, v StddevSampFunction) {
+	vs := v.ToObjectValue(ctx)
+	m.StddevSamp = vs
+}
+
+// GetSum returns the value of the Sum field in AggregationFunction as
+// a SumFunction value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *AggregationFunction) GetSum(ctx context.Context) (SumFunction, bool) {
+	var e SumFunction
+	if m.Sum.IsNull() || m.Sum.IsUnknown() {
+		return e, false
+	}
+	var v SumFunction
+	d := m.Sum.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetSum sets the value of the Sum field in AggregationFunction.
+func (m *AggregationFunction) SetSum(ctx context.Context, v SumFunction) {
+	vs := v.ToObjectValue(ctx)
+	m.Sum = vs
+}
+
+// GetTimeWindow returns the value of the TimeWindow field in AggregationFunction as
+// a TimeWindow value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *AggregationFunction) GetTimeWindow(ctx context.Context) (TimeWindow, bool) {
+	var e TimeWindow
+	if m.TimeWindow.IsNull() || m.TimeWindow.IsUnknown() {
+		return e, false
+	}
+	var v TimeWindow
+	d := m.TimeWindow.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetTimeWindow sets the value of the TimeWindow field in AggregationFunction.
+func (m *AggregationFunction) SetTimeWindow(ctx context.Context, v TimeWindow) {
+	vs := v.ToObjectValue(ctx)
+	m.TimeWindow = vs
+}
+
+// GetVarPop returns the value of the VarPop field in AggregationFunction as
+// a VarPopFunction value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *AggregationFunction) GetVarPop(ctx context.Context) (VarPopFunction, bool) {
+	var e VarPopFunction
+	if m.VarPop.IsNull() || m.VarPop.IsUnknown() {
+		return e, false
+	}
+	var v VarPopFunction
+	d := m.VarPop.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetVarPop sets the value of the VarPop field in AggregationFunction.
+func (m *AggregationFunction) SetVarPop(ctx context.Context, v VarPopFunction) {
+	vs := v.ToObjectValue(ctx)
+	m.VarPop = vs
+}
+
+// GetVarSamp returns the value of the VarSamp field in AggregationFunction as
+// a VarSampFunction value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *AggregationFunction) GetVarSamp(ctx context.Context) (VarSampFunction, bool) {
+	var e VarSampFunction
+	if m.VarSamp.IsNull() || m.VarSamp.IsUnknown() {
+		return e, false
+	}
+	var v VarSampFunction
+	d := m.VarSamp.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetVarSamp sets the value of the VarSamp field in AggregationFunction.
+func (m *AggregationFunction) SetVarSamp(ctx context.Context, v VarSampFunction) {
+	vs := v.ToObjectValue(ctx)
+	m.VarSamp = vs
 }
 
 // Details required to identify and approve a model version stage transition
@@ -308,19 +1217,154 @@ func (m *ApproveTransitionRequestResponse) SetActivity(ctx context.Context, v Ac
 	m.Activity = vs
 }
 
+// Computes the approximate count of distinct values.
+type ApproxCountDistinctFunction struct {
+	// The input column from which the approximate count of distinct values is
+	// computed.
+	Input types.String `tfsdk:"input"`
+	// The maximum relative standard deviation allowed (default defined by
+	// Spark).
+	RelativeSd types.Float64 `tfsdk:"relative_sd"`
+}
+
+func (to *ApproxCountDistinctFunction) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from ApproxCountDistinctFunction) {
+}
+
+func (to *ApproxCountDistinctFunction) SyncFieldsDuringRead(ctx context.Context, from ApproxCountDistinctFunction) {
+}
+
+func (m ApproxCountDistinctFunction) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["input"] = attrs["input"].SetRequired()
+	attrs["relative_sd"] = attrs["relative_sd"].SetOptional()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in ApproxCountDistinctFunction.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m ApproxCountDistinctFunction) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, ApproxCountDistinctFunction
+// only implements ToObjectValue() and Type().
+func (m ApproxCountDistinctFunction) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"input":       m.Input,
+			"relative_sd": m.RelativeSd,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m ApproxCountDistinctFunction) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"input":       types.StringType,
+			"relative_sd": types.Float64Type,
+		},
+	}
+}
+
+// Computes the approximate percentile of values.
+type ApproxPercentileFunction struct {
+	// The accuracy parameter (higher is more accurate but slower).
+	Accuracy types.Int64 `tfsdk:"accuracy"`
+	// The input column from which the approximate percentile is computed.
+	Input types.String `tfsdk:"input"`
+	// The percentile value to compute (between 0 and 1).
+	Percentile types.Float64 `tfsdk:"percentile"`
+}
+
+func (to *ApproxPercentileFunction) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from ApproxPercentileFunction) {
+}
+
+func (to *ApproxPercentileFunction) SyncFieldsDuringRead(ctx context.Context, from ApproxPercentileFunction) {
+}
+
+func (m ApproxPercentileFunction) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["accuracy"] = attrs["accuracy"].SetOptional()
+	attrs["input"] = attrs["input"].SetRequired()
+	attrs["percentile"] = attrs["percentile"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in ApproxPercentileFunction.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m ApproxPercentileFunction) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, ApproxPercentileFunction
+// only implements ToObjectValue() and Type().
+func (m ApproxPercentileFunction) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"accuracy":   m.Accuracy,
+			"input":      m.Input,
+			"percentile": m.Percentile,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m ApproxPercentileFunction) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"accuracy":   types.Int64Type,
+			"input":      types.StringType,
+			"percentile": types.Float64Type,
+		},
+	}
+}
+
 type AuthConfig struct {
+	// Mutual-TLS authentication. See MtlsConfig.
+	MtlsConfig types.Object `tfsdk:"mtls_config"`
 	// Name of the Unity Catalog service credential. This value will be set
 	// under the option databricks.serviceCredential
 	UcServiceCredentialName types.String `tfsdk:"uc_service_credential_name"`
 }
 
 func (to *AuthConfig) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from AuthConfig) {
+	if !from.MtlsConfig.IsNull() && !from.MtlsConfig.IsUnknown() {
+		if toMtlsConfig, ok := to.GetMtlsConfig(ctx); ok {
+			if fromMtlsConfig, ok := from.GetMtlsConfig(ctx); ok {
+				// Recursively sync the fields of MtlsConfig
+				toMtlsConfig.SyncFieldsDuringCreateOrUpdate(ctx, fromMtlsConfig)
+				to.SetMtlsConfig(ctx, toMtlsConfig)
+			}
+		}
+	}
 }
 
 func (to *AuthConfig) SyncFieldsDuringRead(ctx context.Context, from AuthConfig) {
+	if !from.MtlsConfig.IsNull() && !from.MtlsConfig.IsUnknown() {
+		if toMtlsConfig, ok := to.GetMtlsConfig(ctx); ok {
+			if fromMtlsConfig, ok := from.GetMtlsConfig(ctx); ok {
+				toMtlsConfig.SyncFieldsDuringRead(ctx, fromMtlsConfig)
+				to.SetMtlsConfig(ctx, toMtlsConfig)
+			}
+		}
+	}
 }
 
 func (m AuthConfig) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["mtls_config"] = attrs["mtls_config"].SetOptional()
 	attrs["uc_service_credential_name"] = attrs["uc_service_credential_name"].SetOptional()
 
 	return attrs
@@ -334,7 +1378,9 @@ func (m AuthConfig) ApplySchemaCustomizations(attrs map[string]tfschema.Attribut
 // plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
 // SDK values.
 func (m AuthConfig) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
-	return map[string]reflect.Type{}
+	return map[string]reflect.Type{
+		"mtls_config": reflect.TypeOf(MtlsConfig{}),
+	}
 }
 
 // TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
@@ -344,6 +1390,7 @@ func (m AuthConfig) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
 	return types.ObjectValueMust(
 		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
 		map[string]attr.Value{
+			"mtls_config":                m.MtlsConfig,
 			"uc_service_credential_name": m.UcServiceCredentialName,
 		})
 }
@@ -352,9 +1399,189 @@ func (m AuthConfig) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
 func (m AuthConfig) Type(ctx context.Context) attr.Type {
 	return types.ObjectType{
 		AttrTypes: map[string]attr.Type{
+			"mtls_config":                MtlsConfig{}.Type(ctx),
 			"uc_service_credential_name": types.StringType,
 		},
 	}
+}
+
+// GetMtlsConfig returns the value of the MtlsConfig field in AuthConfig as
+// a MtlsConfig value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *AuthConfig) GetMtlsConfig(ctx context.Context) (MtlsConfig, bool) {
+	var e MtlsConfig
+	if m.MtlsConfig.IsNull() || m.MtlsConfig.IsUnknown() {
+		return e, false
+	}
+	var v MtlsConfig
+	d := m.MtlsConfig.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetMtlsConfig sets the value of the MtlsConfig field in AuthConfig.
+func (m *AuthConfig) SetMtlsConfig(ctx context.Context, v MtlsConfig) {
+	vs := v.ToObjectValue(ctx)
+	m.MtlsConfig = vs
+}
+
+// Computes the average of values.
+type AvgFunction struct {
+	// The input column from which the average is computed. For Kafka sources,
+	// use dot-prefixed path notation (e.g., "value.amount"). For nested fields,
+	// the leaf node name is used. Colon-prefixed notation (e.g.,
+	// "value:amount") is supported for backwards compatibility but is
+	// deprecated; migrate to dot notation.
+	Input types.String `tfsdk:"input"`
+}
+
+func (to *AvgFunction) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from AvgFunction) {
+}
+
+func (to *AvgFunction) SyncFieldsDuringRead(ctx context.Context, from AvgFunction) {
+}
+
+func (m AvgFunction) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["input"] = attrs["input"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in AvgFunction.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m AvgFunction) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, AvgFunction
+// only implements ToObjectValue() and Type().
+func (m AvgFunction) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"input": m.Input,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m AvgFunction) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"input": types.StringType,
+		},
+	}
+}
+
+type BackfillSource struct {
+	// The full three-part name (catalog, schema, name) of the Delta table
+	// containing the historical data to backfill.
+	DeltaTableName types.String `tfsdk:"delta_table_name"`
+	// Deprecated: Use delta_table_name instead. Kept for backwards
+	// compatibility. The Delta table source containing the historical data to
+	// backfill. Only the delta table name is used for backfill, other fields
+	// are ignored.
+	DeltaTableSource types.Object `tfsdk:"delta_table_source"`
+}
+
+func (to *BackfillSource) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from BackfillSource) {
+	if !from.DeltaTableSource.IsNull() && !from.DeltaTableSource.IsUnknown() {
+		if toDeltaTableSource, ok := to.GetDeltaTableSource(ctx); ok {
+			if fromDeltaTableSource, ok := from.GetDeltaTableSource(ctx); ok {
+				// Recursively sync the fields of DeltaTableSource
+				toDeltaTableSource.SyncFieldsDuringCreateOrUpdate(ctx, fromDeltaTableSource)
+				to.SetDeltaTableSource(ctx, toDeltaTableSource)
+			}
+		}
+	}
+}
+
+func (to *BackfillSource) SyncFieldsDuringRead(ctx context.Context, from BackfillSource) {
+	if !from.DeltaTableSource.IsNull() && !from.DeltaTableSource.IsUnknown() {
+		if toDeltaTableSource, ok := to.GetDeltaTableSource(ctx); ok {
+			if fromDeltaTableSource, ok := from.GetDeltaTableSource(ctx); ok {
+				toDeltaTableSource.SyncFieldsDuringRead(ctx, fromDeltaTableSource)
+				to.SetDeltaTableSource(ctx, toDeltaTableSource)
+			}
+		}
+	}
+}
+
+func (m BackfillSource) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["delta_table_name"] = attrs["delta_table_name"].SetOptional()
+	attrs["delta_table_source"] = attrs["delta_table_source"].SetOptional()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in BackfillSource.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m BackfillSource) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{
+		"delta_table_source": reflect.TypeOf(DeltaTableSource{}),
+	}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, BackfillSource
+// only implements ToObjectValue() and Type().
+func (m BackfillSource) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"delta_table_name":   m.DeltaTableName,
+			"delta_table_source": m.DeltaTableSource,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m BackfillSource) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"delta_table_name":   types.StringType,
+			"delta_table_source": DeltaTableSource{}.Type(ctx),
+		},
+	}
+}
+
+// GetDeltaTableSource returns the value of the DeltaTableSource field in BackfillSource as
+// a DeltaTableSource value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *BackfillSource) GetDeltaTableSource(ctx context.Context) (DeltaTableSource, bool) {
+	var e DeltaTableSource
+	if m.DeltaTableSource.IsNull() || m.DeltaTableSource.IsUnknown() {
+		return e, false
+	}
+	var v DeltaTableSource
+	d := m.DeltaTableSource.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetDeltaTableSource sets the value of the DeltaTableSource field in BackfillSource.
+func (m *BackfillSource) SetDeltaTableSource(ctx context.Context, v DeltaTableSource) {
+	vs := v.ToObjectValue(ctx)
+	m.DeltaTableSource = vs
 }
 
 type BatchCreateMaterializedFeaturesRequest struct {
@@ -526,10 +1753,11 @@ func (m *BatchCreateMaterializedFeaturesResponse) SetMaterializedFeatures(ctx co
 }
 
 type ColumnIdentifier struct {
-	// String representation of the column name or variant expression path. For
-	// nested fields, the leaf value is what will be present in materialized
-	// tables and expected to match at query time. For example, the leaf node of
-	// value:trip_details.location_details.pickup_zip is pickup_zip.
+	// String representation of the column name using dot-prefixed path
+	// notation. For nested fields, the leaf value is what will be present in
+	// materialized tables and expected to match at query time. For example, the
+	// leaf node of value.trip_details.location_details.pickup_zip is
+	// pickup_zip.
 	VariantExprPath types.String `tfsdk:"variant_expr_path"`
 }
 
@@ -572,6 +1800,56 @@ func (m ColumnIdentifier) Type(ctx context.Context) attr.Type {
 	return types.ObjectType{
 		AttrTypes: map[string]attr.Type{
 			"variant_expr_path": types.StringType,
+		},
+	}
+}
+
+// A ColumnSelection function, equivalent to the LAST() record of an entity over
+// a lifetime ContinuousWindow
+type ColumnSelection struct {
+	// Column name from source to select as the feature value.
+	Column types.String `tfsdk:"column"`
+}
+
+func (to *ColumnSelection) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from ColumnSelection) {
+}
+
+func (to *ColumnSelection) SyncFieldsDuringRead(ctx context.Context, from ColumnSelection) {
+}
+
+func (m ColumnSelection) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["column"] = attrs["column"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in ColumnSelection.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m ColumnSelection) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, ColumnSelection
+// only implements ToObjectValue() and Type().
+func (m ColumnSelection) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"column": m.Column,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m ColumnSelection) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"column": types.StringType,
 		},
 	}
 }
@@ -695,6 +1973,7 @@ func (m *CommentObject) SetAvailableActions(ctx context.Context, v []types.Strin
 	m.AvailableActions = types.ListValueMust(t, vs)
 }
 
+// Deprecated: use RollingWindow with `delay` instead.
 type ContinuousWindow struct {
 	// The offset of the continuous window (must be non-positive).
 	Offset types.String `tfsdk:"offset"`
@@ -744,6 +2023,59 @@ func (m ContinuousWindow) Type(ctx context.Context) attr.Type {
 		AttrTypes: map[string]attr.Type{
 			"offset":          types.StringType,
 			"window_duration": types.StringType,
+		},
+	}
+}
+
+// Computes the count of values.
+type CountFunction struct {
+	// The input column from which the count is computed. For Kafka sources, use
+	// dot-prefixed path notation (e.g., "value.amount"). For nested fields, the
+	// leaf node name is used. Colon-prefixed notation (e.g., "value:amount") is
+	// supported for backwards compatibility but is deprecated; migrate to dot
+	// notation.
+	Input types.String `tfsdk:"input"`
+}
+
+func (to *CountFunction) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from CountFunction) {
+}
+
+func (to *CountFunction) SyncFieldsDuringRead(ctx context.Context, from CountFunction) {
+}
+
+func (m CountFunction) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["input"] = attrs["input"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in CountFunction.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m CountFunction) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, CountFunction
+// only implements ToObjectValue() and Type().
+func (m CountFunction) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"input": m.Input,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m CountFunction) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"input": types.StringType,
 		},
 	}
 }
@@ -911,6 +2243,11 @@ type CreateExperiment struct {
 	// tag values up to 5000 bytes in size. All storage backends are also
 	// guaranteed to support up to 20 tags per request.
 	Tags types.List `tfsdk:"tags"`
+	// The location where the experiment's traces are stored. When set, the
+	// underlying storage is provisioned and the experiment's traces are routed
+	// to it. When unset, traces are stored in the default MLflow backend. This
+	// field cannot be updated after the experiment is created.
+	TraceLocation types.Object `tfsdk:"trace_location"`
 }
 
 func (to *CreateExperiment) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from CreateExperiment) {
@@ -919,6 +2256,15 @@ func (to *CreateExperiment) SyncFieldsDuringCreateOrUpdate(ctx context.Context, 
 		// If a user specified a non-Null, empty list for Tags, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Tags = from.Tags
+	}
+	if !from.TraceLocation.IsNull() && !from.TraceLocation.IsUnknown() {
+		if toTraceLocation, ok := to.GetTraceLocation(ctx); ok {
+			if fromTraceLocation, ok := from.GetTraceLocation(ctx); ok {
+				// Recursively sync the fields of TraceLocation
+				toTraceLocation.SyncFieldsDuringCreateOrUpdate(ctx, fromTraceLocation)
+				to.SetTraceLocation(ctx, toTraceLocation)
+			}
+		}
 	}
 }
 
@@ -929,12 +2275,22 @@ func (to *CreateExperiment) SyncFieldsDuringRead(ctx context.Context, from Creat
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Tags = from.Tags
 	}
+	if !from.TraceLocation.IsNull() && !from.TraceLocation.IsUnknown() {
+		if toTraceLocation, ok := to.GetTraceLocation(ctx); ok {
+			if fromTraceLocation, ok := from.GetTraceLocation(ctx); ok {
+				toTraceLocation.SyncFieldsDuringRead(ctx, fromTraceLocation)
+				to.SetTraceLocation(ctx, toTraceLocation)
+			}
+		}
+	}
 }
 
 func (m CreateExperiment) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
 	attrs["artifact_location"] = attrs["artifact_location"].SetOptional()
 	attrs["name"] = attrs["name"].SetRequired()
 	attrs["tags"] = attrs["tags"].SetOptional()
+	attrs["trace_location"] = attrs["trace_location"].SetOptional()
+	attrs["trace_location"] = attrs["trace_location"].(tfschema.SingleNestedAttributeBuilder).AddPlanModifier(objectplanmodifier.RequiresReplace()).(tfschema.AttributeBuilder)
 
 	return attrs
 }
@@ -948,7 +2304,8 @@ func (m CreateExperiment) ApplySchemaCustomizations(attrs map[string]tfschema.At
 // SDK values.
 func (m CreateExperiment) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
 	return map[string]reflect.Type{
-		"tags": reflect.TypeOf(ExperimentTag{}),
+		"tags":           reflect.TypeOf(ExperimentTag{}),
+		"trace_location": reflect.TypeOf(ExperimentTraceLocation{}),
 	}
 }
 
@@ -962,6 +2319,7 @@ func (m CreateExperiment) ToObjectValue(ctx context.Context) basetypes.ObjectVal
 			"artifact_location": m.ArtifactLocation,
 			"name":              m.Name,
 			"tags":              m.Tags,
+			"trace_location":    m.TraceLocation,
 		})
 }
 
@@ -974,6 +2332,7 @@ func (m CreateExperiment) Type(ctx context.Context) attr.Type {
 			"tags": basetypes.ListType{
 				ElemType: ExperimentTag{}.Type(ctx),
 			},
+			"trace_location": ExperimentTraceLocation{}.Type(ctx),
 		},
 	}
 }
@@ -1002,6 +2361,31 @@ func (m *CreateExperiment) SetTags(ctx context.Context, v []ExperimentTag) {
 	t := m.Type(ctx).(basetypes.ObjectType).AttrTypes["tags"]
 	t = t.(attr.TypeWithElementType).ElementType()
 	m.Tags = types.ListValueMust(t, vs)
+}
+
+// GetTraceLocation returns the value of the TraceLocation field in CreateExperiment as
+// a ExperimentTraceLocation value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *CreateExperiment) GetTraceLocation(ctx context.Context) (ExperimentTraceLocation, bool) {
+	var e ExperimentTraceLocation
+	if m.TraceLocation.IsNull() || m.TraceLocation.IsUnknown() {
+		return e, false
+	}
+	var v ExperimentTraceLocation
+	d := m.TraceLocation.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetTraceLocation sets the value of the TraceLocation field in CreateExperiment.
+func (m *CreateExperiment) SetTraceLocation(ctx context.Context, v ExperimentTraceLocation) {
+	vs := v.ToObjectValue(ctx)
+	m.TraceLocation = vs
 }
 
 type CreateExperimentResponse struct {
@@ -2970,6 +4354,98 @@ func (m *CreateRunResponse) SetRun(ctx context.Context, v Run) {
 	m.Run = vs
 }
 
+type CreateStreamRequest struct {
+	// The Stream to create.
+	Stream types.Object `tfsdk:"stream"`
+}
+
+func (to *CreateStreamRequest) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from CreateStreamRequest) {
+	if !from.Stream.IsNull() && !from.Stream.IsUnknown() {
+		if toStream, ok := to.GetStream(ctx); ok {
+			if fromStream, ok := from.GetStream(ctx); ok {
+				// Recursively sync the fields of Stream
+				toStream.SyncFieldsDuringCreateOrUpdate(ctx, fromStream)
+				to.SetStream(ctx, toStream)
+			}
+		}
+	}
+}
+
+func (to *CreateStreamRequest) SyncFieldsDuringRead(ctx context.Context, from CreateStreamRequest) {
+	if !from.Stream.IsNull() && !from.Stream.IsUnknown() {
+		if toStream, ok := to.GetStream(ctx); ok {
+			if fromStream, ok := from.GetStream(ctx); ok {
+				toStream.SyncFieldsDuringRead(ctx, fromStream)
+				to.SetStream(ctx, toStream)
+			}
+		}
+	}
+}
+
+func (m CreateStreamRequest) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["stream"] = attrs["stream"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in CreateStreamRequest.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m CreateStreamRequest) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{
+		"stream": reflect.TypeOf(Stream{}),
+	}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, CreateStreamRequest
+// only implements ToObjectValue() and Type().
+func (m CreateStreamRequest) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"stream": m.Stream,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m CreateStreamRequest) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"stream": Stream{}.Type(ctx),
+		},
+	}
+}
+
+// GetStream returns the value of the Stream field in CreateStreamRequest as
+// a Stream value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *CreateStreamRequest) GetStream(ctx context.Context) (Stream, bool) {
+	var e Stream
+	if m.Stream.IsNull() || m.Stream.IsUnknown() {
+		return e, false
+	}
+	var v Stream
+	d := m.Stream.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetStream sets the value of the Stream field in CreateStreamRequest.
+func (m *CreateStreamRequest) SetStream(ctx context.Context, v Stream) {
+	vs := v.ToObjectValue(ctx)
+	m.Stream = vs
+}
+
 // Details required to create a model version stage transition request.
 type CreateTransitionRequest struct {
 	// User-provided comment on the action.
@@ -3225,10 +4701,67 @@ func (m *CreateWebhookResponse) SetWebhook(ctx context.Context, v RegistryWebhoo
 	m.Webhook = vs
 }
 
-type DataSource struct {
-	DeltaTableSource types.Object `tfsdk:"delta_table_source"`
+// A cron-based schedule trigger for the materialization pipeline.
+type CronSchedule struct {
+	// The cron expression defining the schedule (e.g., "0 0 * * *" for daily at
+	// midnight).
+	CronExpression types.String `tfsdk:"cron_expression"`
+}
 
+func (to *CronSchedule) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from CronSchedule) {
+}
+
+func (to *CronSchedule) SyncFieldsDuringRead(ctx context.Context, from CronSchedule) {
+}
+
+func (m CronSchedule) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["cron_expression"] = attrs["cron_expression"].SetOptional()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in CronSchedule.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m CronSchedule) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, CronSchedule
+// only implements ToObjectValue() and Type().
+func (m CronSchedule) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"cron_expression": m.CronExpression,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m CronSchedule) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"cron_expression": types.StringType,
+		},
+	}
+}
+
+// Specifies the data source backing a feature. Exactly one source type must be
+// set.
+type DataSource struct {
+	// A Delta table data source.
+	DeltaTableSource types.Object `tfsdk:"delta_table_source"`
+	// A Kafka stream data source.
 	KafkaSource types.Object `tfsdk:"kafka_source"`
+	// A request-time data source.
+	RequestSource types.Object `tfsdk:"request_source"`
+	// A Stream data source.
+	StreamSource types.Object `tfsdk:"stream_source"`
 }
 
 func (to *DataSource) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from DataSource) {
@@ -3247,6 +4780,24 @@ func (to *DataSource) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from D
 				// Recursively sync the fields of KafkaSource
 				toKafkaSource.SyncFieldsDuringCreateOrUpdate(ctx, fromKafkaSource)
 				to.SetKafkaSource(ctx, toKafkaSource)
+			}
+		}
+	}
+	if !from.RequestSource.IsNull() && !from.RequestSource.IsUnknown() {
+		if toRequestSource, ok := to.GetRequestSource(ctx); ok {
+			if fromRequestSource, ok := from.GetRequestSource(ctx); ok {
+				// Recursively sync the fields of RequestSource
+				toRequestSource.SyncFieldsDuringCreateOrUpdate(ctx, fromRequestSource)
+				to.SetRequestSource(ctx, toRequestSource)
+			}
+		}
+	}
+	if !from.StreamSource.IsNull() && !from.StreamSource.IsUnknown() {
+		if toStreamSource, ok := to.GetStreamSource(ctx); ok {
+			if fromStreamSource, ok := from.GetStreamSource(ctx); ok {
+				// Recursively sync the fields of StreamSource
+				toStreamSource.SyncFieldsDuringCreateOrUpdate(ctx, fromStreamSource)
+				to.SetStreamSource(ctx, toStreamSource)
 			}
 		}
 	}
@@ -3269,11 +4820,29 @@ func (to *DataSource) SyncFieldsDuringRead(ctx context.Context, from DataSource)
 			}
 		}
 	}
+	if !from.RequestSource.IsNull() && !from.RequestSource.IsUnknown() {
+		if toRequestSource, ok := to.GetRequestSource(ctx); ok {
+			if fromRequestSource, ok := from.GetRequestSource(ctx); ok {
+				toRequestSource.SyncFieldsDuringRead(ctx, fromRequestSource)
+				to.SetRequestSource(ctx, toRequestSource)
+			}
+		}
+	}
+	if !from.StreamSource.IsNull() && !from.StreamSource.IsUnknown() {
+		if toStreamSource, ok := to.GetStreamSource(ctx); ok {
+			if fromStreamSource, ok := from.GetStreamSource(ctx); ok {
+				toStreamSource.SyncFieldsDuringRead(ctx, fromStreamSource)
+				to.SetStreamSource(ctx, toStreamSource)
+			}
+		}
+	}
 }
 
 func (m DataSource) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
 	attrs["delta_table_source"] = attrs["delta_table_source"].SetOptional()
 	attrs["kafka_source"] = attrs["kafka_source"].SetOptional()
+	attrs["request_source"] = attrs["request_source"].SetOptional()
+	attrs["stream_source"] = attrs["stream_source"].SetOptional()
 
 	return attrs
 }
@@ -3289,6 +4858,8 @@ func (m DataSource) GetComplexFieldTypes(ctx context.Context) map[string]reflect
 	return map[string]reflect.Type{
 		"delta_table_source": reflect.TypeOf(DeltaTableSource{}),
 		"kafka_source":       reflect.TypeOf(KafkaSource{}),
+		"request_source":     reflect.TypeOf(RequestSource{}),
+		"stream_source":      reflect.TypeOf(StreamSource{}),
 	}
 }
 
@@ -3301,6 +4872,8 @@ func (m DataSource) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
 		map[string]attr.Value{
 			"delta_table_source": m.DeltaTableSource,
 			"kafka_source":       m.KafkaSource,
+			"request_source":     m.RequestSource,
+			"stream_source":      m.StreamSource,
 		})
 }
 
@@ -3310,6 +4883,8 @@ func (m DataSource) Type(ctx context.Context) attr.Type {
 		AttrTypes: map[string]attr.Type{
 			"delta_table_source": DeltaTableSource{}.Type(ctx),
 			"kafka_source":       KafkaSource{}.Type(ctx),
+			"request_source":     RequestSource{}.Type(ctx),
+			"stream_source":      StreamSource{}.Type(ctx),
 		},
 	}
 }
@@ -3362,6 +4937,56 @@ func (m *DataSource) GetKafkaSource(ctx context.Context) (KafkaSource, bool) {
 func (m *DataSource) SetKafkaSource(ctx context.Context, v KafkaSource) {
 	vs := v.ToObjectValue(ctx)
 	m.KafkaSource = vs
+}
+
+// GetRequestSource returns the value of the RequestSource field in DataSource as
+// a RequestSource value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *DataSource) GetRequestSource(ctx context.Context) (RequestSource, bool) {
+	var e RequestSource
+	if m.RequestSource.IsNull() || m.RequestSource.IsUnknown() {
+		return e, false
+	}
+	var v RequestSource
+	d := m.RequestSource.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetRequestSource sets the value of the RequestSource field in DataSource.
+func (m *DataSource) SetRequestSource(ctx context.Context, v RequestSource) {
+	vs := v.ToObjectValue(ctx)
+	m.RequestSource = vs
+}
+
+// GetStreamSource returns the value of the StreamSource field in DataSource as
+// a StreamSource value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *DataSource) GetStreamSource(ctx context.Context) (StreamSource, bool) {
+	var e StreamSource
+	if m.StreamSource.IsNull() || m.StreamSource.IsUnknown() {
+		return e, false
+	}
+	var v StreamSource
+	d := m.StreamSource.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetStreamSource sets the value of the StreamSource field in DataSource.
+func (m *DataSource) SetStreamSource(ctx context.Context, v StreamSource) {
+	vs := v.ToObjectValue(ctx)
+	m.StreamSource = vs
 }
 
 // Dataset. Represents a reference to data used for training, testing, or
@@ -4822,6 +6447,54 @@ func (m DeleteRunsResponse) Type(ctx context.Context) attr.Type {
 	}
 }
 
+type DeleteStreamRequest struct {
+	// Full three-part name (catalog.schema.stream) of the Stream to delete.
+	Name types.String `tfsdk:"-"`
+}
+
+func (to *DeleteStreamRequest) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from DeleteStreamRequest) {
+}
+
+func (to *DeleteStreamRequest) SyncFieldsDuringRead(ctx context.Context, from DeleteStreamRequest) {
+}
+
+func (m DeleteStreamRequest) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["name"] = attrs["name"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in DeleteStreamRequest.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m DeleteStreamRequest) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, DeleteStreamRequest
+// only implements ToObjectValue() and Type().
+func (m DeleteStreamRequest) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"name": m.Name,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m DeleteStreamRequest) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"name": types.StringType,
+		},
+	}
+}
+
 type DeleteTag struct {
 	// Name of the tag. Maximum size is 255 bytes. Must be provided.
 	Key types.String `tfsdk:"key"`
@@ -5176,24 +6849,56 @@ func (m DeleteWebhookResponse) Type(ctx context.Context) attr.Type {
 }
 
 type DeltaTableSource struct {
+	// Schema of the resulting dataframe after transformations, in Spark
+	// StructType JSON format (from df.schema.json()). Required if
+	// transformation_sql is specified. Example:
+	// {"type":"struct","fields":[{"name":"col_a","type":"integer","nullable":true,"metadata":{}},{"name":"col_c","type":"integer","nullable":true,"metadata":{}}]}
+	DataframeSchema types.String `tfsdk:"dataframe_schema"`
+	// Deprecated: Use Feature.entity instead. Kept for backwards compatibility.
 	// The entity columns of the Delta table.
 	EntityColumns types.List `tfsdk:"entity_columns"`
+	// Single WHERE clause to filter delta table before applying
+	// transformations. Will be row-wise evaluated, so should only include
+	// conditionals and projections.
+	FilterCondition types.String `tfsdk:"filter_condition"`
 	// The full three-part (catalog, schema, table) name of the Delta table.
 	FullName types.String `tfsdk:"full_name"`
-	// The timeseries column of the Delta table.
+	// Deprecated: Use Feature.timeseries_column instead. Kept for backwards
+	// compatibility. The timeseries column of the Delta table.
 	TimeseriesColumn types.String `tfsdk:"timeseries_column"`
+	// A single SQL SELECT expression applied after filter_condition. Should
+	// contains all the columns needed (eg. "SELECT *, col_a + col_b AS col_c
+	// FROM x.y.z WHERE col_a > 0" would have `transformation_sql` "*, col_a +
+	// col_b AS col_c") If transformation_sql is not provided, all columns of
+	// the delta table are present in the DataSource dataframe.
+	TransformationSql types.String `tfsdk:"transformation_sql"`
 }
 
 func (to *DeltaTableSource) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from DeltaTableSource) {
+	if !from.EntityColumns.IsNull() && !from.EntityColumns.IsUnknown() && to.EntityColumns.IsNull() && len(from.EntityColumns.Elements()) == 0 {
+		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
+		// If a user specified a non-Null, empty list for EntityColumns, and the deserialized field value is Null,
+		// set the resulting resource state to the empty list to match the planned value.
+		to.EntityColumns = from.EntityColumns
+	}
 }
 
 func (to *DeltaTableSource) SyncFieldsDuringRead(ctx context.Context, from DeltaTableSource) {
+	if !from.EntityColumns.IsNull() && !from.EntityColumns.IsUnknown() && to.EntityColumns.IsNull() && len(from.EntityColumns.Elements()) == 0 {
+		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
+		// If a user specified a non-Null, empty list for EntityColumns, and the deserialized field value is Null,
+		// set the resulting resource state to the empty list to match the planned value.
+		to.EntityColumns = from.EntityColumns
+	}
 }
 
 func (m DeltaTableSource) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
-	attrs["entity_columns"] = attrs["entity_columns"].SetRequired()
+	attrs["dataframe_schema"] = attrs["dataframe_schema"].SetOptional()
+	attrs["entity_columns"] = attrs["entity_columns"].SetOptional()
+	attrs["filter_condition"] = attrs["filter_condition"].SetOptional()
 	attrs["full_name"] = attrs["full_name"].SetRequired()
-	attrs["timeseries_column"] = attrs["timeseries_column"].SetRequired()
+	attrs["timeseries_column"] = attrs["timeseries_column"].SetOptional()
+	attrs["transformation_sql"] = attrs["transformation_sql"].SetOptional()
 
 	return attrs
 }
@@ -5218,9 +6923,12 @@ func (m DeltaTableSource) ToObjectValue(ctx context.Context) basetypes.ObjectVal
 	return types.ObjectValueMust(
 		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
 		map[string]attr.Value{
-			"entity_columns":    m.EntityColumns,
-			"full_name":         m.FullName,
-			"timeseries_column": m.TimeseriesColumn,
+			"dataframe_schema":   m.DataframeSchema,
+			"entity_columns":     m.EntityColumns,
+			"filter_condition":   m.FilterCondition,
+			"full_name":          m.FullName,
+			"timeseries_column":  m.TimeseriesColumn,
+			"transformation_sql": m.TransformationSql,
 		})
 }
 
@@ -5228,11 +6936,14 @@ func (m DeltaTableSource) ToObjectValue(ctx context.Context) basetypes.ObjectVal
 func (m DeltaTableSource) Type(ctx context.Context) attr.Type {
 	return types.ObjectType{
 		AttrTypes: map[string]attr.Type{
+			"dataframe_schema": types.StringType,
 			"entity_columns": basetypes.ListType{
 				ElemType: types.StringType,
 			},
-			"full_name":         types.StringType,
-			"timeseries_column": types.StringType,
+			"filter_condition":   types.StringType,
+			"full_name":          types.StringType,
+			"timeseries_column":  types.StringType,
+			"transformation_sql": types.StringType,
 		},
 	}
 }
@@ -5263,6 +6974,306 @@ func (m *DeltaTableSource) SetEntityColumns(ctx context.Context, v []types.Strin
 	m.EntityColumns = types.ListValueMust(t, vs)
 }
 
+// Direct connection configs for mTLS, as Kafka Connections do not support mTLS
+// yet . Temporarily used until UC Kafka Connections gain mTLS support.
+type DirectMtlsConfig struct {
+	// A comma-separated list of host:port pairs for the Kafka bootstrap
+	// servers.
+	BootstrapServers types.String `tfsdk:"bootstrap_servers"`
+	// Mutual-TLS authentication configuration.
+	MtlsConfig types.Object `tfsdk:"mtls_config"`
+}
+
+func (to *DirectMtlsConfig) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from DirectMtlsConfig) {
+	if !from.MtlsConfig.IsNull() && !from.MtlsConfig.IsUnknown() {
+		if toMtlsConfig, ok := to.GetMtlsConfig(ctx); ok {
+			if fromMtlsConfig, ok := from.GetMtlsConfig(ctx); ok {
+				// Recursively sync the fields of MtlsConfig
+				toMtlsConfig.SyncFieldsDuringCreateOrUpdate(ctx, fromMtlsConfig)
+				to.SetMtlsConfig(ctx, toMtlsConfig)
+			}
+		}
+	}
+}
+
+func (to *DirectMtlsConfig) SyncFieldsDuringRead(ctx context.Context, from DirectMtlsConfig) {
+	if !from.MtlsConfig.IsNull() && !from.MtlsConfig.IsUnknown() {
+		if toMtlsConfig, ok := to.GetMtlsConfig(ctx); ok {
+			if fromMtlsConfig, ok := from.GetMtlsConfig(ctx); ok {
+				toMtlsConfig.SyncFieldsDuringRead(ctx, fromMtlsConfig)
+				to.SetMtlsConfig(ctx, toMtlsConfig)
+			}
+		}
+	}
+}
+
+func (m DirectMtlsConfig) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["bootstrap_servers"] = attrs["bootstrap_servers"].SetRequired()
+	attrs["mtls_config"] = attrs["mtls_config"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in DirectMtlsConfig.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m DirectMtlsConfig) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{
+		"mtls_config": reflect.TypeOf(MtlsConfig{}),
+	}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, DirectMtlsConfig
+// only implements ToObjectValue() and Type().
+func (m DirectMtlsConfig) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"bootstrap_servers": m.BootstrapServers,
+			"mtls_config":       m.MtlsConfig,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m DirectMtlsConfig) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"bootstrap_servers": types.StringType,
+			"mtls_config":       MtlsConfig{}.Type(ctx),
+		},
+	}
+}
+
+// GetMtlsConfig returns the value of the MtlsConfig field in DirectMtlsConfig as
+// a MtlsConfig value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *DirectMtlsConfig) GetMtlsConfig(ctx context.Context) (MtlsConfig, bool) {
+	var e MtlsConfig
+	if m.MtlsConfig.IsNull() || m.MtlsConfig.IsUnknown() {
+		return e, false
+	}
+	var v MtlsConfig
+	d := m.MtlsConfig.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetMtlsConfig sets the value of the MtlsConfig field in DirectMtlsConfig.
+func (m *DirectMtlsConfig) SetMtlsConfig(ctx context.Context, v MtlsConfig) {
+	vs := v.ToObjectValue(ctx)
+	m.MtlsConfig = vs
+}
+
+// Schema definitions provided directly on the Stream, as opposed to referencing
+// a schema registry. In a future milestone, we will support schema registries
+// through a UC Connection.
+type DirectSchemas struct {
+	// Schema for the message key. This is only used for Kafka streams. For
+	// Kafka, at least one of payload_schema or key_schema must be specified.
+	KeySchema types.Object `tfsdk:"key_schema"`
+	// Schema for the message payload. For Kafka, this is the value schema.
+	// Unless the platform supports another schema (e.g. keys for Kafka), this
+	// must be specified.
+	PayloadSchema types.Object `tfsdk:"payload_schema"`
+}
+
+func (to *DirectSchemas) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from DirectSchemas) {
+	if !from.KeySchema.IsNull() && !from.KeySchema.IsUnknown() {
+		if toKeySchema, ok := to.GetKeySchema(ctx); ok {
+			if fromKeySchema, ok := from.GetKeySchema(ctx); ok {
+				// Recursively sync the fields of KeySchema
+				toKeySchema.SyncFieldsDuringCreateOrUpdate(ctx, fromKeySchema)
+				to.SetKeySchema(ctx, toKeySchema)
+			}
+		}
+	}
+	if !from.PayloadSchema.IsNull() && !from.PayloadSchema.IsUnknown() {
+		if toPayloadSchema, ok := to.GetPayloadSchema(ctx); ok {
+			if fromPayloadSchema, ok := from.GetPayloadSchema(ctx); ok {
+				// Recursively sync the fields of PayloadSchema
+				toPayloadSchema.SyncFieldsDuringCreateOrUpdate(ctx, fromPayloadSchema)
+				to.SetPayloadSchema(ctx, toPayloadSchema)
+			}
+		}
+	}
+}
+
+func (to *DirectSchemas) SyncFieldsDuringRead(ctx context.Context, from DirectSchemas) {
+	if !from.KeySchema.IsNull() && !from.KeySchema.IsUnknown() {
+		if toKeySchema, ok := to.GetKeySchema(ctx); ok {
+			if fromKeySchema, ok := from.GetKeySchema(ctx); ok {
+				toKeySchema.SyncFieldsDuringRead(ctx, fromKeySchema)
+				to.SetKeySchema(ctx, toKeySchema)
+			}
+		}
+	}
+	if !from.PayloadSchema.IsNull() && !from.PayloadSchema.IsUnknown() {
+		if toPayloadSchema, ok := to.GetPayloadSchema(ctx); ok {
+			if fromPayloadSchema, ok := from.GetPayloadSchema(ctx); ok {
+				toPayloadSchema.SyncFieldsDuringRead(ctx, fromPayloadSchema)
+				to.SetPayloadSchema(ctx, toPayloadSchema)
+			}
+		}
+	}
+}
+
+func (m DirectSchemas) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["key_schema"] = attrs["key_schema"].SetOptional()
+	attrs["payload_schema"] = attrs["payload_schema"].SetOptional()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in DirectSchemas.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m DirectSchemas) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{
+		"key_schema":     reflect.TypeOf(SchemaConfig{}),
+		"payload_schema": reflect.TypeOf(SchemaConfig{}),
+	}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, DirectSchemas
+// only implements ToObjectValue() and Type().
+func (m DirectSchemas) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"key_schema":     m.KeySchema,
+			"payload_schema": m.PayloadSchema,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m DirectSchemas) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"key_schema":     SchemaConfig{}.Type(ctx),
+			"payload_schema": SchemaConfig{}.Type(ctx),
+		},
+	}
+}
+
+// GetKeySchema returns the value of the KeySchema field in DirectSchemas as
+// a SchemaConfig value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *DirectSchemas) GetKeySchema(ctx context.Context) (SchemaConfig, bool) {
+	var e SchemaConfig
+	if m.KeySchema.IsNull() || m.KeySchema.IsUnknown() {
+		return e, false
+	}
+	var v SchemaConfig
+	d := m.KeySchema.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetKeySchema sets the value of the KeySchema field in DirectSchemas.
+func (m *DirectSchemas) SetKeySchema(ctx context.Context, v SchemaConfig) {
+	vs := v.ToObjectValue(ctx)
+	m.KeySchema = vs
+}
+
+// GetPayloadSchema returns the value of the PayloadSchema field in DirectSchemas as
+// a SchemaConfig value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *DirectSchemas) GetPayloadSchema(ctx context.Context) (SchemaConfig, bool) {
+	var e SchemaConfig
+	if m.PayloadSchema.IsNull() || m.PayloadSchema.IsUnknown() {
+		return e, false
+	}
+	var v SchemaConfig
+	d := m.PayloadSchema.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetPayloadSchema sets the value of the PayloadSchema field in DirectSchemas.
+func (m *DirectSchemas) SetPayloadSchema(ctx context.Context, v SchemaConfig) {
+	vs := v.ToObjectValue(ctx)
+	m.PayloadSchema = vs
+}
+
+type EntityColumn struct {
+	// The name of the entity column. For Kafka sources, use dot-prefixed path
+	// notation to reference fields within the key or value schema (e.g.,
+	// "value.user_id", "key.partition_key"). For nested fields, the leaf node
+	// name (e.g., "user_id" from "value.trip_details.user_id") is what will be
+	// present in materialized tables and expected to match at query time.
+	// Colon-prefixed notation (e.g., "value:user_id") is supported for
+	// backwards compatibility but is deprecated; migrate to dot notation.
+	Name types.String `tfsdk:"name"`
+}
+
+func (to *EntityColumn) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from EntityColumn) {
+}
+
+func (to *EntityColumn) SyncFieldsDuringRead(ctx context.Context, from EntityColumn) {
+}
+
+func (m EntityColumn) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["name"] = attrs["name"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in EntityColumn.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m EntityColumn) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, EntityColumn
+// only implements ToObjectValue() and Type().
+func (m EntityColumn) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"name": m.Name,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m EntityColumn) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"name": types.StringType,
+		},
+	}
+}
+
 // An experiment and its metadata.
 type Experiment struct {
 	// Location where artifacts for the experiment are stored.
@@ -5280,6 +7291,10 @@ type Experiment struct {
 	Name types.String `tfsdk:"name"`
 	// Tags: Additional metadata key-value pairs.
 	Tags types.List `tfsdk:"tags"`
+	// The location where the experiment's traces are stored. Unset when traces
+	// are stored in the default MLflow backend. This field cannot be updated
+	// after the experiment is created.
+	TraceLocation types.Object `tfsdk:"trace_location"`
 }
 
 func (to *Experiment) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from Experiment) {
@@ -5289,6 +7304,15 @@ func (to *Experiment) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from E
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Tags = from.Tags
 	}
+	if !from.TraceLocation.IsNull() && !from.TraceLocation.IsUnknown() {
+		if toTraceLocation, ok := to.GetTraceLocation(ctx); ok {
+			if fromTraceLocation, ok := from.GetTraceLocation(ctx); ok {
+				// Recursively sync the fields of TraceLocation
+				toTraceLocation.SyncFieldsDuringCreateOrUpdate(ctx, fromTraceLocation)
+				to.SetTraceLocation(ctx, toTraceLocation)
+			}
+		}
+	}
 }
 
 func (to *Experiment) SyncFieldsDuringRead(ctx context.Context, from Experiment) {
@@ -5297,6 +7321,14 @@ func (to *Experiment) SyncFieldsDuringRead(ctx context.Context, from Experiment)
 		// If a user specified a non-Null, empty list for Tags, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Tags = from.Tags
+	}
+	if !from.TraceLocation.IsNull() && !from.TraceLocation.IsUnknown() {
+		if toTraceLocation, ok := to.GetTraceLocation(ctx); ok {
+			if fromTraceLocation, ok := from.GetTraceLocation(ctx); ok {
+				toTraceLocation.SyncFieldsDuringRead(ctx, fromTraceLocation)
+				to.SetTraceLocation(ctx, toTraceLocation)
+			}
+		}
 	}
 }
 
@@ -5308,6 +7340,8 @@ func (m Experiment) ApplySchemaCustomizations(attrs map[string]tfschema.Attribut
 	attrs["lifecycle_stage"] = attrs["lifecycle_stage"].SetOptional()
 	attrs["name"] = attrs["name"].SetOptional()
 	attrs["tags"] = attrs["tags"].SetOptional()
+	attrs["trace_location"] = attrs["trace_location"].SetOptional()
+	attrs["trace_location"] = attrs["trace_location"].(tfschema.SingleNestedAttributeBuilder).AddPlanModifier(objectplanmodifier.RequiresReplace()).(tfschema.AttributeBuilder)
 
 	return attrs
 }
@@ -5321,7 +7355,8 @@ func (m Experiment) ApplySchemaCustomizations(attrs map[string]tfschema.Attribut
 // SDK values.
 func (m Experiment) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
 	return map[string]reflect.Type{
-		"tags": reflect.TypeOf(ExperimentTag{}),
+		"tags":           reflect.TypeOf(ExperimentTag{}),
+		"trace_location": reflect.TypeOf(ExperimentTraceLocation{}),
 	}
 }
 
@@ -5339,6 +7374,7 @@ func (m Experiment) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
 			"lifecycle_stage":   m.LifecycleStage,
 			"name":              m.Name,
 			"tags":              m.Tags,
+			"trace_location":    m.TraceLocation,
 		})
 }
 
@@ -5355,6 +7391,7 @@ func (m Experiment) Type(ctx context.Context) attr.Type {
 			"tags": basetypes.ListType{
 				ElemType: ExperimentTag{}.Type(ctx),
 			},
+			"trace_location": ExperimentTraceLocation{}.Type(ctx),
 		},
 	}
 }
@@ -5383,6 +7420,31 @@ func (m *Experiment) SetTags(ctx context.Context, v []ExperimentTag) {
 	t := m.Type(ctx).(basetypes.ObjectType).AttrTypes["tags"]
 	t = t.(attr.TypeWithElementType).ElementType()
 	m.Tags = types.ListValueMust(t, vs)
+}
+
+// GetTraceLocation returns the value of the TraceLocation field in Experiment as
+// a ExperimentTraceLocation value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *Experiment) GetTraceLocation(ctx context.Context) (ExperimentTraceLocation, bool) {
+	var e ExperimentTraceLocation
+	if m.TraceLocation.IsNull() || m.TraceLocation.IsUnknown() {
+		return e, false
+	}
+	var v ExperimentTraceLocation
+	d := m.TraceLocation.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetTraceLocation sets the value of the TraceLocation field in Experiment.
+func (m *Experiment) SetTraceLocation(ctx context.Context, v ExperimentTraceLocation) {
+	vs := v.ToObjectValue(ctx)
+	m.TraceLocation = vs
 }
 
 type ExperimentAccessControlRequest struct {
@@ -5956,31 +8018,156 @@ func (m ExperimentTag) Type(ctx context.Context) attr.Type {
 	}
 }
 
+// The storage location for an experiment's traces.
+type ExperimentTraceLocation struct {
+	// A Unity Catalog schema where the experiment's traces are stored as Delta
+	// tables.
+	UcTraceLocation types.Object `tfsdk:"uc_trace_location"`
+}
+
+func (to *ExperimentTraceLocation) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from ExperimentTraceLocation) {
+	if !from.UcTraceLocation.IsNull() && !from.UcTraceLocation.IsUnknown() {
+		if toUcTraceLocation, ok := to.GetUcTraceLocation(ctx); ok {
+			if fromUcTraceLocation, ok := from.GetUcTraceLocation(ctx); ok {
+				// Recursively sync the fields of UcTraceLocation
+				toUcTraceLocation.SyncFieldsDuringCreateOrUpdate(ctx, fromUcTraceLocation)
+				to.SetUcTraceLocation(ctx, toUcTraceLocation)
+			}
+		}
+	}
+}
+
+func (to *ExperimentTraceLocation) SyncFieldsDuringRead(ctx context.Context, from ExperimentTraceLocation) {
+	if !from.UcTraceLocation.IsNull() && !from.UcTraceLocation.IsUnknown() {
+		if toUcTraceLocation, ok := to.GetUcTraceLocation(ctx); ok {
+			if fromUcTraceLocation, ok := from.GetUcTraceLocation(ctx); ok {
+				toUcTraceLocation.SyncFieldsDuringRead(ctx, fromUcTraceLocation)
+				to.SetUcTraceLocation(ctx, toUcTraceLocation)
+			}
+		}
+	}
+}
+
+func (m ExperimentTraceLocation) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["uc_trace_location"] = attrs["uc_trace_location"].SetOptional()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in ExperimentTraceLocation.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m ExperimentTraceLocation) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{
+		"uc_trace_location": reflect.TypeOf(UcTraceLocation{}),
+	}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, ExperimentTraceLocation
+// only implements ToObjectValue() and Type().
+func (m ExperimentTraceLocation) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"uc_trace_location": m.UcTraceLocation,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m ExperimentTraceLocation) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"uc_trace_location": UcTraceLocation{}.Type(ctx),
+		},
+	}
+}
+
+// GetUcTraceLocation returns the value of the UcTraceLocation field in ExperimentTraceLocation as
+// a UcTraceLocation value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *ExperimentTraceLocation) GetUcTraceLocation(ctx context.Context) (UcTraceLocation, bool) {
+	var e UcTraceLocation
+	if m.UcTraceLocation.IsNull() || m.UcTraceLocation.IsUnknown() {
+		return e, false
+	}
+	var v UcTraceLocation
+	d := m.UcTraceLocation.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetUcTraceLocation sets the value of the UcTraceLocation field in ExperimentTraceLocation.
+func (m *ExperimentTraceLocation) SetUcTraceLocation(ctx context.Context, v UcTraceLocation) {
+	vs := v.ToObjectValue(ctx)
+	m.UcTraceLocation = vs
+}
+
 type Feature struct {
+	// Name of parent catalog.
+	CatalogName types.String `tfsdk:"catalog_name"`
+	// Time at which this feature was created.
+	CreatedAt timetypes.RFC3339 `tfsdk:"created_at"`
+	// Username of the feature creator.
+	CreatedBy types.String `tfsdk:"created_by"`
 	// The description of the feature.
 	Description types.String `tfsdk:"description"`
+	// The entity columns for the feature, used as aggregation keys and for
+	// query-time lookup.
+	Entities types.List `tfsdk:"entities"`
+	// Deprecated: Use DeltaTableSource.filter_condition or
+	// KafkaSource.filter_condition instead. Kept for backwards compatibility.
 	// The filter condition applied to the source data before aggregation.
 	FilterCondition types.String `tfsdk:"filter_condition"`
-	// The full three-part name (catalog, schema, name) of the feature.
+	// The full three-part name (catalog, schema, name) of the feature. This is
+	// the feature's resource identifier; the catalog_name, schema_name, and
+	// name fields below are OUTPUT_ONLY decomposed views of this value.
 	FullName types.String `tfsdk:"full_name"`
 	// The function by which the feature is computed.
 	Function types.Object `tfsdk:"function"`
-	// The input columns from which the feature is computed.
+	// Deprecated: Use AggregationFunction.inputs instead. Kept for backwards
+	// compatibility. The input columns from which the feature is computed.
 	Inputs types.List `tfsdk:"inputs"`
-	// WARNING: This field is primarily intended for internal use by Databricks
-	// systems and is automatically populated when features are created through
-	// Databricks notebooks or jobs. Users should not manually set this field as
-	// incorrect values may lead to inaccurate lineage tracking or unexpected
-	// behavior. This field will be set by feature-engineering client and should
-	// be left unset by SDK and terraform users.
+	// Lineage context information for this feature. WARNING: This field is
+	// primarily intended for internal use by Databricks systems and is
+	// automatically populated when features are created through Databricks
+	// notebooks or jobs. Users should not manually set this field as incorrect
+	// values may lead to inaccurate lineage tracking or unexpected behavior.
+	// This field will be set by feature-engineering client and should be left
+	// unset by SDK and terraform users.
 	LineageContext types.Object `tfsdk:"lineage_context"`
+	// Name of the feature, extracted from the full three-part name
+	// (catalog.schema.name).
+	Name types.String `tfsdk:"name"`
+	// Name of parent schema relative to its parent catalog.
+	SchemaName types.String `tfsdk:"schema_name"`
 	// The data source of the feature.
 	Source types.Object `tfsdk:"source"`
-	// The time window in which the feature is computed.
+	// Deprecated: Use Function.aggregation_function.time_window instead. Kept
+	// for backwards compatibility. The time window in which the feature is
+	// computed.
 	TimeWindow types.Object `tfsdk:"time_window"`
+	// Column recording time, used for point-in-time joins, backfills, and
+	// aggregations.
+	TimeseriesColumn types.Object `tfsdk:"timeseries_column"`
 }
 
 func (to *Feature) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from Feature) {
+	if !from.Entities.IsNull() && !from.Entities.IsUnknown() && to.Entities.IsNull() && len(from.Entities.Elements()) == 0 {
+		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
+		// If a user specified a non-Null, empty list for Entities, and the deserialized field value is Null,
+		// set the resulting resource state to the empty list to match the planned value.
+		to.Entities = from.Entities
+	}
 	if !from.Function.IsNull() && !from.Function.IsUnknown() {
 		if toFunction, ok := to.GetFunction(ctx); ok {
 			if fromFunction, ok := from.GetFunction(ctx); ok {
@@ -5989,6 +8176,12 @@ func (to *Feature) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from Feat
 				to.SetFunction(ctx, toFunction)
 			}
 		}
+	}
+	if !from.Inputs.IsNull() && !from.Inputs.IsUnknown() && to.Inputs.IsNull() && len(from.Inputs.Elements()) == 0 {
+		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
+		// If a user specified a non-Null, empty list for Inputs, and the deserialized field value is Null,
+		// set the resulting resource state to the empty list to match the planned value.
+		to.Inputs = from.Inputs
 	}
 	if !from.LineageContext.IsNull() && !from.LineageContext.IsUnknown() {
 		if toLineageContext, ok := to.GetLineageContext(ctx); ok {
@@ -6017,9 +8210,24 @@ func (to *Feature) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from Feat
 			}
 		}
 	}
+	if !from.TimeseriesColumn.IsNull() && !from.TimeseriesColumn.IsUnknown() {
+		if toTimeseriesColumn, ok := to.GetTimeseriesColumn(ctx); ok {
+			if fromTimeseriesColumn, ok := from.GetTimeseriesColumn(ctx); ok {
+				// Recursively sync the fields of TimeseriesColumn
+				toTimeseriesColumn.SyncFieldsDuringCreateOrUpdate(ctx, fromTimeseriesColumn)
+				to.SetTimeseriesColumn(ctx, toTimeseriesColumn)
+			}
+		}
+	}
 }
 
 func (to *Feature) SyncFieldsDuringRead(ctx context.Context, from Feature) {
+	if !from.Entities.IsNull() && !from.Entities.IsUnknown() && to.Entities.IsNull() && len(from.Entities.Elements()) == 0 {
+		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
+		// If a user specified a non-Null, empty list for Entities, and the deserialized field value is Null,
+		// set the resulting resource state to the empty list to match the planned value.
+		to.Entities = from.Entities
+	}
 	if !from.Function.IsNull() && !from.Function.IsUnknown() {
 		if toFunction, ok := to.GetFunction(ctx); ok {
 			if fromFunction, ok := from.GetFunction(ctx); ok {
@@ -6027,6 +8235,12 @@ func (to *Feature) SyncFieldsDuringRead(ctx context.Context, from Feature) {
 				to.SetFunction(ctx, toFunction)
 			}
 		}
+	}
+	if !from.Inputs.IsNull() && !from.Inputs.IsUnknown() && to.Inputs.IsNull() && len(from.Inputs.Elements()) == 0 {
+		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
+		// If a user specified a non-Null, empty list for Inputs, and the deserialized field value is Null,
+		// set the resulting resource state to the empty list to match the planned value.
+		to.Inputs = from.Inputs
 	}
 	if !from.LineageContext.IsNull() && !from.LineageContext.IsUnknown() {
 		if toLineageContext, ok := to.GetLineageContext(ctx); ok {
@@ -6052,22 +8266,37 @@ func (to *Feature) SyncFieldsDuringRead(ctx context.Context, from Feature) {
 			}
 		}
 	}
+	if !from.TimeseriesColumn.IsNull() && !from.TimeseriesColumn.IsUnknown() {
+		if toTimeseriesColumn, ok := to.GetTimeseriesColumn(ctx); ok {
+			if fromTimeseriesColumn, ok := from.GetTimeseriesColumn(ctx); ok {
+				toTimeseriesColumn.SyncFieldsDuringRead(ctx, fromTimeseriesColumn)
+				to.SetTimeseriesColumn(ctx, toTimeseriesColumn)
+			}
+		}
+	}
 }
 
 func (m Feature) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["catalog_name"] = attrs["catalog_name"].SetComputed()
+	attrs["created_at"] = attrs["created_at"].SetComputed()
+	attrs["created_by"] = attrs["created_by"].SetComputed()
 	attrs["description"] = attrs["description"].SetOptional()
+	attrs["entities"] = attrs["entities"].SetOptional()
 	attrs["filter_condition"] = attrs["filter_condition"].SetOptional()
 	attrs["full_name"] = attrs["full_name"].SetRequired()
 	attrs["full_name"] = attrs["full_name"].(tfschema.StringAttributeBuilder).AddPlanModifier(stringplanmodifier.RequiresReplace()).(tfschema.AttributeBuilder)
 	attrs["function"] = attrs["function"].SetRequired()
 	attrs["function"] = attrs["function"].(tfschema.SingleNestedAttributeBuilder).AddPlanModifier(objectplanmodifier.RequiresReplace()).(tfschema.AttributeBuilder)
-	attrs["inputs"] = attrs["inputs"].SetRequired()
+	attrs["inputs"] = attrs["inputs"].SetOptional()
 	attrs["inputs"] = attrs["inputs"].(tfschema.ListAttributeBuilder).AddPlanModifier(listplanmodifier.RequiresReplace()).(tfschema.AttributeBuilder)
 	attrs["lineage_context"] = attrs["lineage_context"].SetOptional()
+	attrs["name"] = attrs["name"].SetComputed()
+	attrs["schema_name"] = attrs["schema_name"].SetComputed()
 	attrs["source"] = attrs["source"].SetRequired()
 	attrs["source"] = attrs["source"].(tfschema.SingleNestedAttributeBuilder).AddPlanModifier(objectplanmodifier.RequiresReplace()).(tfschema.AttributeBuilder)
-	attrs["time_window"] = attrs["time_window"].SetRequired()
+	attrs["time_window"] = attrs["time_window"].SetOptional()
 	attrs["time_window"] = attrs["time_window"].(tfschema.SingleNestedAttributeBuilder).AddPlanModifier(objectplanmodifier.RequiresReplace()).(tfschema.AttributeBuilder)
+	attrs["timeseries_column"] = attrs["timeseries_column"].SetOptional()
 
 	return attrs
 }
@@ -6081,11 +8310,13 @@ func (m Feature) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBu
 // SDK values.
 func (m Feature) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
 	return map[string]reflect.Type{
-		"function":        reflect.TypeOf(Function{}),
-		"inputs":          reflect.TypeOf(types.String{}),
-		"lineage_context": reflect.TypeOf(LineageContext{}),
-		"source":          reflect.TypeOf(DataSource{}),
-		"time_window":     reflect.TypeOf(TimeWindow{}),
+		"entities":          reflect.TypeOf(EntityColumn{}),
+		"function":          reflect.TypeOf(Function{}),
+		"inputs":            reflect.TypeOf(types.String{}),
+		"lineage_context":   reflect.TypeOf(LineageContext{}),
+		"source":            reflect.TypeOf(DataSource{}),
+		"time_window":       reflect.TypeOf(TimeWindow{}),
+		"timeseries_column": reflect.TypeOf(TimeseriesColumn{}),
 	}
 }
 
@@ -6096,14 +8327,21 @@ func (m Feature) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
 	return types.ObjectValueMust(
 		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
 		map[string]attr.Value{
-			"description":      m.Description,
-			"filter_condition": m.FilterCondition,
-			"full_name":        m.FullName,
-			"function":         m.Function,
-			"inputs":           m.Inputs,
-			"lineage_context":  m.LineageContext,
-			"source":           m.Source,
-			"time_window":      m.TimeWindow,
+			"catalog_name":      m.CatalogName,
+			"created_at":        m.CreatedAt,
+			"created_by":        m.CreatedBy,
+			"description":       m.Description,
+			"entities":          m.Entities,
+			"filter_condition":  m.FilterCondition,
+			"full_name":         m.FullName,
+			"function":          m.Function,
+			"inputs":            m.Inputs,
+			"lineage_context":   m.LineageContext,
+			"name":              m.Name,
+			"schema_name":       m.SchemaName,
+			"source":            m.Source,
+			"time_window":       m.TimeWindow,
+			"timeseries_column": m.TimeseriesColumn,
 		})
 }
 
@@ -6111,18 +8349,53 @@ func (m Feature) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
 func (m Feature) Type(ctx context.Context) attr.Type {
 	return types.ObjectType{
 		AttrTypes: map[string]attr.Type{
-			"description":      types.StringType,
+			"catalog_name": types.StringType,
+			"created_at":   timetypes.RFC3339{}.Type(ctx),
+			"created_by":   types.StringType,
+			"description":  types.StringType,
+			"entities": basetypes.ListType{
+				ElemType: EntityColumn{}.Type(ctx),
+			},
 			"filter_condition": types.StringType,
 			"full_name":        types.StringType,
 			"function":         Function{}.Type(ctx),
 			"inputs": basetypes.ListType{
 				ElemType: types.StringType,
 			},
-			"lineage_context": LineageContext{}.Type(ctx),
-			"source":          DataSource{}.Type(ctx),
-			"time_window":     TimeWindow{}.Type(ctx),
+			"lineage_context":   LineageContext{}.Type(ctx),
+			"name":              types.StringType,
+			"schema_name":       types.StringType,
+			"source":            DataSource{}.Type(ctx),
+			"time_window":       TimeWindow{}.Type(ctx),
+			"timeseries_column": TimeseriesColumn{}.Type(ctx),
 		},
 	}
+}
+
+// GetEntities returns the value of the Entities field in Feature as
+// a slice of EntityColumn values.
+// If the field is unknown or null, the boolean return value is false.
+func (m *Feature) GetEntities(ctx context.Context) ([]EntityColumn, bool) {
+	if m.Entities.IsNull() || m.Entities.IsUnknown() {
+		return nil, false
+	}
+	var v []EntityColumn
+	d := m.Entities.ElementsAs(ctx, &v, true)
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetEntities sets the value of the Entities field in Feature.
+func (m *Feature) SetEntities(ctx context.Context, v []EntityColumn) {
+	vs := make([]attr.Value, 0, len(v))
+	for _, e := range v {
+		vs = append(vs, e.ToObjectValue(ctx))
+	}
+	t := m.Type(ctx).(basetypes.ObjectType).AttrTypes["entities"]
+	t = t.(attr.TypeWithElementType).ElementType()
+	m.Entities = types.ListValueMust(t, vs)
 }
 
 // GetFunction returns the value of the Function field in Feature as
@@ -6249,6 +8522,31 @@ func (m *Feature) GetTimeWindow(ctx context.Context) (TimeWindow, bool) {
 func (m *Feature) SetTimeWindow(ctx context.Context, v TimeWindow) {
 	vs := v.ToObjectValue(ctx)
 	m.TimeWindow = vs
+}
+
+// GetTimeseriesColumn returns the value of the TimeseriesColumn field in Feature as
+// a TimeseriesColumn value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *Feature) GetTimeseriesColumn(ctx context.Context) (TimeseriesColumn, bool) {
+	var e TimeseriesColumn
+	if m.TimeseriesColumn.IsNull() || m.TimeseriesColumn.IsUnknown() {
+		return e, false
+	}
+	var v TimeseriesColumn
+	d := m.TimeseriesColumn.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetTimeseriesColumn sets the value of the TimeseriesColumn field in Feature.
+func (m *Feature) SetTimeseriesColumn(ctx context.Context, v TimeseriesColumn) {
+	vs := v.ToObjectValue(ctx)
+	m.TimeseriesColumn = vs
 }
 
 type FeatureLineage struct {
@@ -6730,6 +9028,62 @@ func (m FeatureTag) Type(ctx context.Context) attr.Type {
 	}
 }
 
+// A single field definition within a FlatSchema, specifying the field name and
+// its scalar data type. Does not support nested or complex types (arrays, maps,
+// structs).
+type FieldDefinition struct {
+	// The scalar data type of the field.
+	DataType types.String `tfsdk:"data_type"`
+	// The name of the field.
+	Name types.String `tfsdk:"name"`
+}
+
+func (to *FieldDefinition) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from FieldDefinition) {
+}
+
+func (to *FieldDefinition) SyncFieldsDuringRead(ctx context.Context, from FieldDefinition) {
+}
+
+func (m FieldDefinition) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["data_type"] = attrs["data_type"].SetRequired()
+	attrs["name"] = attrs["name"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in FieldDefinition.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m FieldDefinition) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, FieldDefinition
+// only implements ToObjectValue() and Type().
+func (m FieldDefinition) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"data_type": m.DataType,
+			"name":      m.Name,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m FieldDefinition) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"data_type": types.StringType,
+			"name":      types.StringType,
+		},
+	}
+}
+
 // Metadata of a single artifact file or directory.
 type FileInfo struct {
 	// The size in bytes of the file. Unset for directories.
@@ -6936,6 +9290,244 @@ func (m *FinalizeLoggedModelResponse) SetModel(ctx context.Context, v LoggedMode
 	m.Model = vs
 }
 
+// Returns the first N distinct values, ordered by the feature's timeseries
+// column.
+type FirstDistinctFunction struct {
+	// The input column from which the first N distinct values are returned.
+	Input types.String `tfsdk:"input"`
+	// The number of distinct values to return.
+	N types.Int64 `tfsdk:"n"`
+}
+
+func (to *FirstDistinctFunction) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from FirstDistinctFunction) {
+}
+
+func (to *FirstDistinctFunction) SyncFieldsDuringRead(ctx context.Context, from FirstDistinctFunction) {
+}
+
+func (m FirstDistinctFunction) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["input"] = attrs["input"].SetRequired()
+	attrs["n"] = attrs["n"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in FirstDistinctFunction.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m FirstDistinctFunction) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, FirstDistinctFunction
+// only implements ToObjectValue() and Type().
+func (m FirstDistinctFunction) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"input": m.Input,
+			"n":     m.N,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m FirstDistinctFunction) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"input": types.StringType,
+			"n":     types.Int64Type,
+		},
+	}
+}
+
+// Returns the first value.
+type FirstFunction struct {
+	// The input column from which the first value is returned.
+	Input types.String `tfsdk:"input"`
+}
+
+func (to *FirstFunction) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from FirstFunction) {
+}
+
+func (to *FirstFunction) SyncFieldsDuringRead(ctx context.Context, from FirstFunction) {
+}
+
+func (m FirstFunction) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["input"] = attrs["input"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in FirstFunction.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m FirstFunction) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, FirstFunction
+// only implements ToObjectValue() and Type().
+func (m FirstFunction) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"input": m.Input,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m FirstFunction) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"input": types.StringType,
+		},
+	}
+}
+
+// Returns the first N values, ordered by the feature's timeseries column.
+type FirstNFunction struct {
+	// The input column from which the first N values are returned.
+	Input types.String `tfsdk:"input"`
+	// The number of values to return.
+	N types.Int64 `tfsdk:"n"`
+}
+
+func (to *FirstNFunction) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from FirstNFunction) {
+}
+
+func (to *FirstNFunction) SyncFieldsDuringRead(ctx context.Context, from FirstNFunction) {
+}
+
+func (m FirstNFunction) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["input"] = attrs["input"].SetRequired()
+	attrs["n"] = attrs["n"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in FirstNFunction.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m FirstNFunction) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, FirstNFunction
+// only implements ToObjectValue() and Type().
+func (m FirstNFunction) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"input": m.Input,
+			"n":     m.N,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m FirstNFunction) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"input": types.StringType,
+			"n":     types.Int64Type,
+		},
+	}
+}
+
+// A flat (non-nested) schema for request-time fields, defined as an ordered
+// list of field definitions. This schema only supports scalar types.
+type FlatSchema struct {
+	// The list of fields in this schema.
+	Fields types.List `tfsdk:"fields"`
+}
+
+func (to *FlatSchema) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from FlatSchema) {
+}
+
+func (to *FlatSchema) SyncFieldsDuringRead(ctx context.Context, from FlatSchema) {
+}
+
+func (m FlatSchema) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["fields"] = attrs["fields"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in FlatSchema.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m FlatSchema) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{
+		"fields": reflect.TypeOf(FieldDefinition{}),
+	}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, FlatSchema
+// only implements ToObjectValue() and Type().
+func (m FlatSchema) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"fields": m.Fields,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m FlatSchema) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"fields": basetypes.ListType{
+				ElemType: FieldDefinition{}.Type(ctx),
+			},
+		},
+	}
+}
+
+// GetFields returns the value of the Fields field in FlatSchema as
+// a slice of FieldDefinition values.
+// If the field is unknown or null, the boolean return value is false.
+func (m *FlatSchema) GetFields(ctx context.Context) ([]FieldDefinition, bool) {
+	if m.Fields.IsNull() || m.Fields.IsUnknown() {
+		return nil, false
+	}
+	var v []FieldDefinition
+	d := m.Fields.ElementsAs(ctx, &v, true)
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetFields sets the value of the Fields field in FlatSchema.
+func (m *FlatSchema) SetFields(ctx context.Context, v []FieldDefinition) {
+	vs := make([]attr.Value, 0, len(v))
+	for _, e := range v {
+		vs = append(vs, e.ToObjectValue(ctx))
+	}
+	t := m.Type(ctx).(basetypes.ObjectType).AttrTypes["fields"]
+	t = t.(attr.TypeWithElementType).ElementType()
+	m.Fields = types.ListValueMust(t, vs)
+}
+
 // Represents a forecasting experiment with its unique identifier, URL, and
 // state.
 type ForecastingExperiment struct {
@@ -6997,13 +9589,38 @@ func (m ForecastingExperiment) Type(ctx context.Context) attr.Type {
 }
 
 type Function struct {
-	// Extra parameters for parameterized functions.
+	// An aggregation function applied over a time window.
+	AggregationFunction types.Object `tfsdk:"aggregation_function"`
+	// Selects the latest value of a single column in a data source
+	ColumnSelection types.Object `tfsdk:"column_selection"`
+	// Deprecated: Use the function oneof with AggregationFunction instead. Kept
+	// for backwards compatibility. Extra parameters for parameterized
+	// functions.
 	ExtraParameters types.List `tfsdk:"extra_parameters"`
-	// The type of the function.
+	// Deprecated: Use the function oneof with AggregationFunction instead. Kept
+	// for backwards compatibility. The type of the function.
 	FunctionType types.String `tfsdk:"function_type"`
 }
 
 func (to *Function) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from Function) {
+	if !from.AggregationFunction.IsNull() && !from.AggregationFunction.IsUnknown() {
+		if toAggregationFunction, ok := to.GetAggregationFunction(ctx); ok {
+			if fromAggregationFunction, ok := from.GetAggregationFunction(ctx); ok {
+				// Recursively sync the fields of AggregationFunction
+				toAggregationFunction.SyncFieldsDuringCreateOrUpdate(ctx, fromAggregationFunction)
+				to.SetAggregationFunction(ctx, toAggregationFunction)
+			}
+		}
+	}
+	if !from.ColumnSelection.IsNull() && !from.ColumnSelection.IsUnknown() {
+		if toColumnSelection, ok := to.GetColumnSelection(ctx); ok {
+			if fromColumnSelection, ok := from.GetColumnSelection(ctx); ok {
+				// Recursively sync the fields of ColumnSelection
+				toColumnSelection.SyncFieldsDuringCreateOrUpdate(ctx, fromColumnSelection)
+				to.SetColumnSelection(ctx, toColumnSelection)
+			}
+		}
+	}
 	if !from.ExtraParameters.IsNull() && !from.ExtraParameters.IsUnknown() && to.ExtraParameters.IsNull() && len(from.ExtraParameters.Elements()) == 0 {
 		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
 		// If a user specified a non-Null, empty list for ExtraParameters, and the deserialized field value is Null,
@@ -7013,6 +9630,22 @@ func (to *Function) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from Fun
 }
 
 func (to *Function) SyncFieldsDuringRead(ctx context.Context, from Function) {
+	if !from.AggregationFunction.IsNull() && !from.AggregationFunction.IsUnknown() {
+		if toAggregationFunction, ok := to.GetAggregationFunction(ctx); ok {
+			if fromAggregationFunction, ok := from.GetAggregationFunction(ctx); ok {
+				toAggregationFunction.SyncFieldsDuringRead(ctx, fromAggregationFunction)
+				to.SetAggregationFunction(ctx, toAggregationFunction)
+			}
+		}
+	}
+	if !from.ColumnSelection.IsNull() && !from.ColumnSelection.IsUnknown() {
+		if toColumnSelection, ok := to.GetColumnSelection(ctx); ok {
+			if fromColumnSelection, ok := from.GetColumnSelection(ctx); ok {
+				toColumnSelection.SyncFieldsDuringRead(ctx, fromColumnSelection)
+				to.SetColumnSelection(ctx, toColumnSelection)
+			}
+		}
+	}
 	if !from.ExtraParameters.IsNull() && !from.ExtraParameters.IsUnknown() && to.ExtraParameters.IsNull() && len(from.ExtraParameters.Elements()) == 0 {
 		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
 		// If a user specified a non-Null, empty list for ExtraParameters, and the deserialized field value is Null,
@@ -7022,8 +9655,10 @@ func (to *Function) SyncFieldsDuringRead(ctx context.Context, from Function) {
 }
 
 func (m Function) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["aggregation_function"] = attrs["aggregation_function"].SetOptional()
+	attrs["column_selection"] = attrs["column_selection"].SetOptional()
 	attrs["extra_parameters"] = attrs["extra_parameters"].SetOptional()
-	attrs["function_type"] = attrs["function_type"].SetRequired()
+	attrs["function_type"] = attrs["function_type"].SetOptional()
 
 	return attrs
 }
@@ -7037,7 +9672,9 @@ func (m Function) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeB
 // SDK values.
 func (m Function) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
 	return map[string]reflect.Type{
-		"extra_parameters": reflect.TypeOf(FunctionExtraParameter{}),
+		"aggregation_function": reflect.TypeOf(AggregationFunction{}),
+		"column_selection":     reflect.TypeOf(ColumnSelection{}),
+		"extra_parameters":     reflect.TypeOf(FunctionExtraParameter{}),
 	}
 }
 
@@ -7048,8 +9685,10 @@ func (m Function) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
 	return types.ObjectValueMust(
 		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
 		map[string]attr.Value{
-			"extra_parameters": m.ExtraParameters,
-			"function_type":    m.FunctionType,
+			"aggregation_function": m.AggregationFunction,
+			"column_selection":     m.ColumnSelection,
+			"extra_parameters":     m.ExtraParameters,
+			"function_type":        m.FunctionType,
 		})
 }
 
@@ -7057,12 +9696,64 @@ func (m Function) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
 func (m Function) Type(ctx context.Context) attr.Type {
 	return types.ObjectType{
 		AttrTypes: map[string]attr.Type{
+			"aggregation_function": AggregationFunction{}.Type(ctx),
+			"column_selection":     ColumnSelection{}.Type(ctx),
 			"extra_parameters": basetypes.ListType{
 				ElemType: FunctionExtraParameter{}.Type(ctx),
 			},
 			"function_type": types.StringType,
 		},
 	}
+}
+
+// GetAggregationFunction returns the value of the AggregationFunction field in Function as
+// a AggregationFunction value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *Function) GetAggregationFunction(ctx context.Context) (AggregationFunction, bool) {
+	var e AggregationFunction
+	if m.AggregationFunction.IsNull() || m.AggregationFunction.IsUnknown() {
+		return e, false
+	}
+	var v AggregationFunction
+	d := m.AggregationFunction.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetAggregationFunction sets the value of the AggregationFunction field in Function.
+func (m *Function) SetAggregationFunction(ctx context.Context, v AggregationFunction) {
+	vs := v.ToObjectValue(ctx)
+	m.AggregationFunction = vs
+}
+
+// GetColumnSelection returns the value of the ColumnSelection field in Function as
+// a ColumnSelection value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *Function) GetColumnSelection(ctx context.Context) (ColumnSelection, bool) {
+	var e ColumnSelection
+	if m.ColumnSelection.IsNull() || m.ColumnSelection.IsUnknown() {
+		return e, false
+	}
+	var v ColumnSelection
+	d := m.ColumnSelection.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetColumnSelection sets the value of the ColumnSelection field in Function.
+func (m *Function) SetColumnSelection(ctx context.Context, v ColumnSelection) {
+	vs := v.ToObjectValue(ctx)
+	m.ColumnSelection = vs
 }
 
 // GetExtraParameters returns the value of the ExtraParameters field in Function as
@@ -7091,6 +9782,9 @@ func (m *Function) SetExtraParameters(ctx context.Context, v []FunctionExtraPara
 	m.ExtraParameters = types.ListValueMust(t, vs)
 }
 
+// Deprecated: Use typed fields on function-specific messages (e.g.
+// ApproxPercentileFunction.percentile) or AggregationFunction.ExtraParameter
+// instead. Kept for backwards compatibility.
 type FunctionExtraParameter struct {
 	// The name of the parameter.
 	Key types.String `tfsdk:"key"`
@@ -9175,6 +11869,54 @@ func (m *GetRunResponse) SetRun(ctx context.Context, v Run) {
 	m.Run = vs
 }
 
+type GetStreamRequest struct {
+	// Full three-part name (catalog.schema.stream) of the Stream to get.
+	Name types.String `tfsdk:"-"`
+}
+
+func (to *GetStreamRequest) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from GetStreamRequest) {
+}
+
+func (to *GetStreamRequest) SyncFieldsDuringRead(ctx context.Context, from GetStreamRequest) {
+}
+
+func (m GetStreamRequest) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["name"] = attrs["name"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in GetStreamRequest.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m GetStreamRequest) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, GetStreamRequest
+// only implements ToObjectValue() and Type().
+func (m GetStreamRequest) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"name": m.Name,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m GetStreamRequest) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"name": types.StringType,
+		},
+	}
+}
+
 type HttpUrlSpec struct {
 	// Value of the authorization header that should be sent in the request sent
 	// by the wehbook. It should be of the form `"<auth type> <credentials>"`.
@@ -9304,6 +12046,274 @@ func (m HttpUrlSpecWithoutSecret) Type(ctx context.Context) attr.Type {
 		AttrTypes: map[string]attr.Type{
 			"enable_ssl_verification": types.BoolType,
 			"url":                     types.StringType,
+		},
+	}
+}
+
+// Configuration for the Databricks-managed ingestion pipeline. Groups the
+// ingestion destination (required) and optional backfill source.
+type IngestionConfig struct {
+	// The ID of the Databricks Job that performs the historical backfill of the
+	// ingestion Delta table.
+	BackfillJobId types.Int64 `tfsdk:"backfill_job_id"`
+	// A user-provided source for backfilling data. Historical data is used when
+	// creating a training set from streaming features linked to this Stream.
+	// The backfill data stored in this location will be copied into the
+	// ingestion table for offline querying and training. The schema for this
+	// source must match exactly that of the key and payload schemas specified
+	// for this Stream.
+	BackfillSource types.Object `tfsdk:"backfill_source"`
+	// Column paths used to identify duplicate rows during ingestion; only one
+	// row per distinct combination of these values is kept. Use dot notation
+	// for nested fields (e.g. `value.user_id`). Empty list means every column
+	// is compared.
+	DeduplicationColumns types.List `tfsdk:"deduplication_columns"`
+	// Destination for the Databricks-managed Delta table that holds an offline
+	// copy of the streaming data for querying and training. This table contains
+	// both 1) forward-filled data from the Stream and 2) backfilled data from
+	// the BackfillSource (if provided). This table is created and managed by
+	// Databricks and is deleted when the Stream is deleted.
+	IngestionDestination types.Object `tfsdk:"ingestion_destination"`
+	// The ID of the Databricks Job that performs the forward-fill ingestion.
+	IngestionJobId types.Int64 `tfsdk:"ingestion_job_id"`
+	// The ID of the SDP pipeline that continuously copies new events from the
+	// streaming source into the ingestion Delta table.
+	IngestionPipelineId types.String `tfsdk:"ingestion_pipeline_id"`
+}
+
+func (to *IngestionConfig) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from IngestionConfig) {
+	if !from.BackfillSource.IsNull() && !from.BackfillSource.IsUnknown() {
+		if toBackfillSource, ok := to.GetBackfillSource(ctx); ok {
+			if fromBackfillSource, ok := from.GetBackfillSource(ctx); ok {
+				// Recursively sync the fields of BackfillSource
+				toBackfillSource.SyncFieldsDuringCreateOrUpdate(ctx, fromBackfillSource)
+				to.SetBackfillSource(ctx, toBackfillSource)
+			}
+		}
+	}
+	if !from.DeduplicationColumns.IsNull() && !from.DeduplicationColumns.IsUnknown() && to.DeduplicationColumns.IsNull() && len(from.DeduplicationColumns.Elements()) == 0 {
+		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
+		// If a user specified a non-Null, empty list for DeduplicationColumns, and the deserialized field value is Null,
+		// set the resulting resource state to the empty list to match the planned value.
+		to.DeduplicationColumns = from.DeduplicationColumns
+	}
+	if !from.IngestionDestination.IsNull() && !from.IngestionDestination.IsUnknown() {
+		if toIngestionDestination, ok := to.GetIngestionDestination(ctx); ok {
+			if fromIngestionDestination, ok := from.GetIngestionDestination(ctx); ok {
+				// Recursively sync the fields of IngestionDestination
+				toIngestionDestination.SyncFieldsDuringCreateOrUpdate(ctx, fromIngestionDestination)
+				to.SetIngestionDestination(ctx, toIngestionDestination)
+			}
+		}
+	}
+}
+
+func (to *IngestionConfig) SyncFieldsDuringRead(ctx context.Context, from IngestionConfig) {
+	if !from.BackfillSource.IsNull() && !from.BackfillSource.IsUnknown() {
+		if toBackfillSource, ok := to.GetBackfillSource(ctx); ok {
+			if fromBackfillSource, ok := from.GetBackfillSource(ctx); ok {
+				toBackfillSource.SyncFieldsDuringRead(ctx, fromBackfillSource)
+				to.SetBackfillSource(ctx, toBackfillSource)
+			}
+		}
+	}
+	if !from.DeduplicationColumns.IsNull() && !from.DeduplicationColumns.IsUnknown() && to.DeduplicationColumns.IsNull() && len(from.DeduplicationColumns.Elements()) == 0 {
+		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
+		// If a user specified a non-Null, empty list for DeduplicationColumns, and the deserialized field value is Null,
+		// set the resulting resource state to the empty list to match the planned value.
+		to.DeduplicationColumns = from.DeduplicationColumns
+	}
+	if !from.IngestionDestination.IsNull() && !from.IngestionDestination.IsUnknown() {
+		if toIngestionDestination, ok := to.GetIngestionDestination(ctx); ok {
+			if fromIngestionDestination, ok := from.GetIngestionDestination(ctx); ok {
+				toIngestionDestination.SyncFieldsDuringRead(ctx, fromIngestionDestination)
+				to.SetIngestionDestination(ctx, toIngestionDestination)
+			}
+		}
+	}
+}
+
+func (m IngestionConfig) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["backfill_job_id"] = attrs["backfill_job_id"].SetComputed()
+	attrs["backfill_source"] = attrs["backfill_source"].SetOptional()
+	attrs["deduplication_columns"] = attrs["deduplication_columns"].SetOptional()
+	attrs["ingestion_destination"] = attrs["ingestion_destination"].SetRequired()
+	attrs["ingestion_job_id"] = attrs["ingestion_job_id"].SetComputed()
+	attrs["ingestion_pipeline_id"] = attrs["ingestion_pipeline_id"].SetComputed()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in IngestionConfig.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m IngestionConfig) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{
+		"backfill_source":       reflect.TypeOf(BackfillSource{}),
+		"deduplication_columns": reflect.TypeOf(types.String{}),
+		"ingestion_destination": reflect.TypeOf(IngestionDestination{}),
+	}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, IngestionConfig
+// only implements ToObjectValue() and Type().
+func (m IngestionConfig) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"backfill_job_id":       m.BackfillJobId,
+			"backfill_source":       m.BackfillSource,
+			"deduplication_columns": m.DeduplicationColumns,
+			"ingestion_destination": m.IngestionDestination,
+			"ingestion_job_id":      m.IngestionJobId,
+			"ingestion_pipeline_id": m.IngestionPipelineId,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m IngestionConfig) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"backfill_job_id": types.Int64Type,
+			"backfill_source": BackfillSource{}.Type(ctx),
+			"deduplication_columns": basetypes.ListType{
+				ElemType: types.StringType,
+			},
+			"ingestion_destination": IngestionDestination{}.Type(ctx),
+			"ingestion_job_id":      types.Int64Type,
+			"ingestion_pipeline_id": types.StringType,
+		},
+	}
+}
+
+// GetBackfillSource returns the value of the BackfillSource field in IngestionConfig as
+// a BackfillSource value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *IngestionConfig) GetBackfillSource(ctx context.Context) (BackfillSource, bool) {
+	var e BackfillSource
+	if m.BackfillSource.IsNull() || m.BackfillSource.IsUnknown() {
+		return e, false
+	}
+	var v BackfillSource
+	d := m.BackfillSource.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetBackfillSource sets the value of the BackfillSource field in IngestionConfig.
+func (m *IngestionConfig) SetBackfillSource(ctx context.Context, v BackfillSource) {
+	vs := v.ToObjectValue(ctx)
+	m.BackfillSource = vs
+}
+
+// GetDeduplicationColumns returns the value of the DeduplicationColumns field in IngestionConfig as
+// a slice of types.String values.
+// If the field is unknown or null, the boolean return value is false.
+func (m *IngestionConfig) GetDeduplicationColumns(ctx context.Context) ([]types.String, bool) {
+	if m.DeduplicationColumns.IsNull() || m.DeduplicationColumns.IsUnknown() {
+		return nil, false
+	}
+	var v []types.String
+	d := m.DeduplicationColumns.ElementsAs(ctx, &v, true)
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetDeduplicationColumns sets the value of the DeduplicationColumns field in IngestionConfig.
+func (m *IngestionConfig) SetDeduplicationColumns(ctx context.Context, v []types.String) {
+	vs := make([]attr.Value, 0, len(v))
+	for _, e := range v {
+		vs = append(vs, e)
+	}
+	t := m.Type(ctx).(basetypes.ObjectType).AttrTypes["deduplication_columns"]
+	t = t.(attr.TypeWithElementType).ElementType()
+	m.DeduplicationColumns = types.ListValueMust(t, vs)
+}
+
+// GetIngestionDestination returns the value of the IngestionDestination field in IngestionConfig as
+// a IngestionDestination value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *IngestionConfig) GetIngestionDestination(ctx context.Context) (IngestionDestination, bool) {
+	var e IngestionDestination
+	if m.IngestionDestination.IsNull() || m.IngestionDestination.IsUnknown() {
+		return e, false
+	}
+	var v IngestionDestination
+	d := m.IngestionDestination.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetIngestionDestination sets the value of the IngestionDestination field in IngestionConfig.
+func (m *IngestionConfig) SetIngestionDestination(ctx context.Context, v IngestionDestination) {
+	vs := v.ToObjectValue(ctx)
+	m.IngestionDestination = vs
+}
+
+// Destination for the Databricks-managed Delta table that holds an offline copy
+// of the streaming data for querying and training.
+type IngestionDestination struct {
+	// The full three-part name (catalog, schema, name) of the Delta table to be
+	// created for ingestion.
+	DeltaTableName types.String `tfsdk:"delta_table_name"`
+}
+
+func (to *IngestionDestination) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from IngestionDestination) {
+}
+
+func (to *IngestionDestination) SyncFieldsDuringRead(ctx context.Context, from IngestionDestination) {
+}
+
+func (m IngestionDestination) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["delta_table_name"] = attrs["delta_table_name"].SetOptional()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in IngestionDestination.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m IngestionDestination) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, IngestionDestination
+// only implements ToObjectValue() and Type().
+func (m IngestionDestination) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"delta_table_name": m.DeltaTableName,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m IngestionDestination) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"delta_table_name": types.StringType,
 		},
 	}
 }
@@ -9533,11 +12543,21 @@ func (m JobSpecWithoutSecret) Type(ctx context.Context) attr.Type {
 type KafkaConfig struct {
 	// Authentication configuration for connection to topics.
 	AuthConfig types.Object `tfsdk:"auth_config"`
+	// A user-provided and managed source for backfilling data. Historical data
+	// is used when creating a training set from streaming features linked to
+	// this Kafka config. In the future, a separate table will be maintained by
+	// Databricks for forward filling data. The schema for this source must
+	// match exactly that of the key and value schemas specified for this Kafka
+	// config.
+	BackfillSource types.Object `tfsdk:"backfill_source"`
 	// A comma-separated list of host/port pairs pointing to Kafka cluster.
 	BootstrapServers types.String `tfsdk:"bootstrap_servers"`
 	// Catch-all for miscellaneous options. Keys should be source options or
 	// Kafka consumer options (kafka.*)
 	ExtraOptions types.Map `tfsdk:"extra_options"`
+	// Configuration for ingesting Kafka data into a Databricks-managed Delta
+	// table.
+	IngestionConfig types.Object `tfsdk:"ingestion_config"`
 	// Schema configuration for extracting message keys from topics. At least
 	// one of key_schema and value_schema must be provided.
 	KeySchema types.Object `tfsdk:"key_schema"`
@@ -9559,6 +12579,24 @@ func (to *KafkaConfig) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from 
 				// Recursively sync the fields of AuthConfig
 				toAuthConfig.SyncFieldsDuringCreateOrUpdate(ctx, fromAuthConfig)
 				to.SetAuthConfig(ctx, toAuthConfig)
+			}
+		}
+	}
+	if !from.BackfillSource.IsNull() && !from.BackfillSource.IsUnknown() {
+		if toBackfillSource, ok := to.GetBackfillSource(ctx); ok {
+			if fromBackfillSource, ok := from.GetBackfillSource(ctx); ok {
+				// Recursively sync the fields of BackfillSource
+				toBackfillSource.SyncFieldsDuringCreateOrUpdate(ctx, fromBackfillSource)
+				to.SetBackfillSource(ctx, toBackfillSource)
+			}
+		}
+	}
+	if !from.IngestionConfig.IsNull() && !from.IngestionConfig.IsUnknown() {
+		if toIngestionConfig, ok := to.GetIngestionConfig(ctx); ok {
+			if fromIngestionConfig, ok := from.GetIngestionConfig(ctx); ok {
+				// Recursively sync the fields of IngestionConfig
+				toIngestionConfig.SyncFieldsDuringCreateOrUpdate(ctx, fromIngestionConfig)
+				to.SetIngestionConfig(ctx, toIngestionConfig)
 			}
 		}
 	}
@@ -9600,6 +12638,22 @@ func (to *KafkaConfig) SyncFieldsDuringRead(ctx context.Context, from KafkaConfi
 			}
 		}
 	}
+	if !from.BackfillSource.IsNull() && !from.BackfillSource.IsUnknown() {
+		if toBackfillSource, ok := to.GetBackfillSource(ctx); ok {
+			if fromBackfillSource, ok := from.GetBackfillSource(ctx); ok {
+				toBackfillSource.SyncFieldsDuringRead(ctx, fromBackfillSource)
+				to.SetBackfillSource(ctx, toBackfillSource)
+			}
+		}
+	}
+	if !from.IngestionConfig.IsNull() && !from.IngestionConfig.IsUnknown() {
+		if toIngestionConfig, ok := to.GetIngestionConfig(ctx); ok {
+			if fromIngestionConfig, ok := from.GetIngestionConfig(ctx); ok {
+				toIngestionConfig.SyncFieldsDuringRead(ctx, fromIngestionConfig)
+				to.SetIngestionConfig(ctx, toIngestionConfig)
+			}
+		}
+	}
 	if !from.KeySchema.IsNull() && !from.KeySchema.IsUnknown() {
 		if toKeySchema, ok := to.GetKeySchema(ctx); ok {
 			if fromKeySchema, ok := from.GetKeySchema(ctx); ok {
@@ -9628,8 +12682,10 @@ func (to *KafkaConfig) SyncFieldsDuringRead(ctx context.Context, from KafkaConfi
 
 func (m KafkaConfig) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
 	attrs["auth_config"] = attrs["auth_config"].SetRequired()
+	attrs["backfill_source"] = attrs["backfill_source"].SetOptional()
 	attrs["bootstrap_servers"] = attrs["bootstrap_servers"].SetRequired()
 	attrs["extra_options"] = attrs["extra_options"].SetOptional()
+	attrs["ingestion_config"] = attrs["ingestion_config"].SetOptional()
 	attrs["key_schema"] = attrs["key_schema"].SetOptional()
 	attrs["name"] = attrs["name"].SetRequired()
 	attrs["subscription_mode"] = attrs["subscription_mode"].SetRequired()
@@ -9648,7 +12704,9 @@ func (m KafkaConfig) ApplySchemaCustomizations(attrs map[string]tfschema.Attribu
 func (m KafkaConfig) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
 	return map[string]reflect.Type{
 		"auth_config":       reflect.TypeOf(AuthConfig{}),
+		"backfill_source":   reflect.TypeOf(BackfillSource{}),
 		"extra_options":     reflect.TypeOf(types.String{}),
+		"ingestion_config":  reflect.TypeOf(IngestionConfig{}),
 		"key_schema":        reflect.TypeOf(SchemaConfig{}),
 		"subscription_mode": reflect.TypeOf(SubscriptionMode{}),
 		"value_schema":      reflect.TypeOf(SchemaConfig{}),
@@ -9663,8 +12721,10 @@ func (m KafkaConfig) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
 		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
 		map[string]attr.Value{
 			"auth_config":       m.AuthConfig,
+			"backfill_source":   m.BackfillSource,
 			"bootstrap_servers": m.BootstrapServers,
 			"extra_options":     m.ExtraOptions,
+			"ingestion_config":  m.IngestionConfig,
 			"key_schema":        m.KeySchema,
 			"name":              m.Name,
 			"subscription_mode": m.SubscriptionMode,
@@ -9677,10 +12737,12 @@ func (m KafkaConfig) Type(ctx context.Context) attr.Type {
 	return types.ObjectType{
 		AttrTypes: map[string]attr.Type{
 			"auth_config":       AuthConfig{}.Type(ctx),
+			"backfill_source":   BackfillSource{}.Type(ctx),
 			"bootstrap_servers": types.StringType,
 			"extra_options": basetypes.MapType{
 				ElemType: types.StringType,
 			},
+			"ingestion_config":  IngestionConfig{}.Type(ctx),
 			"key_schema":        SchemaConfig{}.Type(ctx),
 			"name":              types.StringType,
 			"subscription_mode": SubscriptionMode{}.Type(ctx),
@@ -9714,6 +12776,31 @@ func (m *KafkaConfig) SetAuthConfig(ctx context.Context, v AuthConfig) {
 	m.AuthConfig = vs
 }
 
+// GetBackfillSource returns the value of the BackfillSource field in KafkaConfig as
+// a BackfillSource value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *KafkaConfig) GetBackfillSource(ctx context.Context) (BackfillSource, bool) {
+	var e BackfillSource
+	if m.BackfillSource.IsNull() || m.BackfillSource.IsUnknown() {
+		return e, false
+	}
+	var v BackfillSource
+	d := m.BackfillSource.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetBackfillSource sets the value of the BackfillSource field in KafkaConfig.
+func (m *KafkaConfig) SetBackfillSource(ctx context.Context, v BackfillSource) {
+	vs := v.ToObjectValue(ctx)
+	m.BackfillSource = vs
+}
+
 // GetExtraOptions returns the value of the ExtraOptions field in KafkaConfig as
 // a map of string to types.String values.
 // If the field is unknown or null, the boolean return value is false.
@@ -9738,6 +12825,31 @@ func (m *KafkaConfig) SetExtraOptions(ctx context.Context, v map[string]types.St
 	t := m.Type(ctx).(basetypes.ObjectType).AttrTypes["extra_options"]
 	t = t.(attr.TypeWithElementType).ElementType()
 	m.ExtraOptions = types.MapValueMust(t, vs)
+}
+
+// GetIngestionConfig returns the value of the IngestionConfig field in KafkaConfig as
+// a IngestionConfig value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *KafkaConfig) GetIngestionConfig(ctx context.Context) (IngestionConfig, bool) {
+	var e IngestionConfig
+	if m.IngestionConfig.IsNull() || m.IngestionConfig.IsUnknown() {
+		return e, false
+	}
+	var v IngestionConfig
+	d := m.IngestionConfig.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetIngestionConfig sets the value of the IngestionConfig field in KafkaConfig.
+func (m *KafkaConfig) SetIngestionConfig(ctx context.Context, v IngestionConfig) {
+	vs := v.ToObjectValue(ctx)
+	m.IngestionConfig = vs
 }
 
 // GetKeySchema returns the value of the KeySchema field in KafkaConfig as
@@ -9816,16 +12928,26 @@ func (m *KafkaConfig) SetValueSchema(ctx context.Context, v SchemaConfig) {
 }
 
 type KafkaSource struct {
+	// Deprecated: Use Feature.entity instead. Kept for backwards compatibility.
 	// The entity column identifiers of the Kafka source.
 	EntityColumnIdentifiers types.List `tfsdk:"entity_column_identifiers"`
+	// The filter condition applied to the source data before aggregation.
+	FilterCondition types.String `tfsdk:"filter_condition"`
 	// Name of the Kafka source, used to identify it. This is used to look up
 	// the corresponding KafkaConfig object. Can be distinct from topic name.
 	Name types.String `tfsdk:"name"`
-	// The timeseries column identifier of the Kafka source.
+	// Deprecated: Use Feature.timeseries_column instead. Kept for backwards
+	// compatibility. The timeseries column identifier of the Kafka source.
 	TimeseriesColumnIdentifier types.Object `tfsdk:"timeseries_column_identifier"`
 }
 
 func (to *KafkaSource) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from KafkaSource) {
+	if !from.EntityColumnIdentifiers.IsNull() && !from.EntityColumnIdentifiers.IsUnknown() && to.EntityColumnIdentifiers.IsNull() && len(from.EntityColumnIdentifiers.Elements()) == 0 {
+		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
+		// If a user specified a non-Null, empty list for EntityColumnIdentifiers, and the deserialized field value is Null,
+		// set the resulting resource state to the empty list to match the planned value.
+		to.EntityColumnIdentifiers = from.EntityColumnIdentifiers
+	}
 	if !from.TimeseriesColumnIdentifier.IsNull() && !from.TimeseriesColumnIdentifier.IsUnknown() {
 		if toTimeseriesColumnIdentifier, ok := to.GetTimeseriesColumnIdentifier(ctx); ok {
 			if fromTimeseriesColumnIdentifier, ok := from.GetTimeseriesColumnIdentifier(ctx); ok {
@@ -9838,6 +12960,12 @@ func (to *KafkaSource) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from 
 }
 
 func (to *KafkaSource) SyncFieldsDuringRead(ctx context.Context, from KafkaSource) {
+	if !from.EntityColumnIdentifiers.IsNull() && !from.EntityColumnIdentifiers.IsUnknown() && to.EntityColumnIdentifiers.IsNull() && len(from.EntityColumnIdentifiers.Elements()) == 0 {
+		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
+		// If a user specified a non-Null, empty list for EntityColumnIdentifiers, and the deserialized field value is Null,
+		// set the resulting resource state to the empty list to match the planned value.
+		to.EntityColumnIdentifiers = from.EntityColumnIdentifiers
+	}
 	if !from.TimeseriesColumnIdentifier.IsNull() && !from.TimeseriesColumnIdentifier.IsUnknown() {
 		if toTimeseriesColumnIdentifier, ok := to.GetTimeseriesColumnIdentifier(ctx); ok {
 			if fromTimeseriesColumnIdentifier, ok := from.GetTimeseriesColumnIdentifier(ctx); ok {
@@ -9849,9 +12977,10 @@ func (to *KafkaSource) SyncFieldsDuringRead(ctx context.Context, from KafkaSourc
 }
 
 func (m KafkaSource) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
-	attrs["entity_column_identifiers"] = attrs["entity_column_identifiers"].SetRequired()
+	attrs["entity_column_identifiers"] = attrs["entity_column_identifiers"].SetOptional()
+	attrs["filter_condition"] = attrs["filter_condition"].SetOptional()
 	attrs["name"] = attrs["name"].SetRequired()
-	attrs["timeseries_column_identifier"] = attrs["timeseries_column_identifier"].SetRequired()
+	attrs["timeseries_column_identifier"] = attrs["timeseries_column_identifier"].SetOptional()
 
 	return attrs
 }
@@ -9878,6 +13007,7 @@ func (m KafkaSource) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
 		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
 		map[string]attr.Value{
 			"entity_column_identifiers":    m.EntityColumnIdentifiers,
+			"filter_condition":             m.FilterCondition,
 			"name":                         m.Name,
 			"timeseries_column_identifier": m.TimeseriesColumnIdentifier,
 		})
@@ -9890,6 +13020,7 @@ func (m KafkaSource) Type(ctx context.Context) attr.Type {
 			"entity_column_identifiers": basetypes.ListType{
 				ElemType: ColumnIdentifier{}.Type(ctx),
 			},
+			"filter_condition":             types.StringType,
 			"name":                         types.StringType,
 			"timeseries_column_identifier": ColumnIdentifier{}.Type(ctx),
 		},
@@ -9945,6 +13076,415 @@ func (m *KafkaSource) GetTimeseriesColumnIdentifier(ctx context.Context) (Column
 func (m *KafkaSource) SetTimeseriesColumnIdentifier(ctx context.Context, v ColumnIdentifier) {
 	vs := v.ToObjectValue(ctx)
 	m.TimeseriesColumnIdentifier = vs
+}
+
+// Kafka-specific configuration for a Stream.
+type KafkaStreamConfig struct {
+	// Optional Kafka source or consumer options, validated against a
+	// server-side allowlist at request time. Allowed keys: -
+	// `maxOffsetsPerTrigger` - `startingOffsets` - `includeHeaders` -
+	// `kafka.request.timeout.ms` - `kafka.session.timeout.ms` -
+	// `kafka.max.partition.fetch.bytes` The following keys are ingestion-only
+	// and are stripped before being forwarded to the materialization pipeline:
+	// - `maxOffsetsPerTrigger` - `startingOffsets` Auth and connection details
+	// belong on the parent Stream's `connection_config`, not here.
+	ExtraOptions types.Map `tfsdk:"extra_options"`
+	// Options to configure which Kafka topics to pull data from.
+	SubscriptionMode types.Object `tfsdk:"subscription_mode"`
+}
+
+func (to *KafkaStreamConfig) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from KafkaStreamConfig) {
+	if !from.SubscriptionMode.IsNull() && !from.SubscriptionMode.IsUnknown() {
+		if toSubscriptionMode, ok := to.GetSubscriptionMode(ctx); ok {
+			if fromSubscriptionMode, ok := from.GetSubscriptionMode(ctx); ok {
+				// Recursively sync the fields of SubscriptionMode
+				toSubscriptionMode.SyncFieldsDuringCreateOrUpdate(ctx, fromSubscriptionMode)
+				to.SetSubscriptionMode(ctx, toSubscriptionMode)
+			}
+		}
+	}
+}
+
+func (to *KafkaStreamConfig) SyncFieldsDuringRead(ctx context.Context, from KafkaStreamConfig) {
+	if !from.SubscriptionMode.IsNull() && !from.SubscriptionMode.IsUnknown() {
+		if toSubscriptionMode, ok := to.GetSubscriptionMode(ctx); ok {
+			if fromSubscriptionMode, ok := from.GetSubscriptionMode(ctx); ok {
+				toSubscriptionMode.SyncFieldsDuringRead(ctx, fromSubscriptionMode)
+				to.SetSubscriptionMode(ctx, toSubscriptionMode)
+			}
+		}
+	}
+}
+
+func (m KafkaStreamConfig) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["extra_options"] = attrs["extra_options"].SetOptional()
+	attrs["subscription_mode"] = attrs["subscription_mode"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in KafkaStreamConfig.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m KafkaStreamConfig) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{
+		"extra_options":     reflect.TypeOf(types.String{}),
+		"subscription_mode": reflect.TypeOf(KafkaSubscriptionMode{}),
+	}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, KafkaStreamConfig
+// only implements ToObjectValue() and Type().
+func (m KafkaStreamConfig) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"extra_options":     m.ExtraOptions,
+			"subscription_mode": m.SubscriptionMode,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m KafkaStreamConfig) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"extra_options": basetypes.MapType{
+				ElemType: types.StringType,
+			},
+			"subscription_mode": KafkaSubscriptionMode{}.Type(ctx),
+		},
+	}
+}
+
+// GetExtraOptions returns the value of the ExtraOptions field in KafkaStreamConfig as
+// a map of string to types.String values.
+// If the field is unknown or null, the boolean return value is false.
+func (m *KafkaStreamConfig) GetExtraOptions(ctx context.Context) (map[string]types.String, bool) {
+	if m.ExtraOptions.IsNull() || m.ExtraOptions.IsUnknown() {
+		return nil, false
+	}
+	var v map[string]types.String
+	d := m.ExtraOptions.ElementsAs(ctx, &v, true)
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetExtraOptions sets the value of the ExtraOptions field in KafkaStreamConfig.
+func (m *KafkaStreamConfig) SetExtraOptions(ctx context.Context, v map[string]types.String) {
+	vs := make(map[string]attr.Value, len(v))
+	for k, e := range v {
+		vs[k] = e
+	}
+	t := m.Type(ctx).(basetypes.ObjectType).AttrTypes["extra_options"]
+	t = t.(attr.TypeWithElementType).ElementType()
+	m.ExtraOptions = types.MapValueMust(t, vs)
+}
+
+// GetSubscriptionMode returns the value of the SubscriptionMode field in KafkaStreamConfig as
+// a KafkaSubscriptionMode value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *KafkaStreamConfig) GetSubscriptionMode(ctx context.Context) (KafkaSubscriptionMode, bool) {
+	var e KafkaSubscriptionMode
+	if m.SubscriptionMode.IsNull() || m.SubscriptionMode.IsUnknown() {
+		return e, false
+	}
+	var v KafkaSubscriptionMode
+	d := m.SubscriptionMode.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetSubscriptionMode sets the value of the SubscriptionMode field in KafkaStreamConfig.
+func (m *KafkaStreamConfig) SetSubscriptionMode(ctx context.Context, v KafkaSubscriptionMode) {
+	vs := v.ToObjectValue(ctx)
+	m.SubscriptionMode = vs
+}
+
+// Subscription mode for Kafka topic selection, matching standard Spark
+// Structured Streaming options.
+type KafkaSubscriptionMode struct {
+	// A JSON string that contains the specific topic-partitions to consume
+	// from. For example, for '{"topicA":[0,1],"topicB":[2,4]}', topicA's 0'th
+	// and 1st partitions will be consumed from.
+	Assign types.String `tfsdk:"assign"`
+	// A comma-separated list of Kafka topics to read from. For example,
+	// 'topicA,topicB,topicC'.
+	Subscribe types.String `tfsdk:"subscribe"`
+	// A regular expression matching topics to subscribe to. For example,
+	// 'topic.*' will subscribe to all topics starting with 'topic'.
+	SubscribePattern types.String `tfsdk:"subscribe_pattern"`
+}
+
+func (to *KafkaSubscriptionMode) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from KafkaSubscriptionMode) {
+}
+
+func (to *KafkaSubscriptionMode) SyncFieldsDuringRead(ctx context.Context, from KafkaSubscriptionMode) {
+}
+
+func (m KafkaSubscriptionMode) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["assign"] = attrs["assign"].SetOptional()
+	attrs["subscribe"] = attrs["subscribe"].SetOptional()
+	attrs["subscribe_pattern"] = attrs["subscribe_pattern"].SetOptional()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in KafkaSubscriptionMode.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m KafkaSubscriptionMode) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, KafkaSubscriptionMode
+// only implements ToObjectValue() and Type().
+func (m KafkaSubscriptionMode) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"assign":            m.Assign,
+			"subscribe":         m.Subscribe,
+			"subscribe_pattern": m.SubscribePattern,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m KafkaSubscriptionMode) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"assign":            types.StringType,
+			"subscribe":         types.StringType,
+			"subscribe_pattern": types.StringType,
+		},
+	}
+}
+
+// Returns the last N distinct values, ordered by the feature's timeseries
+// column.
+type LastDistinctFunction struct {
+	// The input column from which the last N distinct values are returned.
+	Input types.String `tfsdk:"input"`
+	// The number of distinct values to return.
+	N types.Int64 `tfsdk:"n"`
+}
+
+func (to *LastDistinctFunction) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from LastDistinctFunction) {
+}
+
+func (to *LastDistinctFunction) SyncFieldsDuringRead(ctx context.Context, from LastDistinctFunction) {
+}
+
+func (m LastDistinctFunction) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["input"] = attrs["input"].SetRequired()
+	attrs["n"] = attrs["n"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in LastDistinctFunction.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m LastDistinctFunction) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, LastDistinctFunction
+// only implements ToObjectValue() and Type().
+func (m LastDistinctFunction) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"input": m.Input,
+			"n":     m.N,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m LastDistinctFunction) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"input": types.StringType,
+			"n":     types.Int64Type,
+		},
+	}
+}
+
+// Returns the last value.
+type LastFunction struct {
+	// The input column from which the last value is returned.
+	Input types.String `tfsdk:"input"`
+}
+
+func (to *LastFunction) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from LastFunction) {
+}
+
+func (to *LastFunction) SyncFieldsDuringRead(ctx context.Context, from LastFunction) {
+}
+
+func (m LastFunction) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["input"] = attrs["input"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in LastFunction.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m LastFunction) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, LastFunction
+// only implements ToObjectValue() and Type().
+func (m LastFunction) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"input": m.Input,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m LastFunction) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"input": types.StringType,
+		},
+	}
+}
+
+// Returns the last N values, ordered by the feature's timeseries column.
+type LastNFunction struct {
+	// The input column from which the last N values are returned.
+	Input types.String `tfsdk:"input"`
+	// The number of values to return.
+	N types.Int64 `tfsdk:"n"`
+}
+
+func (to *LastNFunction) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from LastNFunction) {
+}
+
+func (to *LastNFunction) SyncFieldsDuringRead(ctx context.Context, from LastNFunction) {
+}
+
+func (m LastNFunction) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["input"] = attrs["input"].SetRequired()
+	attrs["n"] = attrs["n"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in LastNFunction.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m LastNFunction) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, LastNFunction
+// only implements ToObjectValue() and Type().
+func (m LastNFunction) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"input": m.Input,
+			"n":     m.N,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m LastNFunction) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"input": types.StringType,
+			"n":     types.Int64Type,
+		},
+	}
+}
+
+// A window that spans the entire lifetime of a data source, accumulating from
+// the source's start rather than over a bounded duration. All fields are
+// optional; an empty message denotes the continuous, fully-accurate variant.
+type LifetimeWindow struct {
+	// The slide duration for the discrete (offline) variant: the value updates
+	// only at these boundaries. Must be positive when set. When absent, the
+	// window is continuous (the value is as fresh as the pipeline delivers).
+	SlideDuration timetypes.GoDuration `tfsdk:"slide_duration"`
+}
+
+func (to *LifetimeWindow) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from LifetimeWindow) {
+}
+
+func (to *LifetimeWindow) SyncFieldsDuringRead(ctx context.Context, from LifetimeWindow) {
+}
+
+func (m LifetimeWindow) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["slide_duration"] = attrs["slide_duration"].SetOptional()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in LifetimeWindow.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m LifetimeWindow) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, LifetimeWindow
+// only implements ToObjectValue() and Type().
+func (m LifetimeWindow) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"slide_duration": m.SlideDuration,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m LifetimeWindow) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"slide_duration": timetypes.GoDuration{}.Type(ctx),
+		},
+	}
 }
 
 // Lineage context information for tracking where an API was invoked. This will
@@ -10047,7 +13587,7 @@ func (m *LineageContext) SetJobContext(ctx context.Context, v JobContext) {
 	m.JobContext = vs
 }
 
-// Feature for model version. ([ML-57150] Renamed from Feature to LinkedFeature)
+// Feature for model version.
 type LinkedFeature struct {
 	// Feature name
 	FeatureName types.String `tfsdk:"feature_name"`
@@ -10594,10 +14134,14 @@ func (m *ListFeatureTagsResponse) SetFeatureTags(ctx context.Context, v []Featur
 }
 
 type ListFeaturesRequest struct {
+	// Name of parent catalog for features of interest.
+	CatalogName types.String `tfsdk:"-"`
 	// The maximum number of results to return.
 	PageSize types.Int64 `tfsdk:"-"`
 	// Pagination token to go to the next page based on a previous query.
 	PageToken types.String `tfsdk:"-"`
+	// Name of parent schema relative to its parent catalog.
+	SchemaName types.String `tfsdk:"-"`
 }
 
 func (to *ListFeaturesRequest) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from ListFeaturesRequest) {
@@ -10609,6 +14153,8 @@ func (to *ListFeaturesRequest) SyncFieldsDuringRead(ctx context.Context, from Li
 func (m ListFeaturesRequest) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
 	attrs["page_token"] = attrs["page_token"].SetOptional()
 	attrs["page_size"] = attrs["page_size"].SetOptional()
+	attrs["catalog_name"] = attrs["catalog_name"].SetRequired()
+	attrs["schema_name"] = attrs["schema_name"].SetRequired()
 
 	return attrs
 }
@@ -10631,8 +14177,10 @@ func (m ListFeaturesRequest) ToObjectValue(ctx context.Context) basetypes.Object
 	return types.ObjectValueMust(
 		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
 		map[string]attr.Value{
-			"page_size":  m.PageSize,
-			"page_token": m.PageToken,
+			"catalog_name": m.CatalogName,
+			"page_size":    m.PageSize,
+			"page_token":   m.PageToken,
+			"schema_name":  m.SchemaName,
 		})
 }
 
@@ -10640,8 +14188,10 @@ func (m ListFeaturesRequest) ToObjectValue(ctx context.Context) basetypes.Object
 func (m ListFeaturesRequest) Type(ctx context.Context) attr.Type {
 	return types.ObjectType{
 		AttrTypes: map[string]attr.Type{
-			"page_size":  types.Int64Type,
-			"page_token": types.StringType,
+			"catalog_name": types.StringType,
+			"page_size":    types.Int64Type,
+			"page_token":   types.StringType,
+			"schema_name":  types.StringType,
 		},
 	}
 }
@@ -11422,6 +14972,167 @@ func (m *ListRegistryWebhooks) SetWebhooks(ctx context.Context, v []RegistryWebh
 	t := m.Type(ctx).(basetypes.ObjectType).AttrTypes["webhooks"]
 	t = t.(attr.TypeWithElementType).ElementType()
 	m.Webhooks = types.ListValueMust(t, vs)
+}
+
+type ListStreamsRequest struct {
+	// The maximum number of results to return.
+	PageSize types.Int64 `tfsdk:"-"`
+	// Pagination token to go to the next page based on a previous query.
+	PageToken types.String `tfsdk:"-"`
+	// Two-part name (catalog.schema) of the parent under which to list Streams.
+	Parent types.String `tfsdk:"-"`
+}
+
+func (to *ListStreamsRequest) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from ListStreamsRequest) {
+}
+
+func (to *ListStreamsRequest) SyncFieldsDuringRead(ctx context.Context, from ListStreamsRequest) {
+}
+
+func (m ListStreamsRequest) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["parent"] = attrs["parent"].SetOptional()
+	attrs["page_size"] = attrs["page_size"].SetOptional()
+	attrs["page_token"] = attrs["page_token"].SetOptional()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in ListStreamsRequest.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m ListStreamsRequest) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, ListStreamsRequest
+// only implements ToObjectValue() and Type().
+func (m ListStreamsRequest) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"page_size":  m.PageSize,
+			"page_token": m.PageToken,
+			"parent":     m.Parent,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m ListStreamsRequest) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"page_size":  types.Int64Type,
+			"page_token": types.StringType,
+			"parent":     types.StringType,
+		},
+	}
+}
+
+// Response to a ListStreamsRequest.
+//
+// NOTE: Results are post-filtered by access permission on each stream's
+// ingestion table. This means: - Returned results may be fewer than page_size
+// (including zero) - Page token points to next unfiltered batch, not next
+// filtered batch, and may point to an item that will be filtered out Callers
+// should paginate until next_page_token is empty to retrieve all accessible
+// streams.
+type ListStreamsResponse struct {
+	// Pagination token to request the next page of results for this query.
+	NextPageToken types.String `tfsdk:"next_page_token"`
+	// List of Streams.
+	Streams types.List `tfsdk:"streams"`
+}
+
+func (to *ListStreamsResponse) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from ListStreamsResponse) {
+	if !from.Streams.IsNull() && !from.Streams.IsUnknown() && to.Streams.IsNull() && len(from.Streams.Elements()) == 0 {
+		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
+		// If a user specified a non-Null, empty list for Streams, and the deserialized field value is Null,
+		// set the resulting resource state to the empty list to match the planned value.
+		to.Streams = from.Streams
+	}
+}
+
+func (to *ListStreamsResponse) SyncFieldsDuringRead(ctx context.Context, from ListStreamsResponse) {
+	if !from.Streams.IsNull() && !from.Streams.IsUnknown() && to.Streams.IsNull() && len(from.Streams.Elements()) == 0 {
+		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
+		// If a user specified a non-Null, empty list for Streams, and the deserialized field value is Null,
+		// set the resulting resource state to the empty list to match the planned value.
+		to.Streams = from.Streams
+	}
+}
+
+func (m ListStreamsResponse) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["next_page_token"] = attrs["next_page_token"].SetOptional()
+	attrs["streams"] = attrs["streams"].SetOptional()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in ListStreamsResponse.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m ListStreamsResponse) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{
+		"streams": reflect.TypeOf(Stream{}),
+	}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, ListStreamsResponse
+// only implements ToObjectValue() and Type().
+func (m ListStreamsResponse) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"next_page_token": m.NextPageToken,
+			"streams":         m.Streams,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m ListStreamsResponse) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"next_page_token": types.StringType,
+			"streams": basetypes.ListType{
+				ElemType: Stream{}.Type(ctx),
+			},
+		},
+	}
+}
+
+// GetStreams returns the value of the Streams field in ListStreamsResponse as
+// a slice of Stream values.
+// If the field is unknown or null, the boolean return value is false.
+func (m *ListStreamsResponse) GetStreams(ctx context.Context) ([]Stream, bool) {
+	if m.Streams.IsNull() || m.Streams.IsUnknown() {
+		return nil, false
+	}
+	var v []Stream
+	d := m.Streams.ElementsAs(ctx, &v, true)
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetStreams sets the value of the Streams field in ListStreamsResponse.
+func (m *ListStreamsResponse) SetStreams(ctx context.Context, v []Stream) {
+	vs := make([]attr.Value, 0, len(v))
+	for _, e := range v {
+		vs = append(vs, e.ToObjectValue(ctx))
+	}
+	t := m.Type(ctx).(basetypes.ObjectType).AttrTypes["streams"]
+	t = t.(attr.TypeWithElementType).ElementType()
+	m.Streams = types.ListValueMust(t, vs)
 }
 
 type ListTransitionRequestsRequest struct {
@@ -13262,28 +16973,119 @@ func (m LoggedModelTag) Type(ctx context.Context) attr.Type {
 	}
 }
 
+// A long (multi-day) rolling window served via the hybrid batch + streaming
+// path. The batch pipeline maintains daily partial aggregates for the bulk of
+// the window while the streaming pipeline maintains the most recent day(s), and
+// serving merges them on read. Distinct from RollingWindow so the control plane
+// can explicitly identify long rolling window features rather than inferring
+// hybrid behavior from window_duration.
+type LongRollingWindow struct {
+	// The delay applied to the end of the rolling window (must be
+	// non-negative). For example, delay=1d shifts the window end 1 day before
+	// the evaluation time.
+	Delay timetypes.GoDuration `tfsdk:"delay"`
+	// The duration of the rolling window. Must be positive and span more than
+	// two days, so that both the batch (N-1 day) and stale-path (N-2 day)
+	// partial aggregates are well defined. The duration need not be a whole
+	// number of days (e.g. 3 days 15 minutes is allowed).
+	WindowDuration timetypes.GoDuration `tfsdk:"window_duration"`
+}
+
+func (to *LongRollingWindow) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from LongRollingWindow) {
+}
+
+func (to *LongRollingWindow) SyncFieldsDuringRead(ctx context.Context, from LongRollingWindow) {
+}
+
+func (m LongRollingWindow) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["delay"] = attrs["delay"].SetOptional()
+	attrs["window_duration"] = attrs["window_duration"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in LongRollingWindow.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m LongRollingWindow) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, LongRollingWindow
+// only implements ToObjectValue() and Type().
+func (m LongRollingWindow) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"delay":           m.Delay,
+			"window_duration": m.WindowDuration,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m LongRollingWindow) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"delay":           timetypes.GoDuration{}.Type(ctx),
+			"window_duration": timetypes.GoDuration{}.Type(ctx),
+		},
+	}
+}
+
 // A materialized feature represents a feature that is continuously computed and
 // stored.
 type MaterializedFeature struct {
+	// The quartz cron expression that defines the schedule of the
+	// materialization pipeline. The schedule is evaluated in the UTC timezone.
+	// Hidden from GraphQL: superseded by the `trigger` oneof
+	// (cron_schedule_trigger), so not exposed to Catalog Explorer.
+	CronSchedule types.String `tfsdk:"cron_schedule"`
+	// A cron-based schedule trigger for the materialization pipeline.
+	CronScheduleTrigger types.Object `tfsdk:"cron_schedule_trigger"`
 	// The full name of the feature in Unity Catalog.
 	FeatureName types.String `tfsdk:"feature_name"`
+	// True if this is an online materialized feature. False if it is an offline
+	// materialized feature.
+	IsOnline types.Bool `tfsdk:"is_online"`
 	// The timestamp when the pipeline last ran and updated the materialized
 	// feature values. If the pipeline has not run yet, this field will be null.
 	LastMaterializationTime types.String `tfsdk:"last_materialization_time"`
-	// Unique identifier for the materialized feature.
+	// Server-assigned unique identifier for the materialized feature.
 	MaterializedFeatureId types.String `tfsdk:"materialized_feature_id"`
-
+	// Destination for writing feature values to an offline Delta table.
 	OfflineStoreConfig types.Object `tfsdk:"offline_store_config"`
-
+	// Destination for writing feature values to an online Lakebase table.
 	OnlineStoreConfig types.Object `tfsdk:"online_store_config"`
-	// The schedule state of the materialization pipeline.
+	// The schedule state of the materialization pipeline. Hidden from GraphQL:
+	// being deprecated, so not exposed to Catalog Explorer.
 	PipelineScheduleState types.String `tfsdk:"pipeline_schedule_state"`
+	// The Structured Streaming trigger mode used for materialization. Real-time
+	// mode (RTM) targets sub-second latency for operational workloads;
+	// micro-batch mode (MBM) favors cost efficiency for ETL and analytics
+	// workloads.
+	StreamingMode types.Object `tfsdk:"streaming_mode"`
 	// The fully qualified Unity Catalog path to the table containing the
 	// materialized feature (Delta table or Lakebase table). Output only.
 	TableName types.String `tfsdk:"table_name"`
+	// A trigger that fires when the upstream source table changes.
+	TableTrigger types.Object `tfsdk:"table_trigger"`
 }
 
 func (to *MaterializedFeature) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from MaterializedFeature) {
+	if !from.CronScheduleTrigger.IsNull() && !from.CronScheduleTrigger.IsUnknown() {
+		if toCronScheduleTrigger, ok := to.GetCronScheduleTrigger(ctx); ok {
+			if fromCronScheduleTrigger, ok := from.GetCronScheduleTrigger(ctx); ok {
+				// Recursively sync the fields of CronScheduleTrigger
+				toCronScheduleTrigger.SyncFieldsDuringCreateOrUpdate(ctx, fromCronScheduleTrigger)
+				to.SetCronScheduleTrigger(ctx, toCronScheduleTrigger)
+			}
+		}
+	}
 	if !from.OfflineStoreConfig.IsNull() && !from.OfflineStoreConfig.IsUnknown() {
 		if toOfflineStoreConfig, ok := to.GetOfflineStoreConfig(ctx); ok {
 			if fromOfflineStoreConfig, ok := from.GetOfflineStoreConfig(ctx); ok {
@@ -13302,9 +17104,35 @@ func (to *MaterializedFeature) SyncFieldsDuringCreateOrUpdate(ctx context.Contex
 			}
 		}
 	}
+	if !from.StreamingMode.IsNull() && !from.StreamingMode.IsUnknown() {
+		if toStreamingMode, ok := to.GetStreamingMode(ctx); ok {
+			if fromStreamingMode, ok := from.GetStreamingMode(ctx); ok {
+				// Recursively sync the fields of StreamingMode
+				toStreamingMode.SyncFieldsDuringCreateOrUpdate(ctx, fromStreamingMode)
+				to.SetStreamingMode(ctx, toStreamingMode)
+			}
+		}
+	}
+	if !from.TableTrigger.IsNull() && !from.TableTrigger.IsUnknown() {
+		if toTableTrigger, ok := to.GetTableTrigger(ctx); ok {
+			if fromTableTrigger, ok := from.GetTableTrigger(ctx); ok {
+				// Recursively sync the fields of TableTrigger
+				toTableTrigger.SyncFieldsDuringCreateOrUpdate(ctx, fromTableTrigger)
+				to.SetTableTrigger(ctx, toTableTrigger)
+			}
+		}
+	}
 }
 
 func (to *MaterializedFeature) SyncFieldsDuringRead(ctx context.Context, from MaterializedFeature) {
+	if !from.CronScheduleTrigger.IsNull() && !from.CronScheduleTrigger.IsUnknown() {
+		if toCronScheduleTrigger, ok := to.GetCronScheduleTrigger(ctx); ok {
+			if fromCronScheduleTrigger, ok := from.GetCronScheduleTrigger(ctx); ok {
+				toCronScheduleTrigger.SyncFieldsDuringRead(ctx, fromCronScheduleTrigger)
+				to.SetCronScheduleTrigger(ctx, toCronScheduleTrigger)
+			}
+		}
+	}
 	if !from.OfflineStoreConfig.IsNull() && !from.OfflineStoreConfig.IsUnknown() {
 		if toOfflineStoreConfig, ok := to.GetOfflineStoreConfig(ctx); ok {
 			if fromOfflineStoreConfig, ok := from.GetOfflineStoreConfig(ctx); ok {
@@ -13321,16 +17149,38 @@ func (to *MaterializedFeature) SyncFieldsDuringRead(ctx context.Context, from Ma
 			}
 		}
 	}
+	if !from.StreamingMode.IsNull() && !from.StreamingMode.IsUnknown() {
+		if toStreamingMode, ok := to.GetStreamingMode(ctx); ok {
+			if fromStreamingMode, ok := from.GetStreamingMode(ctx); ok {
+				toStreamingMode.SyncFieldsDuringRead(ctx, fromStreamingMode)
+				to.SetStreamingMode(ctx, toStreamingMode)
+			}
+		}
+	}
+	if !from.TableTrigger.IsNull() && !from.TableTrigger.IsUnknown() {
+		if toTableTrigger, ok := to.GetTableTrigger(ctx); ok {
+			if fromTableTrigger, ok := from.GetTableTrigger(ctx); ok {
+				toTableTrigger.SyncFieldsDuringRead(ctx, fromTableTrigger)
+				to.SetTableTrigger(ctx, toTableTrigger)
+			}
+		}
+	}
 }
 
 func (m MaterializedFeature) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["cron_schedule"] = attrs["cron_schedule"].SetOptional()
+	attrs["cron_schedule_trigger"] = attrs["cron_schedule_trigger"].SetOptional()
 	attrs["feature_name"] = attrs["feature_name"].SetRequired()
+	attrs["is_online"] = attrs["is_online"].SetComputed()
 	attrs["last_materialization_time"] = attrs["last_materialization_time"].SetComputed()
-	attrs["materialized_feature_id"] = attrs["materialized_feature_id"].SetComputed()
+	attrs["materialized_feature_id"] = attrs["materialized_feature_id"].SetOptional()
+	attrs["materialized_feature_id"] = attrs["materialized_feature_id"].(tfschema.StringAttributeBuilder).AddPlanModifier(stringplanmodifier.RequiresReplace()).(tfschema.AttributeBuilder)
 	attrs["offline_store_config"] = attrs["offline_store_config"].SetOptional()
 	attrs["online_store_config"] = attrs["online_store_config"].SetOptional()
 	attrs["pipeline_schedule_state"] = attrs["pipeline_schedule_state"].SetOptional()
+	attrs["streaming_mode"] = attrs["streaming_mode"].SetOptional()
 	attrs["table_name"] = attrs["table_name"].SetComputed()
+	attrs["table_trigger"] = attrs["table_trigger"].SetOptional()
 
 	return attrs
 }
@@ -13344,8 +17194,11 @@ func (m MaterializedFeature) ApplySchemaCustomizations(attrs map[string]tfschema
 // SDK values.
 func (m MaterializedFeature) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
 	return map[string]reflect.Type{
-		"offline_store_config": reflect.TypeOf(OfflineStoreConfig{}),
-		"online_store_config":  reflect.TypeOf(OnlineStoreConfig{}),
+		"cron_schedule_trigger": reflect.TypeOf(CronSchedule{}),
+		"offline_store_config":  reflect.TypeOf(OfflineStoreConfig{}),
+		"online_store_config":   reflect.TypeOf(OnlineStoreConfig{}),
+		"streaming_mode":        reflect.TypeOf(StreamingMode{}),
+		"table_trigger":         reflect.TypeOf(TableTrigger{}),
 	}
 }
 
@@ -13356,13 +17209,18 @@ func (m MaterializedFeature) ToObjectValue(ctx context.Context) basetypes.Object
 	return types.ObjectValueMust(
 		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
 		map[string]attr.Value{
+			"cron_schedule":             m.CronSchedule,
+			"cron_schedule_trigger":     m.CronScheduleTrigger,
 			"feature_name":              m.FeatureName,
+			"is_online":                 m.IsOnline,
 			"last_materialization_time": m.LastMaterializationTime,
 			"materialized_feature_id":   m.MaterializedFeatureId,
 			"offline_store_config":      m.OfflineStoreConfig,
 			"online_store_config":       m.OnlineStoreConfig,
 			"pipeline_schedule_state":   m.PipelineScheduleState,
+			"streaming_mode":            m.StreamingMode,
 			"table_name":                m.TableName,
+			"table_trigger":             m.TableTrigger,
 		})
 }
 
@@ -13370,15 +17228,45 @@ func (m MaterializedFeature) ToObjectValue(ctx context.Context) basetypes.Object
 func (m MaterializedFeature) Type(ctx context.Context) attr.Type {
 	return types.ObjectType{
 		AttrTypes: map[string]attr.Type{
+			"cron_schedule":             types.StringType,
+			"cron_schedule_trigger":     CronSchedule{}.Type(ctx),
 			"feature_name":              types.StringType,
+			"is_online":                 types.BoolType,
 			"last_materialization_time": types.StringType,
 			"materialized_feature_id":   types.StringType,
 			"offline_store_config":      OfflineStoreConfig{}.Type(ctx),
 			"online_store_config":       OnlineStoreConfig{}.Type(ctx),
 			"pipeline_schedule_state":   types.StringType,
+			"streaming_mode":            StreamingMode{}.Type(ctx),
 			"table_name":                types.StringType,
+			"table_trigger":             TableTrigger{}.Type(ctx),
 		},
 	}
+}
+
+// GetCronScheduleTrigger returns the value of the CronScheduleTrigger field in MaterializedFeature as
+// a CronSchedule value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *MaterializedFeature) GetCronScheduleTrigger(ctx context.Context) (CronSchedule, bool) {
+	var e CronSchedule
+	if m.CronScheduleTrigger.IsNull() || m.CronScheduleTrigger.IsUnknown() {
+		return e, false
+	}
+	var v CronSchedule
+	d := m.CronScheduleTrigger.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetCronScheduleTrigger sets the value of the CronScheduleTrigger field in MaterializedFeature.
+func (m *MaterializedFeature) SetCronScheduleTrigger(ctx context.Context, v CronSchedule) {
+	vs := v.ToObjectValue(ctx)
+	m.CronScheduleTrigger = vs
 }
 
 // GetOfflineStoreConfig returns the value of the OfflineStoreConfig field in MaterializedFeature as
@@ -13429,6 +17317,105 @@ func (m *MaterializedFeature) GetOnlineStoreConfig(ctx context.Context) (OnlineS
 func (m *MaterializedFeature) SetOnlineStoreConfig(ctx context.Context, v OnlineStoreConfig) {
 	vs := v.ToObjectValue(ctx)
 	m.OnlineStoreConfig = vs
+}
+
+// GetStreamingMode returns the value of the StreamingMode field in MaterializedFeature as
+// a StreamingMode value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *MaterializedFeature) GetStreamingMode(ctx context.Context) (StreamingMode, bool) {
+	var e StreamingMode
+	if m.StreamingMode.IsNull() || m.StreamingMode.IsUnknown() {
+		return e, false
+	}
+	var v StreamingMode
+	d := m.StreamingMode.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetStreamingMode sets the value of the StreamingMode field in MaterializedFeature.
+func (m *MaterializedFeature) SetStreamingMode(ctx context.Context, v StreamingMode) {
+	vs := v.ToObjectValue(ctx)
+	m.StreamingMode = vs
+}
+
+// GetTableTrigger returns the value of the TableTrigger field in MaterializedFeature as
+// a TableTrigger value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *MaterializedFeature) GetTableTrigger(ctx context.Context) (TableTrigger, bool) {
+	var e TableTrigger
+	if m.TableTrigger.IsNull() || m.TableTrigger.IsUnknown() {
+		return e, false
+	}
+	var v TableTrigger
+	d := m.TableTrigger.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetTableTrigger sets the value of the TableTrigger field in MaterializedFeature.
+func (m *MaterializedFeature) SetTableTrigger(ctx context.Context, v TableTrigger) {
+	vs := v.ToObjectValue(ctx)
+	m.TableTrigger = vs
+}
+
+// Computes the maximum value.
+type MaxFunction struct {
+	// The input column from which the maximum is computed.
+	Input types.String `tfsdk:"input"`
+}
+
+func (to *MaxFunction) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from MaxFunction) {
+}
+
+func (to *MaxFunction) SyncFieldsDuringRead(ctx context.Context, from MaxFunction) {
+}
+
+func (m MaxFunction) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["input"] = attrs["input"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in MaxFunction.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m MaxFunction) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, MaxFunction
+// only implements ToObjectValue() and Type().
+func (m MaxFunction) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"input": m.Input,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m MaxFunction) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"input": types.StringType,
+		},
+	}
 }
 
 // Metric associated with a run, represented as a key-value pair.
@@ -13515,6 +17502,55 @@ func (m Metric) Type(ctx context.Context) attr.Type {
 			"step":           types.Int64Type,
 			"timestamp":      types.Int64Type,
 			"value":          types.Float64Type,
+		},
+	}
+}
+
+// Computes the minimum value.
+type MinFunction struct {
+	// The input column from which the minimum is computed.
+	Input types.String `tfsdk:"input"`
+}
+
+func (to *MinFunction) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from MinFunction) {
+}
+
+func (to *MinFunction) SyncFieldsDuringRead(ctx context.Context, from MinFunction) {
+}
+
+func (m MinFunction) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["input"] = attrs["input"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in MinFunction.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m MinFunction) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, MinFunction
+// only implements ToObjectValue() and Type().
+func (m MinFunction) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"input": m.Input,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m MinFunction) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"input": types.StringType,
 		},
 	}
 }
@@ -14478,6 +18514,238 @@ func (m ModelVersionTag) Type(ctx context.Context) attr.Type {
 	}
 }
 
+// Mutual-TLS (mTLS) authentication configuration. The keystore (client
+// certificate + private key) and truststore (CAs trusted to verify the broker)
+// live as JKS files on Unity Catalog volumes, with their passwords stored in
+// Databricks secret scopes. This matches the SSL setup pattern documented at
+// https://docs.databricks.com/en/connect/streaming/kafka/authentication#use-ssl-to-connect-databricks-to-kafka.
+//
+// At materialization time, the generated PySpark code passes the JKS file paths
+// and resolved passwords through to the Kafka SSL options
+// (kafka.ssl.keystore.location, kafka.ssl.keystore.password,
+// kafka.ssl.key.password, kafka.ssl.truststore.location,
+// kafka.ssl.truststore.password). Passwords are resolved on the Spark cluster
+// via dbutils.secrets.get; this message stores only references, never password
+// values.
+type MtlsConfig struct {
+	// Set to true only when the broker certificate's SAN intentionally does not
+	// match the connection endpoint — for example when reaching the cluster
+	// through a PrivateLink endpoint whose DNS name is not in the broker
+	// certificate. Skipping the hostname check removes a defense against
+	// man-in-the-middle attacks; do not enable casually. mTLS client
+	// authentication is unaffected by this option.
+	//
+	// See the Apache Kafka SSL security guide for background on this check:
+	// https://kafka.apache.org/42/security/encryption-and-authentication-using-ssl/#host-name-verification
+	DisableHostnameVerification types.Bool `tfsdk:"disable_hostname_verification"`
+	// Secret-scope reference for the private key password. Often the same value
+	// as the keystore password (keytool's default), but provided as a separate
+	// field because Apache Kafka requires it as a distinct option
+	// (kafka.ssl.key.password).
+	KeyPasswordRef types.Object `tfsdk:"key_password_ref"`
+	// Unity Catalog volume path to the JKS keystore file containing the client
+	// certificate and private key. e.g.
+	// "/Volumes/<catalog>/<schema>/<volume>/client.jks". The materialization
+	// compute must have read permission on this volume.
+	KeystoreLocation types.String `tfsdk:"keystore_location"`
+	// Secret-scope reference for the JKS keystore password.
+	KeystorePasswordRef types.Object `tfsdk:"keystore_password_ref"`
+	// Unity Catalog volume path to the JKS truststore file containing the CA
+	// certificate(s) trusted to verify the Kafka broker's server certificate.
+	// e.g. "/Volumes/<catalog>/<schema>/<volume>/truststore.jks".
+	TruststoreLocation types.String `tfsdk:"truststore_location"`
+	// Secret-scope reference for the JKS truststore password.
+	TruststorePasswordRef types.Object `tfsdk:"truststore_password_ref"`
+}
+
+func (to *MtlsConfig) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from MtlsConfig) {
+	if !from.KeyPasswordRef.IsNull() && !from.KeyPasswordRef.IsUnknown() {
+		if toKeyPasswordRef, ok := to.GetKeyPasswordRef(ctx); ok {
+			if fromKeyPasswordRef, ok := from.GetKeyPasswordRef(ctx); ok {
+				// Recursively sync the fields of KeyPasswordRef
+				toKeyPasswordRef.SyncFieldsDuringCreateOrUpdate(ctx, fromKeyPasswordRef)
+				to.SetKeyPasswordRef(ctx, toKeyPasswordRef)
+			}
+		}
+	}
+	if !from.KeystorePasswordRef.IsNull() && !from.KeystorePasswordRef.IsUnknown() {
+		if toKeystorePasswordRef, ok := to.GetKeystorePasswordRef(ctx); ok {
+			if fromKeystorePasswordRef, ok := from.GetKeystorePasswordRef(ctx); ok {
+				// Recursively sync the fields of KeystorePasswordRef
+				toKeystorePasswordRef.SyncFieldsDuringCreateOrUpdate(ctx, fromKeystorePasswordRef)
+				to.SetKeystorePasswordRef(ctx, toKeystorePasswordRef)
+			}
+		}
+	}
+	if !from.TruststorePasswordRef.IsNull() && !from.TruststorePasswordRef.IsUnknown() {
+		if toTruststorePasswordRef, ok := to.GetTruststorePasswordRef(ctx); ok {
+			if fromTruststorePasswordRef, ok := from.GetTruststorePasswordRef(ctx); ok {
+				// Recursively sync the fields of TruststorePasswordRef
+				toTruststorePasswordRef.SyncFieldsDuringCreateOrUpdate(ctx, fromTruststorePasswordRef)
+				to.SetTruststorePasswordRef(ctx, toTruststorePasswordRef)
+			}
+		}
+	}
+}
+
+func (to *MtlsConfig) SyncFieldsDuringRead(ctx context.Context, from MtlsConfig) {
+	if !from.KeyPasswordRef.IsNull() && !from.KeyPasswordRef.IsUnknown() {
+		if toKeyPasswordRef, ok := to.GetKeyPasswordRef(ctx); ok {
+			if fromKeyPasswordRef, ok := from.GetKeyPasswordRef(ctx); ok {
+				toKeyPasswordRef.SyncFieldsDuringRead(ctx, fromKeyPasswordRef)
+				to.SetKeyPasswordRef(ctx, toKeyPasswordRef)
+			}
+		}
+	}
+	if !from.KeystorePasswordRef.IsNull() && !from.KeystorePasswordRef.IsUnknown() {
+		if toKeystorePasswordRef, ok := to.GetKeystorePasswordRef(ctx); ok {
+			if fromKeystorePasswordRef, ok := from.GetKeystorePasswordRef(ctx); ok {
+				toKeystorePasswordRef.SyncFieldsDuringRead(ctx, fromKeystorePasswordRef)
+				to.SetKeystorePasswordRef(ctx, toKeystorePasswordRef)
+			}
+		}
+	}
+	if !from.TruststorePasswordRef.IsNull() && !from.TruststorePasswordRef.IsUnknown() {
+		if toTruststorePasswordRef, ok := to.GetTruststorePasswordRef(ctx); ok {
+			if fromTruststorePasswordRef, ok := from.GetTruststorePasswordRef(ctx); ok {
+				toTruststorePasswordRef.SyncFieldsDuringRead(ctx, fromTruststorePasswordRef)
+				to.SetTruststorePasswordRef(ctx, toTruststorePasswordRef)
+			}
+		}
+	}
+}
+
+func (m MtlsConfig) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["disable_hostname_verification"] = attrs["disable_hostname_verification"].SetOptional()
+	attrs["key_password_ref"] = attrs["key_password_ref"].SetRequired()
+	attrs["keystore_location"] = attrs["keystore_location"].SetRequired()
+	attrs["keystore_password_ref"] = attrs["keystore_password_ref"].SetRequired()
+	attrs["truststore_location"] = attrs["truststore_location"].SetRequired()
+	attrs["truststore_password_ref"] = attrs["truststore_password_ref"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in MtlsConfig.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m MtlsConfig) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{
+		"key_password_ref":        reflect.TypeOf(SecretScopeReference{}),
+		"keystore_password_ref":   reflect.TypeOf(SecretScopeReference{}),
+		"truststore_password_ref": reflect.TypeOf(SecretScopeReference{}),
+	}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, MtlsConfig
+// only implements ToObjectValue() and Type().
+func (m MtlsConfig) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"disable_hostname_verification": m.DisableHostnameVerification,
+			"key_password_ref":              m.KeyPasswordRef,
+			"keystore_location":             m.KeystoreLocation,
+			"keystore_password_ref":         m.KeystorePasswordRef,
+			"truststore_location":           m.TruststoreLocation,
+			"truststore_password_ref":       m.TruststorePasswordRef,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m MtlsConfig) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"disable_hostname_verification": types.BoolType,
+			"key_password_ref":              SecretScopeReference{}.Type(ctx),
+			"keystore_location":             types.StringType,
+			"keystore_password_ref":         SecretScopeReference{}.Type(ctx),
+			"truststore_location":           types.StringType,
+			"truststore_password_ref":       SecretScopeReference{}.Type(ctx),
+		},
+	}
+}
+
+// GetKeyPasswordRef returns the value of the KeyPasswordRef field in MtlsConfig as
+// a SecretScopeReference value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *MtlsConfig) GetKeyPasswordRef(ctx context.Context) (SecretScopeReference, bool) {
+	var e SecretScopeReference
+	if m.KeyPasswordRef.IsNull() || m.KeyPasswordRef.IsUnknown() {
+		return e, false
+	}
+	var v SecretScopeReference
+	d := m.KeyPasswordRef.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetKeyPasswordRef sets the value of the KeyPasswordRef field in MtlsConfig.
+func (m *MtlsConfig) SetKeyPasswordRef(ctx context.Context, v SecretScopeReference) {
+	vs := v.ToObjectValue(ctx)
+	m.KeyPasswordRef = vs
+}
+
+// GetKeystorePasswordRef returns the value of the KeystorePasswordRef field in MtlsConfig as
+// a SecretScopeReference value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *MtlsConfig) GetKeystorePasswordRef(ctx context.Context) (SecretScopeReference, bool) {
+	var e SecretScopeReference
+	if m.KeystorePasswordRef.IsNull() || m.KeystorePasswordRef.IsUnknown() {
+		return e, false
+	}
+	var v SecretScopeReference
+	d := m.KeystorePasswordRef.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetKeystorePasswordRef sets the value of the KeystorePasswordRef field in MtlsConfig.
+func (m *MtlsConfig) SetKeystorePasswordRef(ctx context.Context, v SecretScopeReference) {
+	vs := v.ToObjectValue(ctx)
+	m.KeystorePasswordRef = vs
+}
+
+// GetTruststorePasswordRef returns the value of the TruststorePasswordRef field in MtlsConfig as
+// a SecretScopeReference value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *MtlsConfig) GetTruststorePasswordRef(ctx context.Context) (SecretScopeReference, bool) {
+	var e SecretScopeReference
+	if m.TruststorePasswordRef.IsNull() || m.TruststorePasswordRef.IsUnknown() {
+		return e, false
+	}
+	var v SecretScopeReference
+	d := m.TruststorePasswordRef.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetTruststorePasswordRef sets the value of the TruststorePasswordRef field in MtlsConfig.
+func (m *MtlsConfig) SetTruststorePasswordRef(ctx context.Context, v SecretScopeReference) {
+	vs := v.ToObjectValue(ctx)
+	m.TruststorePasswordRef = vs
+}
+
 // Configuration for offline store destination.
 type OfflineStoreConfig struct {
 	// The Unity Catalog catalog name.
@@ -14555,6 +18823,8 @@ type OnlineStore struct {
 	ReadReplicaCount types.Int64 `tfsdk:"read_replica_count"`
 	// The current state of the online store.
 	State types.String `tfsdk:"state"`
+	// The usage policy applied to the online store to track billing.
+	UsagePolicyId types.String `tfsdk:"usage_policy_id"`
 }
 
 func (to *OnlineStore) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from OnlineStore) {
@@ -14570,6 +18840,7 @@ func (m OnlineStore) ApplySchemaCustomizations(attrs map[string]tfschema.Attribu
 	attrs["name"] = attrs["name"].SetRequired()
 	attrs["read_replica_count"] = attrs["read_replica_count"].SetOptional()
 	attrs["state"] = attrs["state"].SetComputed()
+	attrs["usage_policy_id"] = attrs["usage_policy_id"].SetOptional()
 
 	return attrs
 }
@@ -14598,6 +18869,7 @@ func (m OnlineStore) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
 			"name":               m.Name,
 			"read_replica_count": m.ReadReplicaCount,
 			"state":              m.State,
+			"usage_policy_id":    m.UsagePolicyId,
 		})
 }
 
@@ -14611,6 +18883,7 @@ func (m OnlineStore) Type(ctx context.Context) attr.Type {
 			"name":               types.StringType,
 			"read_replica_count": types.Int64Type,
 			"state":              types.StringType,
+			"usage_policy_id":    types.StringType,
 		},
 	}
 }
@@ -14618,11 +18891,14 @@ func (m OnlineStore) Type(ctx context.Context) attr.Type {
 // Configuration for online store destination.
 type OnlineStoreConfig struct {
 	// The Unity Catalog catalog name. This name is also used as the Lakebase
-	// logical database name.
+	// logical database name. Quoting is handled by the backend where needed, do
+	// not pre-quote it.
 	CatalogName types.String `tfsdk:"catalog_name"`
 	// The name of the target online store.
 	OnlineStoreName types.String `tfsdk:"online_store_name"`
-	// The Unity Catalog schema name.
+	// The Unity Catalog schema name. This name is also used as the Lakebase
+	// schema name under the database. Quoting is handled by the backend where
+	// needed, do not pre-quote it.
 	SchemaName types.String `tfsdk:"schema_name"`
 	// Prefix for Unity Catalog table name. The materialized feature will be
 	// stored in a Lakebase table with this prefix and a generated postfix.
@@ -14731,6 +19007,68 @@ func (m Param) Type(ctx context.Context) attr.Type {
 		AttrTypes: map[string]attr.Type{
 			"key":   types.StringType,
 			"value": types.StringType,
+		},
+	}
+}
+
+// A Protocol Buffer schema paired with the name of the message within it that
+// describes the Kafka payload. A .proto file may declare multiple messages;
+// message_name disambiguates.
+type ProtoSchemaSpec struct {
+	// The fully-qualified name of the message within schema_text that describes
+	// the Kafka payload (e.g. "Event" or "com.example.Event" if schema_text
+	// declares a package). Identifies which message is used to decode each
+	// Kafka record — a .proto file may declare multiple messages but only one
+	// represents the payload. Must not be empty.
+	MessageName types.String `tfsdk:"message_name"`
+	// The raw .proto file text (proto2 and proto3 syntax supported, see
+	// https://protobuf.dev/programming-guides/proto3/ and
+	// https://protobuf.dev/programming-guides/proto2/).
+	SchemaText types.String `tfsdk:"schema_text"`
+}
+
+func (to *ProtoSchemaSpec) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from ProtoSchemaSpec) {
+}
+
+func (to *ProtoSchemaSpec) SyncFieldsDuringRead(ctx context.Context, from ProtoSchemaSpec) {
+}
+
+func (m ProtoSchemaSpec) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["message_name"] = attrs["message_name"].SetRequired()
+	attrs["schema_text"] = attrs["schema_text"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in ProtoSchemaSpec.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m ProtoSchemaSpec) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, ProtoSchemaSpec
+// only implements ToObjectValue() and Type().
+func (m ProtoSchemaSpec) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"message_name": m.MessageName,
+			"schema_text":  m.SchemaText,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m ProtoSchemaSpec) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"message_name": types.StringType,
+			"schema_text":  types.StringType,
 		},
 	}
 }
@@ -16018,6 +20356,100 @@ func (m *RenameModelResponse) SetRegisteredModel(ctx context.Context, v Model) {
 	m.RegisteredModel = vs
 }
 
+// A request-time data source whose value is provided at inference time: offline
+// batch scoring or online serving endpoint
+type RequestSource struct {
+	// A flat schema with scalar-typed fields only.
+	FlatSchema types.Object `tfsdk:"flat_schema"`
+}
+
+func (to *RequestSource) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from RequestSource) {
+	if !from.FlatSchema.IsNull() && !from.FlatSchema.IsUnknown() {
+		if toFlatSchema, ok := to.GetFlatSchema(ctx); ok {
+			if fromFlatSchema, ok := from.GetFlatSchema(ctx); ok {
+				// Recursively sync the fields of FlatSchema
+				toFlatSchema.SyncFieldsDuringCreateOrUpdate(ctx, fromFlatSchema)
+				to.SetFlatSchema(ctx, toFlatSchema)
+			}
+		}
+	}
+}
+
+func (to *RequestSource) SyncFieldsDuringRead(ctx context.Context, from RequestSource) {
+	if !from.FlatSchema.IsNull() && !from.FlatSchema.IsUnknown() {
+		if toFlatSchema, ok := to.GetFlatSchema(ctx); ok {
+			if fromFlatSchema, ok := from.GetFlatSchema(ctx); ok {
+				toFlatSchema.SyncFieldsDuringRead(ctx, fromFlatSchema)
+				to.SetFlatSchema(ctx, toFlatSchema)
+			}
+		}
+	}
+}
+
+func (m RequestSource) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["flat_schema"] = attrs["flat_schema"].SetOptional()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in RequestSource.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m RequestSource) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{
+		"flat_schema": reflect.TypeOf(FlatSchema{}),
+	}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, RequestSource
+// only implements ToObjectValue() and Type().
+func (m RequestSource) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"flat_schema": m.FlatSchema,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m RequestSource) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"flat_schema": FlatSchema{}.Type(ctx),
+		},
+	}
+}
+
+// GetFlatSchema returns the value of the FlatSchema field in RequestSource as
+// a FlatSchema value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *RequestSource) GetFlatSchema(ctx context.Context) (FlatSchema, bool) {
+	var e FlatSchema
+	if m.FlatSchema.IsNull() || m.FlatSchema.IsUnknown() {
+		return e, false
+	}
+	var v FlatSchema
+	d := m.FlatSchema.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetFlatSchema sets the value of the FlatSchema field in RequestSource.
+func (m *RequestSource) SetFlatSchema(ctx context.Context, v FlatSchema) {
+	vs := v.ToObjectValue(ctx)
+	m.FlatSchema = vs
+}
+
 type RestoreExperiment struct {
 	// ID of the associated experiment.
 	ExperimentId types.String `tfsdk:"experiment_id"`
@@ -16301,6 +20733,64 @@ func (m RestoreRunsResponse) Type(ctx context.Context) attr.Type {
 	return types.ObjectType{
 		AttrTypes: map[string]attr.Type{
 			"runs_restored": types.Int64Type,
+		},
+	}
+}
+
+// A rolling time window with an optional delay. This is the SQL-spec-aligned
+// replacement for ContinuousWindow: `delay` is the non-negative counterpart of
+// the legacy non-positive `ContinuousWindow.offset`.
+type RollingWindow struct {
+	// The delay applied to the end of the rolling window (must be
+	// non-negative). For example, delay=1d shifts the window end 1 day before
+	// the evaluation time.
+	Delay timetypes.GoDuration `tfsdk:"delay"`
+	// The duration of the rolling window (must be positive).
+	WindowDuration timetypes.GoDuration `tfsdk:"window_duration"`
+}
+
+func (to *RollingWindow) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from RollingWindow) {
+}
+
+func (to *RollingWindow) SyncFieldsDuringRead(ctx context.Context, from RollingWindow) {
+}
+
+func (m RollingWindow) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["delay"] = attrs["delay"].SetOptional()
+	attrs["window_duration"] = attrs["window_duration"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in RollingWindow.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m RollingWindow) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, RollingWindow
+// only implements ToObjectValue() and Type().
+func (m RollingWindow) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"delay":           m.Delay,
+			"window_duration": m.WindowDuration,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m RollingWindow) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"delay":           timetypes.GoDuration{}.Type(ctx),
+			"window_duration": timetypes.GoDuration{}.Type(ctx),
 		},
 	}
 }
@@ -16969,19 +21459,43 @@ func (m RunTag) Type(ctx context.Context) attr.Type {
 }
 
 type SchemaConfig struct {
+	// Avro schema in JSON format
+	// (https://avro.apache.org/docs/current/specification/).
+	AvroSchema types.String `tfsdk:"avro_schema"`
 	// Schema of the JSON object in standard IETF JSON schema format
-	// (https://json-schema.org/)
+	// (https://json-schema.org/).
 	JsonSchema types.String `tfsdk:"json_schema"`
+	// Protocol Buffer schema with its payload message name.
+	ProtoSchema types.Object `tfsdk:"proto_schema"`
 }
 
 func (to *SchemaConfig) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from SchemaConfig) {
+	if !from.ProtoSchema.IsNull() && !from.ProtoSchema.IsUnknown() {
+		if toProtoSchema, ok := to.GetProtoSchema(ctx); ok {
+			if fromProtoSchema, ok := from.GetProtoSchema(ctx); ok {
+				// Recursively sync the fields of ProtoSchema
+				toProtoSchema.SyncFieldsDuringCreateOrUpdate(ctx, fromProtoSchema)
+				to.SetProtoSchema(ctx, toProtoSchema)
+			}
+		}
+	}
 }
 
 func (to *SchemaConfig) SyncFieldsDuringRead(ctx context.Context, from SchemaConfig) {
+	if !from.ProtoSchema.IsNull() && !from.ProtoSchema.IsUnknown() {
+		if toProtoSchema, ok := to.GetProtoSchema(ctx); ok {
+			if fromProtoSchema, ok := from.GetProtoSchema(ctx); ok {
+				toProtoSchema.SyncFieldsDuringRead(ctx, fromProtoSchema)
+				to.SetProtoSchema(ctx, toProtoSchema)
+			}
+		}
+	}
 }
 
 func (m SchemaConfig) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["avro_schema"] = attrs["avro_schema"].SetOptional()
 	attrs["json_schema"] = attrs["json_schema"].SetOptional()
+	attrs["proto_schema"] = attrs["proto_schema"].SetOptional()
 
 	return attrs
 }
@@ -16994,7 +21508,9 @@ func (m SchemaConfig) ApplySchemaCustomizations(attrs map[string]tfschema.Attrib
 // plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
 // SDK values.
 func (m SchemaConfig) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
-	return map[string]reflect.Type{}
+	return map[string]reflect.Type{
+		"proto_schema": reflect.TypeOf(ProtoSchemaSpec{}),
+	}
 }
 
 // TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
@@ -17004,7 +21520,9 @@ func (m SchemaConfig) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
 	return types.ObjectValueMust(
 		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
 		map[string]attr.Value{
-			"json_schema": m.JsonSchema,
+			"avro_schema":  m.AvroSchema,
+			"json_schema":  m.JsonSchema,
+			"proto_schema": m.ProtoSchema,
 		})
 }
 
@@ -17012,9 +21530,36 @@ func (m SchemaConfig) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
 func (m SchemaConfig) Type(ctx context.Context) attr.Type {
 	return types.ObjectType{
 		AttrTypes: map[string]attr.Type{
-			"json_schema": types.StringType,
+			"avro_schema":  types.StringType,
+			"json_schema":  types.StringType,
+			"proto_schema": ProtoSchemaSpec{}.Type(ctx),
 		},
 	}
+}
+
+// GetProtoSchema returns the value of the ProtoSchema field in SchemaConfig as
+// a ProtoSchemaSpec value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *SchemaConfig) GetProtoSchema(ctx context.Context) (ProtoSchemaSpec, bool) {
+	var e ProtoSchemaSpec
+	if m.ProtoSchema.IsNull() || m.ProtoSchema.IsUnknown() {
+		return e, false
+	}
+	var v ProtoSchemaSpec
+	d := m.ProtoSchema.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetProtoSchema sets the value of the ProtoSchema field in SchemaConfig.
+func (m *SchemaConfig) SetProtoSchema(ctx context.Context, v ProtoSchemaSpec) {
+	vs := v.ToObjectValue(ctx)
+	m.ProtoSchema = vs
 }
 
 type SearchExperiments struct {
@@ -18329,6 +22874,62 @@ func (m *SearchRunsResponse) SetRuns(ctx context.Context, v []Run) {
 	m.Runs = types.ListValueMust(t, vs)
 }
 
+// Reference to an entry in a Databricks secret scope. The referenced value is
+// fetched on the Spark cluster at materialization time via
+// dbutils.secrets.get(scope, key).
+type SecretScopeReference struct {
+	// The key within the scope.
+	Key types.String `tfsdk:"key"`
+	// The Databricks secret scope name.
+	Scope types.String `tfsdk:"scope"`
+}
+
+func (to *SecretScopeReference) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from SecretScopeReference) {
+}
+
+func (to *SecretScopeReference) SyncFieldsDuringRead(ctx context.Context, from SecretScopeReference) {
+}
+
+func (m SecretScopeReference) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["key"] = attrs["key"].SetRequired()
+	attrs["scope"] = attrs["scope"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in SecretScopeReference.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m SecretScopeReference) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, SecretScopeReference
+// only implements ToObjectValue() and Type().
+func (m SecretScopeReference) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"key":   m.Key,
+			"scope": m.Scope,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m SecretScopeReference) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"key":   types.StringType,
+			"scope": types.StringType,
+		},
+	}
+}
+
 type SetExperimentTag struct {
 	// ID of the experiment under which to log the tag. Must be provided.
 	ExperimentId types.String `tfsdk:"experiment_id"`
@@ -18938,6 +23539,787 @@ func (m SlidingWindow) Type(ctx context.Context) attr.Type {
 	}
 }
 
+// Computes the population standard deviation.
+type StddevPopFunction struct {
+	// The input column from which the population standard deviation is
+	// computed. For Kafka sources, use dot-prefixed path notation (e.g.,
+	// "value.amount"). For nested fields, the leaf node name is used.
+	// Colon-prefixed notation (e.g., "value:amount") is supported for backwards
+	// compatibility but is deprecated; migrate to dot notation.
+	Input types.String `tfsdk:"input"`
+}
+
+func (to *StddevPopFunction) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from StddevPopFunction) {
+}
+
+func (to *StddevPopFunction) SyncFieldsDuringRead(ctx context.Context, from StddevPopFunction) {
+}
+
+func (m StddevPopFunction) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["input"] = attrs["input"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in StddevPopFunction.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m StddevPopFunction) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, StddevPopFunction
+// only implements ToObjectValue() and Type().
+func (m StddevPopFunction) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"input": m.Input,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m StddevPopFunction) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"input": types.StringType,
+		},
+	}
+}
+
+// Computes the sample standard deviation.
+type StddevSampFunction struct {
+	// The input column from which the sample standard deviation is computed.
+	Input types.String `tfsdk:"input"`
+}
+
+func (to *StddevSampFunction) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from StddevSampFunction) {
+}
+
+func (to *StddevSampFunction) SyncFieldsDuringRead(ctx context.Context, from StddevSampFunction) {
+}
+
+func (m StddevSampFunction) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["input"] = attrs["input"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in StddevSampFunction.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m StddevSampFunction) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, StddevSampFunction
+// only implements ToObjectValue() and Type().
+func (m StddevSampFunction) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"input": m.Input,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m StddevSampFunction) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"input": types.StringType,
+		},
+	}
+}
+
+// A Stream is a governed UC entity representing an external streaming data
+// source. The source_config oneof determines the streaming platform source
+// (e.g. Kafka, Kinesis, etc.).
+type Stream struct {
+	// Indicates whether the principal is limited to retrieving metadata for the
+	// associated object through the BROWSE privilege when include_browse is
+	// enabled in the request.
+	BrowseOnly types.Bool `tfsdk:"browse_only"`
+	// Specifies how to connect and authenticate to the stream platform.
+	ConnectionConfig types.Object `tfsdk:"connection_config"`
+	// Time at which this Stream was created.
+	CreateTime timetypes.RFC3339 `tfsdk:"create_time"`
+	// Username of the Stream creator.
+	CreatedBy types.String `tfsdk:"created_by"`
+	// User-provided description.
+	Description types.String `tfsdk:"description"`
+	// Configuration for streaming data ingestion: the managed table storing an
+	// offline copy of forward fill data and optional historical backfill.
+	IngestionConfig types.Object `tfsdk:"ingestion_config"`
+	// Full three-part (catalog.schema.stream) name of the stream.
+	Name types.String `tfsdk:"name"`
+	// Schema definitions for the stream. Currently only direct schemas are
+	// supported. In a future milestone, we will support schema registries
+	// through a UC Connection.
+	SchemaConfig types.Object `tfsdk:"schema_config"`
+	// Source-specific configuration. Determines the streaming platform source.
+	SourceConfig types.Object `tfsdk:"source_config"`
+	// Time at which this Stream was last modified.
+	UpdateTime timetypes.RFC3339 `tfsdk:"update_time"`
+	// Username of user who last modified the Stream.
+	UpdatedBy types.String `tfsdk:"updated_by"`
+}
+
+func (to *Stream) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from Stream) {
+	if !from.ConnectionConfig.IsNull() && !from.ConnectionConfig.IsUnknown() {
+		if toConnectionConfig, ok := to.GetConnectionConfig(ctx); ok {
+			if fromConnectionConfig, ok := from.GetConnectionConfig(ctx); ok {
+				// Recursively sync the fields of ConnectionConfig
+				toConnectionConfig.SyncFieldsDuringCreateOrUpdate(ctx, fromConnectionConfig)
+				to.SetConnectionConfig(ctx, toConnectionConfig)
+			}
+		}
+	}
+	if !from.IngestionConfig.IsNull() && !from.IngestionConfig.IsUnknown() {
+		if toIngestionConfig, ok := to.GetIngestionConfig(ctx); ok {
+			if fromIngestionConfig, ok := from.GetIngestionConfig(ctx); ok {
+				// Recursively sync the fields of IngestionConfig
+				toIngestionConfig.SyncFieldsDuringCreateOrUpdate(ctx, fromIngestionConfig)
+				to.SetIngestionConfig(ctx, toIngestionConfig)
+			}
+		}
+	}
+	if !from.SchemaConfig.IsNull() && !from.SchemaConfig.IsUnknown() {
+		if toSchemaConfig, ok := to.GetSchemaConfig(ctx); ok {
+			if fromSchemaConfig, ok := from.GetSchemaConfig(ctx); ok {
+				// Recursively sync the fields of SchemaConfig
+				toSchemaConfig.SyncFieldsDuringCreateOrUpdate(ctx, fromSchemaConfig)
+				to.SetSchemaConfig(ctx, toSchemaConfig)
+			}
+		}
+	}
+	if !from.SourceConfig.IsNull() && !from.SourceConfig.IsUnknown() {
+		if toSourceConfig, ok := to.GetSourceConfig(ctx); ok {
+			if fromSourceConfig, ok := from.GetSourceConfig(ctx); ok {
+				// Recursively sync the fields of SourceConfig
+				toSourceConfig.SyncFieldsDuringCreateOrUpdate(ctx, fromSourceConfig)
+				to.SetSourceConfig(ctx, toSourceConfig)
+			}
+		}
+	}
+}
+
+func (to *Stream) SyncFieldsDuringRead(ctx context.Context, from Stream) {
+	if !from.ConnectionConfig.IsNull() && !from.ConnectionConfig.IsUnknown() {
+		if toConnectionConfig, ok := to.GetConnectionConfig(ctx); ok {
+			if fromConnectionConfig, ok := from.GetConnectionConfig(ctx); ok {
+				toConnectionConfig.SyncFieldsDuringRead(ctx, fromConnectionConfig)
+				to.SetConnectionConfig(ctx, toConnectionConfig)
+			}
+		}
+	}
+	if !from.IngestionConfig.IsNull() && !from.IngestionConfig.IsUnknown() {
+		if toIngestionConfig, ok := to.GetIngestionConfig(ctx); ok {
+			if fromIngestionConfig, ok := from.GetIngestionConfig(ctx); ok {
+				toIngestionConfig.SyncFieldsDuringRead(ctx, fromIngestionConfig)
+				to.SetIngestionConfig(ctx, toIngestionConfig)
+			}
+		}
+	}
+	if !from.SchemaConfig.IsNull() && !from.SchemaConfig.IsUnknown() {
+		if toSchemaConfig, ok := to.GetSchemaConfig(ctx); ok {
+			if fromSchemaConfig, ok := from.GetSchemaConfig(ctx); ok {
+				toSchemaConfig.SyncFieldsDuringRead(ctx, fromSchemaConfig)
+				to.SetSchemaConfig(ctx, toSchemaConfig)
+			}
+		}
+	}
+	if !from.SourceConfig.IsNull() && !from.SourceConfig.IsUnknown() {
+		if toSourceConfig, ok := to.GetSourceConfig(ctx); ok {
+			if fromSourceConfig, ok := from.GetSourceConfig(ctx); ok {
+				toSourceConfig.SyncFieldsDuringRead(ctx, fromSourceConfig)
+				to.SetSourceConfig(ctx, toSourceConfig)
+			}
+		}
+	}
+}
+
+func (m Stream) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["browse_only"] = attrs["browse_only"].SetComputed()
+	attrs["connection_config"] = attrs["connection_config"].SetRequired()
+	attrs["create_time"] = attrs["create_time"].SetComputed()
+	attrs["created_by"] = attrs["created_by"].SetComputed()
+	attrs["description"] = attrs["description"].SetOptional()
+	attrs["ingestion_config"] = attrs["ingestion_config"].SetRequired()
+	attrs["name"] = attrs["name"].SetRequired()
+	attrs["schema_config"] = attrs["schema_config"].SetRequired()
+	attrs["source_config"] = attrs["source_config"].SetRequired()
+	attrs["update_time"] = attrs["update_time"].SetComputed()
+	attrs["updated_by"] = attrs["updated_by"].SetComputed()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in Stream.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m Stream) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{
+		"connection_config": reflect.TypeOf(StreamConnectionConfig{}),
+		"ingestion_config":  reflect.TypeOf(IngestionConfig{}),
+		"schema_config":     reflect.TypeOf(StreamSchemaConfig{}),
+		"source_config":     reflect.TypeOf(StreamSourceConfig{}),
+	}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, Stream
+// only implements ToObjectValue() and Type().
+func (m Stream) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"browse_only":       m.BrowseOnly,
+			"connection_config": m.ConnectionConfig,
+			"create_time":       m.CreateTime,
+			"created_by":        m.CreatedBy,
+			"description":       m.Description,
+			"ingestion_config":  m.IngestionConfig,
+			"name":              m.Name,
+			"schema_config":     m.SchemaConfig,
+			"source_config":     m.SourceConfig,
+			"update_time":       m.UpdateTime,
+			"updated_by":        m.UpdatedBy,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m Stream) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"browse_only":       types.BoolType,
+			"connection_config": StreamConnectionConfig{}.Type(ctx),
+			"create_time":       timetypes.RFC3339{}.Type(ctx),
+			"created_by":        types.StringType,
+			"description":       types.StringType,
+			"ingestion_config":  IngestionConfig{}.Type(ctx),
+			"name":              types.StringType,
+			"schema_config":     StreamSchemaConfig{}.Type(ctx),
+			"source_config":     StreamSourceConfig{}.Type(ctx),
+			"update_time":       timetypes.RFC3339{}.Type(ctx),
+			"updated_by":        types.StringType,
+		},
+	}
+}
+
+// GetConnectionConfig returns the value of the ConnectionConfig field in Stream as
+// a StreamConnectionConfig value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *Stream) GetConnectionConfig(ctx context.Context) (StreamConnectionConfig, bool) {
+	var e StreamConnectionConfig
+	if m.ConnectionConfig.IsNull() || m.ConnectionConfig.IsUnknown() {
+		return e, false
+	}
+	var v StreamConnectionConfig
+	d := m.ConnectionConfig.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetConnectionConfig sets the value of the ConnectionConfig field in Stream.
+func (m *Stream) SetConnectionConfig(ctx context.Context, v StreamConnectionConfig) {
+	vs := v.ToObjectValue(ctx)
+	m.ConnectionConfig = vs
+}
+
+// GetIngestionConfig returns the value of the IngestionConfig field in Stream as
+// a IngestionConfig value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *Stream) GetIngestionConfig(ctx context.Context) (IngestionConfig, bool) {
+	var e IngestionConfig
+	if m.IngestionConfig.IsNull() || m.IngestionConfig.IsUnknown() {
+		return e, false
+	}
+	var v IngestionConfig
+	d := m.IngestionConfig.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetIngestionConfig sets the value of the IngestionConfig field in Stream.
+func (m *Stream) SetIngestionConfig(ctx context.Context, v IngestionConfig) {
+	vs := v.ToObjectValue(ctx)
+	m.IngestionConfig = vs
+}
+
+// GetSchemaConfig returns the value of the SchemaConfig field in Stream as
+// a StreamSchemaConfig value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *Stream) GetSchemaConfig(ctx context.Context) (StreamSchemaConfig, bool) {
+	var e StreamSchemaConfig
+	if m.SchemaConfig.IsNull() || m.SchemaConfig.IsUnknown() {
+		return e, false
+	}
+	var v StreamSchemaConfig
+	d := m.SchemaConfig.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetSchemaConfig sets the value of the SchemaConfig field in Stream.
+func (m *Stream) SetSchemaConfig(ctx context.Context, v StreamSchemaConfig) {
+	vs := v.ToObjectValue(ctx)
+	m.SchemaConfig = vs
+}
+
+// GetSourceConfig returns the value of the SourceConfig field in Stream as
+// a StreamSourceConfig value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *Stream) GetSourceConfig(ctx context.Context) (StreamSourceConfig, bool) {
+	var e StreamSourceConfig
+	if m.SourceConfig.IsNull() || m.SourceConfig.IsUnknown() {
+		return e, false
+	}
+	var v StreamSourceConfig
+	d := m.SourceConfig.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetSourceConfig sets the value of the SourceConfig field in Stream.
+func (m *Stream) SetSourceConfig(ctx context.Context, v StreamSourceConfig) {
+	vs := v.ToObjectValue(ctx)
+	m.SourceConfig = vs
+}
+
+// Specifies how to connect and authenticate to the stream platform.
+type StreamConnectionConfig struct {
+	// Direct mTLS configuration for stream platform access. This is only used
+	// in the short term until UC Kafka Connections support mTLS . Once UC Kafka
+	// Connections support mTLS, this will be deprecated.
+	DirectMtlsConfig types.Object `tfsdk:"direct_mtls_config"`
+	// Name of an existing UC Connection for stream platform access. Must be the
+	// correct type for the streaming platform (e.g. a Kafka Connection for a
+	// Kafka Stream).
+	UcConnectionName types.String `tfsdk:"uc_connection_name"`
+}
+
+func (to *StreamConnectionConfig) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from StreamConnectionConfig) {
+	if !from.DirectMtlsConfig.IsNull() && !from.DirectMtlsConfig.IsUnknown() {
+		if toDirectMtlsConfig, ok := to.GetDirectMtlsConfig(ctx); ok {
+			if fromDirectMtlsConfig, ok := from.GetDirectMtlsConfig(ctx); ok {
+				// Recursively sync the fields of DirectMtlsConfig
+				toDirectMtlsConfig.SyncFieldsDuringCreateOrUpdate(ctx, fromDirectMtlsConfig)
+				to.SetDirectMtlsConfig(ctx, toDirectMtlsConfig)
+			}
+		}
+	}
+}
+
+func (to *StreamConnectionConfig) SyncFieldsDuringRead(ctx context.Context, from StreamConnectionConfig) {
+	if !from.DirectMtlsConfig.IsNull() && !from.DirectMtlsConfig.IsUnknown() {
+		if toDirectMtlsConfig, ok := to.GetDirectMtlsConfig(ctx); ok {
+			if fromDirectMtlsConfig, ok := from.GetDirectMtlsConfig(ctx); ok {
+				toDirectMtlsConfig.SyncFieldsDuringRead(ctx, fromDirectMtlsConfig)
+				to.SetDirectMtlsConfig(ctx, toDirectMtlsConfig)
+			}
+		}
+	}
+}
+
+func (m StreamConnectionConfig) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["direct_mtls_config"] = attrs["direct_mtls_config"].SetOptional()
+	attrs["uc_connection_name"] = attrs["uc_connection_name"].SetOptional()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in StreamConnectionConfig.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m StreamConnectionConfig) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{
+		"direct_mtls_config": reflect.TypeOf(DirectMtlsConfig{}),
+	}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, StreamConnectionConfig
+// only implements ToObjectValue() and Type().
+func (m StreamConnectionConfig) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"direct_mtls_config": m.DirectMtlsConfig,
+			"uc_connection_name": m.UcConnectionName,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m StreamConnectionConfig) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"direct_mtls_config": DirectMtlsConfig{}.Type(ctx),
+			"uc_connection_name": types.StringType,
+		},
+	}
+}
+
+// GetDirectMtlsConfig returns the value of the DirectMtlsConfig field in StreamConnectionConfig as
+// a DirectMtlsConfig value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *StreamConnectionConfig) GetDirectMtlsConfig(ctx context.Context) (DirectMtlsConfig, bool) {
+	var e DirectMtlsConfig
+	if m.DirectMtlsConfig.IsNull() || m.DirectMtlsConfig.IsUnknown() {
+		return e, false
+	}
+	var v DirectMtlsConfig
+	d := m.DirectMtlsConfig.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetDirectMtlsConfig sets the value of the DirectMtlsConfig field in StreamConnectionConfig.
+func (m *StreamConnectionConfig) SetDirectMtlsConfig(ctx context.Context, v DirectMtlsConfig) {
+	vs := v.ToObjectValue(ctx)
+	m.DirectMtlsConfig = vs
+}
+
+// Schema definitions for the stream. Currently only direct schemas are
+// supported. In a future milestone, we will support schema registries through a
+// UC Connection.
+type StreamSchemaConfig struct {
+	// Schema definitions provided directly on the Stream.
+	DirectSchemas types.Object `tfsdk:"direct_schemas"`
+}
+
+func (to *StreamSchemaConfig) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from StreamSchemaConfig) {
+	if !from.DirectSchemas.IsNull() && !from.DirectSchemas.IsUnknown() {
+		if toDirectSchemas, ok := to.GetDirectSchemas(ctx); ok {
+			if fromDirectSchemas, ok := from.GetDirectSchemas(ctx); ok {
+				// Recursively sync the fields of DirectSchemas
+				toDirectSchemas.SyncFieldsDuringCreateOrUpdate(ctx, fromDirectSchemas)
+				to.SetDirectSchemas(ctx, toDirectSchemas)
+			}
+		}
+	}
+}
+
+func (to *StreamSchemaConfig) SyncFieldsDuringRead(ctx context.Context, from StreamSchemaConfig) {
+	if !from.DirectSchemas.IsNull() && !from.DirectSchemas.IsUnknown() {
+		if toDirectSchemas, ok := to.GetDirectSchemas(ctx); ok {
+			if fromDirectSchemas, ok := from.GetDirectSchemas(ctx); ok {
+				toDirectSchemas.SyncFieldsDuringRead(ctx, fromDirectSchemas)
+				to.SetDirectSchemas(ctx, toDirectSchemas)
+			}
+		}
+	}
+}
+
+func (m StreamSchemaConfig) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["direct_schemas"] = attrs["direct_schemas"].SetOptional()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in StreamSchemaConfig.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m StreamSchemaConfig) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{
+		"direct_schemas": reflect.TypeOf(DirectSchemas{}),
+	}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, StreamSchemaConfig
+// only implements ToObjectValue() and Type().
+func (m StreamSchemaConfig) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"direct_schemas": m.DirectSchemas,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m StreamSchemaConfig) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"direct_schemas": DirectSchemas{}.Type(ctx),
+		},
+	}
+}
+
+// GetDirectSchemas returns the value of the DirectSchemas field in StreamSchemaConfig as
+// a DirectSchemas value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *StreamSchemaConfig) GetDirectSchemas(ctx context.Context) (DirectSchemas, bool) {
+	var e DirectSchemas
+	if m.DirectSchemas.IsNull() || m.DirectSchemas.IsUnknown() {
+		return e, false
+	}
+	var v DirectSchemas
+	d := m.DirectSchemas.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetDirectSchemas sets the value of the DirectSchemas field in StreamSchemaConfig.
+func (m *StreamSchemaConfig) SetDirectSchemas(ctx context.Context, v DirectSchemas) {
+	vs := v.ToObjectValue(ctx)
+	m.DirectSchemas = vs
+}
+
+// A Stream entity used as a data source for a feature.
+type StreamSource struct {
+	// The filter condition applied to the source data before aggregation.
+	FilterCondition types.String `tfsdk:"filter_condition"`
+	// Three-part full name of the Stream (catalog.schema.stream).
+	FullName types.String `tfsdk:"full_name"`
+}
+
+func (to *StreamSource) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from StreamSource) {
+}
+
+func (to *StreamSource) SyncFieldsDuringRead(ctx context.Context, from StreamSource) {
+}
+
+func (m StreamSource) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["filter_condition"] = attrs["filter_condition"].SetOptional()
+	attrs["full_name"] = attrs["full_name"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in StreamSource.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m StreamSource) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, StreamSource
+// only implements ToObjectValue() and Type().
+func (m StreamSource) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"filter_condition": m.FilterCondition,
+			"full_name":        m.FullName,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m StreamSource) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"filter_condition": types.StringType,
+			"full_name":        types.StringType,
+		},
+	}
+}
+
+// Source-specific configuration. Determines the streaming platform source.
+type StreamSourceConfig struct {
+	// Configuration for Apache Kafka streams.
+	KafkaStreamConfig types.Object `tfsdk:"kafka_stream_config"`
+}
+
+func (to *StreamSourceConfig) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from StreamSourceConfig) {
+	if !from.KafkaStreamConfig.IsNull() && !from.KafkaStreamConfig.IsUnknown() {
+		if toKafkaStreamConfig, ok := to.GetKafkaStreamConfig(ctx); ok {
+			if fromKafkaStreamConfig, ok := from.GetKafkaStreamConfig(ctx); ok {
+				// Recursively sync the fields of KafkaStreamConfig
+				toKafkaStreamConfig.SyncFieldsDuringCreateOrUpdate(ctx, fromKafkaStreamConfig)
+				to.SetKafkaStreamConfig(ctx, toKafkaStreamConfig)
+			}
+		}
+	}
+}
+
+func (to *StreamSourceConfig) SyncFieldsDuringRead(ctx context.Context, from StreamSourceConfig) {
+	if !from.KafkaStreamConfig.IsNull() && !from.KafkaStreamConfig.IsUnknown() {
+		if toKafkaStreamConfig, ok := to.GetKafkaStreamConfig(ctx); ok {
+			if fromKafkaStreamConfig, ok := from.GetKafkaStreamConfig(ctx); ok {
+				toKafkaStreamConfig.SyncFieldsDuringRead(ctx, fromKafkaStreamConfig)
+				to.SetKafkaStreamConfig(ctx, toKafkaStreamConfig)
+			}
+		}
+	}
+}
+
+func (m StreamSourceConfig) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["kafka_stream_config"] = attrs["kafka_stream_config"].SetOptional()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in StreamSourceConfig.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m StreamSourceConfig) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{
+		"kafka_stream_config": reflect.TypeOf(KafkaStreamConfig{}),
+	}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, StreamSourceConfig
+// only implements ToObjectValue() and Type().
+func (m StreamSourceConfig) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"kafka_stream_config": m.KafkaStreamConfig,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m StreamSourceConfig) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"kafka_stream_config": KafkaStreamConfig{}.Type(ctx),
+		},
+	}
+}
+
+// GetKafkaStreamConfig returns the value of the KafkaStreamConfig field in StreamSourceConfig as
+// a KafkaStreamConfig value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *StreamSourceConfig) GetKafkaStreamConfig(ctx context.Context) (KafkaStreamConfig, bool) {
+	var e KafkaStreamConfig
+	if m.KafkaStreamConfig.IsNull() || m.KafkaStreamConfig.IsUnknown() {
+		return e, false
+	}
+	var v KafkaStreamConfig
+	d := m.KafkaStreamConfig.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetKafkaStreamConfig sets the value of the KafkaStreamConfig field in StreamSourceConfig.
+func (m *StreamSourceConfig) SetKafkaStreamConfig(ctx context.Context, v KafkaStreamConfig) {
+	vs := v.ToObjectValue(ctx)
+	m.KafkaStreamConfig = vs
+}
+
+// The streaming mode configuration for a streaming materialization pipeline.
+type StreamingMode struct {
+	// The desired data freshness for feature materialization, expressed as a
+	// duration string (e.g. "1 minute").
+	FreshnessTarget types.String `tfsdk:"freshness_target"`
+	// The type of streaming mode used by the materialization pipeline.
+	Mode types.String `tfsdk:"mode"`
+}
+
+func (to *StreamingMode) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from StreamingMode) {
+}
+
+func (to *StreamingMode) SyncFieldsDuringRead(ctx context.Context, from StreamingMode) {
+}
+
+func (m StreamingMode) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["freshness_target"] = attrs["freshness_target"].SetOptional()
+	attrs["mode"] = attrs["mode"].SetOptional()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in StreamingMode.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m StreamingMode) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, StreamingMode
+// only implements ToObjectValue() and Type().
+func (m StreamingMode) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"freshness_target": m.FreshnessTarget,
+			"mode":             m.Mode,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m StreamingMode) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"freshness_target": types.StringType,
+			"mode":             types.StringType,
+		},
+	}
+}
+
+// Deprecated: Use KafkaSubscriptionMode instead.
 type SubscriptionMode struct {
 	// A JSON string that contains the specific topic-partitions to consume
 	// from. For example, for '{"topicA":[0,1],"topicB":[2,4]}', topicA's 0'th
@@ -18997,6 +24379,101 @@ func (m SubscriptionMode) Type(ctx context.Context) attr.Type {
 			"subscribe":         types.StringType,
 			"subscribe_pattern": types.StringType,
 		},
+	}
+}
+
+// Computes the sum of values.
+type SumFunction struct {
+	// The input column from which the sum is computed. For Kafka sources, use
+	// dot-prefixed path notation (e.g., "value.amount"). For nested fields, the
+	// leaf node name is used. Colon-prefixed notation (e.g., "value:amount") is
+	// supported for backwards compatibility but is deprecated; migrate to dot
+	// notation.
+	Input types.String `tfsdk:"input"`
+}
+
+func (to *SumFunction) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from SumFunction) {
+}
+
+func (to *SumFunction) SyncFieldsDuringRead(ctx context.Context, from SumFunction) {
+}
+
+func (m SumFunction) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["input"] = attrs["input"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in SumFunction.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m SumFunction) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, SumFunction
+// only implements ToObjectValue() and Type().
+func (m SumFunction) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"input": m.Input,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m SumFunction) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"input": types.StringType,
+		},
+	}
+}
+
+// A trigger that fires when the upstream source table changes.
+type TableTrigger struct {
+}
+
+func (to *TableTrigger) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from TableTrigger) {
+}
+
+func (to *TableTrigger) SyncFieldsDuringRead(ctx context.Context, from TableTrigger) {
+}
+
+func (m TableTrigger) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in TableTrigger.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m TableTrigger) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, TableTrigger
+// only implements ToObjectValue() and Type().
+func (m TableTrigger) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m TableTrigger) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{},
 	}
 }
 
@@ -19111,6 +24588,13 @@ func (m TestRegistryWebhookResponse) Type(ctx context.Context) attr.Type {
 
 type TimeWindow struct {
 	Continuous types.Object `tfsdk:"continuous"`
+	// A window that spans the entire lifetime of the data source.
+	Lifetime types.Object `tfsdk:"lifetime"`
+	// A long (multi-day) rolling window served via the hybrid batch + streaming
+	// path.
+	LongRolling types.Object `tfsdk:"long_rolling"`
+
+	Rolling types.Object `tfsdk:"rolling"`
 
 	Sliding types.Object `tfsdk:"sliding"`
 
@@ -19124,6 +24608,33 @@ func (to *TimeWindow) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from T
 				// Recursively sync the fields of Continuous
 				toContinuous.SyncFieldsDuringCreateOrUpdate(ctx, fromContinuous)
 				to.SetContinuous(ctx, toContinuous)
+			}
+		}
+	}
+	if !from.Lifetime.IsNull() && !from.Lifetime.IsUnknown() {
+		if toLifetime, ok := to.GetLifetime(ctx); ok {
+			if fromLifetime, ok := from.GetLifetime(ctx); ok {
+				// Recursively sync the fields of Lifetime
+				toLifetime.SyncFieldsDuringCreateOrUpdate(ctx, fromLifetime)
+				to.SetLifetime(ctx, toLifetime)
+			}
+		}
+	}
+	if !from.LongRolling.IsNull() && !from.LongRolling.IsUnknown() {
+		if toLongRolling, ok := to.GetLongRolling(ctx); ok {
+			if fromLongRolling, ok := from.GetLongRolling(ctx); ok {
+				// Recursively sync the fields of LongRolling
+				toLongRolling.SyncFieldsDuringCreateOrUpdate(ctx, fromLongRolling)
+				to.SetLongRolling(ctx, toLongRolling)
+			}
+		}
+	}
+	if !from.Rolling.IsNull() && !from.Rolling.IsUnknown() {
+		if toRolling, ok := to.GetRolling(ctx); ok {
+			if fromRolling, ok := from.GetRolling(ctx); ok {
+				// Recursively sync the fields of Rolling
+				toRolling.SyncFieldsDuringCreateOrUpdate(ctx, fromRolling)
+				to.SetRolling(ctx, toRolling)
 			}
 		}
 	}
@@ -19156,6 +24667,30 @@ func (to *TimeWindow) SyncFieldsDuringRead(ctx context.Context, from TimeWindow)
 			}
 		}
 	}
+	if !from.Lifetime.IsNull() && !from.Lifetime.IsUnknown() {
+		if toLifetime, ok := to.GetLifetime(ctx); ok {
+			if fromLifetime, ok := from.GetLifetime(ctx); ok {
+				toLifetime.SyncFieldsDuringRead(ctx, fromLifetime)
+				to.SetLifetime(ctx, toLifetime)
+			}
+		}
+	}
+	if !from.LongRolling.IsNull() && !from.LongRolling.IsUnknown() {
+		if toLongRolling, ok := to.GetLongRolling(ctx); ok {
+			if fromLongRolling, ok := from.GetLongRolling(ctx); ok {
+				toLongRolling.SyncFieldsDuringRead(ctx, fromLongRolling)
+				to.SetLongRolling(ctx, toLongRolling)
+			}
+		}
+	}
+	if !from.Rolling.IsNull() && !from.Rolling.IsUnknown() {
+		if toRolling, ok := to.GetRolling(ctx); ok {
+			if fromRolling, ok := from.GetRolling(ctx); ok {
+				toRolling.SyncFieldsDuringRead(ctx, fromRolling)
+				to.SetRolling(ctx, toRolling)
+			}
+		}
+	}
 	if !from.Sliding.IsNull() && !from.Sliding.IsUnknown() {
 		if toSliding, ok := to.GetSliding(ctx); ok {
 			if fromSliding, ok := from.GetSliding(ctx); ok {
@@ -19176,6 +24711,9 @@ func (to *TimeWindow) SyncFieldsDuringRead(ctx context.Context, from TimeWindow)
 
 func (m TimeWindow) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
 	attrs["continuous"] = attrs["continuous"].SetOptional()
+	attrs["lifetime"] = attrs["lifetime"].SetOptional()
+	attrs["long_rolling"] = attrs["long_rolling"].SetOptional()
+	attrs["rolling"] = attrs["rolling"].SetOptional()
 	attrs["sliding"] = attrs["sliding"].SetOptional()
 	attrs["tumbling"] = attrs["tumbling"].SetOptional()
 
@@ -19191,9 +24729,12 @@ func (m TimeWindow) ApplySchemaCustomizations(attrs map[string]tfschema.Attribut
 // SDK values.
 func (m TimeWindow) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
 	return map[string]reflect.Type{
-		"continuous": reflect.TypeOf(ContinuousWindow{}),
-		"sliding":    reflect.TypeOf(SlidingWindow{}),
-		"tumbling":   reflect.TypeOf(TumblingWindow{}),
+		"continuous":   reflect.TypeOf(ContinuousWindow{}),
+		"lifetime":     reflect.TypeOf(LifetimeWindow{}),
+		"long_rolling": reflect.TypeOf(LongRollingWindow{}),
+		"rolling":      reflect.TypeOf(RollingWindow{}),
+		"sliding":      reflect.TypeOf(SlidingWindow{}),
+		"tumbling":     reflect.TypeOf(TumblingWindow{}),
 	}
 }
 
@@ -19204,9 +24745,12 @@ func (m TimeWindow) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
 	return types.ObjectValueMust(
 		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
 		map[string]attr.Value{
-			"continuous": m.Continuous,
-			"sliding":    m.Sliding,
-			"tumbling":   m.Tumbling,
+			"continuous":   m.Continuous,
+			"lifetime":     m.Lifetime,
+			"long_rolling": m.LongRolling,
+			"rolling":      m.Rolling,
+			"sliding":      m.Sliding,
+			"tumbling":     m.Tumbling,
 		})
 }
 
@@ -19214,9 +24758,12 @@ func (m TimeWindow) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
 func (m TimeWindow) Type(ctx context.Context) attr.Type {
 	return types.ObjectType{
 		AttrTypes: map[string]attr.Type{
-			"continuous": ContinuousWindow{}.Type(ctx),
-			"sliding":    SlidingWindow{}.Type(ctx),
-			"tumbling":   TumblingWindow{}.Type(ctx),
+			"continuous":   ContinuousWindow{}.Type(ctx),
+			"lifetime":     LifetimeWindow{}.Type(ctx),
+			"long_rolling": LongRollingWindow{}.Type(ctx),
+			"rolling":      RollingWindow{}.Type(ctx),
+			"sliding":      SlidingWindow{}.Type(ctx),
+			"tumbling":     TumblingWindow{}.Type(ctx),
 		},
 	}
 }
@@ -19244,6 +24791,81 @@ func (m *TimeWindow) GetContinuous(ctx context.Context) (ContinuousWindow, bool)
 func (m *TimeWindow) SetContinuous(ctx context.Context, v ContinuousWindow) {
 	vs := v.ToObjectValue(ctx)
 	m.Continuous = vs
+}
+
+// GetLifetime returns the value of the Lifetime field in TimeWindow as
+// a LifetimeWindow value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *TimeWindow) GetLifetime(ctx context.Context) (LifetimeWindow, bool) {
+	var e LifetimeWindow
+	if m.Lifetime.IsNull() || m.Lifetime.IsUnknown() {
+		return e, false
+	}
+	var v LifetimeWindow
+	d := m.Lifetime.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetLifetime sets the value of the Lifetime field in TimeWindow.
+func (m *TimeWindow) SetLifetime(ctx context.Context, v LifetimeWindow) {
+	vs := v.ToObjectValue(ctx)
+	m.Lifetime = vs
+}
+
+// GetLongRolling returns the value of the LongRolling field in TimeWindow as
+// a LongRollingWindow value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *TimeWindow) GetLongRolling(ctx context.Context) (LongRollingWindow, bool) {
+	var e LongRollingWindow
+	if m.LongRolling.IsNull() || m.LongRolling.IsUnknown() {
+		return e, false
+	}
+	var v LongRollingWindow
+	d := m.LongRolling.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetLongRolling sets the value of the LongRolling field in TimeWindow.
+func (m *TimeWindow) SetLongRolling(ctx context.Context, v LongRollingWindow) {
+	vs := v.ToObjectValue(ctx)
+	m.LongRolling = vs
+}
+
+// GetRolling returns the value of the Rolling field in TimeWindow as
+// a RollingWindow value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *TimeWindow) GetRolling(ctx context.Context) (RollingWindow, bool) {
+	var e RollingWindow
+	if m.Rolling.IsNull() || m.Rolling.IsUnknown() {
+		return e, false
+	}
+	var v RollingWindow
+	d := m.Rolling.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetRolling sets the value of the Rolling field in TimeWindow.
+func (m *TimeWindow) SetRolling(ctx context.Context, v RollingWindow) {
+	vs := v.ToObjectValue(ctx)
+	m.Rolling = vs
 }
 
 // GetSliding returns the value of the Sliding field in TimeWindow as
@@ -19294,6 +24916,61 @@ func (m *TimeWindow) GetTumbling(ctx context.Context) (TumblingWindow, bool) {
 func (m *TimeWindow) SetTumbling(ctx context.Context, v TumblingWindow) {
 	vs := v.ToObjectValue(ctx)
 	m.Tumbling = vs
+}
+
+type TimeseriesColumn struct {
+	// The name of the timeseries column. For Kafka sources, use dot-prefixed
+	// path notation to reference fields within the key or value schema (e.g.,
+	// "value.event_timestamp"). For nested fields, the leaf node name (e.g.,
+	// "event_timestamp" from "value.event_details.event_timestamp") is what
+	// will be present in materialized tables and expected to match at query
+	// time. Colon-prefixed notation (e.g., "value:event_timestamp") is
+	// supported for backwards compatibility but is deprecated; migrate to dot
+	// notation.
+	Name types.String `tfsdk:"name"`
+}
+
+func (to *TimeseriesColumn) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from TimeseriesColumn) {
+}
+
+func (to *TimeseriesColumn) SyncFieldsDuringRead(ctx context.Context, from TimeseriesColumn) {
+}
+
+func (m TimeseriesColumn) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["name"] = attrs["name"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in TimeseriesColumn.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m TimeseriesColumn) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, TimeseriesColumn
+// only implements ToObjectValue() and Type().
+func (m TimeseriesColumn) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"name": m.Name,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m TimeseriesColumn) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"name": types.StringType,
+		},
+	}
 }
 
 // Details required to transition a model version's stage.
@@ -19638,6 +25315,72 @@ func (m TumblingWindow) Type(ctx context.Context) attr.Type {
 	}
 }
 
+// A Unity Catalog trace storage location. Traces are stored as Delta tables in
+// the specified catalog and schema.
+type UcTraceLocation struct {
+	// The name of the Unity Catalog catalog.
+	Catalog types.String `tfsdk:"catalog"`
+	// The name of the Unity Catalog schema within `catalog`.
+	Schema types.String `tfsdk:"schema"`
+	// The prefix for the trace tables, which are named
+	// `{catalog}.{schema}.{table_prefix}_otel_*`. May only contain letters,
+	// digits, and underscores, and may be at most 238 characters. When unset, a
+	// server-generated prefix derived from the experiment ID is used.
+	TablePrefix types.String `tfsdk:"table_prefix"`
+}
+
+func (to *UcTraceLocation) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from UcTraceLocation) {
+}
+
+func (to *UcTraceLocation) SyncFieldsDuringRead(ctx context.Context, from UcTraceLocation) {
+}
+
+func (m UcTraceLocation) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["catalog"] = attrs["catalog"].SetRequired()
+	attrs["catalog"] = attrs["catalog"].(tfschema.StringAttributeBuilder).AddPlanModifier(stringplanmodifier.RequiresReplace()).(tfschema.AttributeBuilder)
+	attrs["schema"] = attrs["schema"].SetRequired()
+	attrs["schema"] = attrs["schema"].(tfschema.StringAttributeBuilder).AddPlanModifier(stringplanmodifier.RequiresReplace()).(tfschema.AttributeBuilder)
+	attrs["table_prefix"] = attrs["table_prefix"].SetOptional()
+	attrs["table_prefix"] = attrs["table_prefix"].(tfschema.StringAttributeBuilder).AddPlanModifier(stringplanmodifier.RequiresReplace()).(tfschema.AttributeBuilder)
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in UcTraceLocation.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m UcTraceLocation) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, UcTraceLocation
+// only implements ToObjectValue() and Type().
+func (m UcTraceLocation) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"catalog":      m.Catalog,
+			"schema":       m.Schema,
+			"table_prefix": m.TablePrefix,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m UcTraceLocation) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"catalog":      types.StringType,
+			"schema":       types.StringType,
+			"table_prefix": types.StringType,
+		},
+	}
+}
+
 // Details required to edit a comment on a model version.
 type UpdateComment struct {
 	// User-provided comment on the action.
@@ -19882,7 +25625,9 @@ func (m UpdateExperimentResponse) Type(ctx context.Context) attr.Type {
 type UpdateFeatureRequest struct {
 	// Feature to update.
 	Feature types.Object `tfsdk:"feature"`
-	// The full three-part name (catalog, schema, name) of the feature.
+	// The full three-part name (catalog, schema, name) of the feature. This is
+	// the feature's resource identifier; the catalog_name, schema_name, and
+	// name fields below are OUTPUT_ONLY decomposed views of this value.
 	FullName types.String `tfsdk:"-"`
 	// The list of fields to update.
 	UpdateMask types.String `tfsdk:"-"`
@@ -20200,7 +25945,7 @@ func (m *UpdateKafkaConfigRequest) SetKafkaConfig(ctx context.Context, v KafkaCo
 type UpdateMaterializedFeatureRequest struct {
 	// The materialized feature to update.
 	MaterializedFeature types.Object `tfsdk:"materialized_feature"`
-	// Unique identifier for the materialized feature.
+	// Server-assigned unique identifier for the materialized feature.
 	MaterializedFeatureId types.String `tfsdk:"-"`
 	// Provide the materialization feature fields which should be updated.
 	// Currently, only the pipeline_state field can be updated.
@@ -20232,7 +25977,8 @@ func (to *UpdateMaterializedFeatureRequest) SyncFieldsDuringRead(ctx context.Con
 
 func (m UpdateMaterializedFeatureRequest) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
 	attrs["materialized_feature"] = attrs["materialized_feature"].SetRequired()
-	attrs["materialized_feature_id"] = attrs["materialized_feature_id"].SetComputed()
+	attrs["materialized_feature_id"] = attrs["materialized_feature_id"].SetRequired()
+	attrs["materialized_feature_id"] = attrs["materialized_feature_id"].(tfschema.StringAttributeBuilder).AddPlanModifier(stringplanmodifier.RequiresReplace()).(tfschema.AttributeBuilder)
 	attrs["update_mask"] = attrs["update_mask"].SetRequired()
 
 	return attrs
@@ -21094,6 +26840,108 @@ func (m *UpdateRunResponse) SetRunInfo(ctx context.Context, v RunInfo) {
 	m.RunInfo = vs
 }
 
+type UpdateStreamRequest struct {
+	// Full three-part (catalog.schema.stream) name of the stream.
+	Name types.String `tfsdk:"-"`
+	// The Stream to update.
+	Stream types.Object `tfsdk:"stream"`
+	// The list of fields to update.
+	UpdateMask types.String `tfsdk:"-"`
+}
+
+func (to *UpdateStreamRequest) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from UpdateStreamRequest) {
+	if !from.Stream.IsNull() && !from.Stream.IsUnknown() {
+		if toStream, ok := to.GetStream(ctx); ok {
+			if fromStream, ok := from.GetStream(ctx); ok {
+				// Recursively sync the fields of Stream
+				toStream.SyncFieldsDuringCreateOrUpdate(ctx, fromStream)
+				to.SetStream(ctx, toStream)
+			}
+		}
+	}
+}
+
+func (to *UpdateStreamRequest) SyncFieldsDuringRead(ctx context.Context, from UpdateStreamRequest) {
+	if !from.Stream.IsNull() && !from.Stream.IsUnknown() {
+		if toStream, ok := to.GetStream(ctx); ok {
+			if fromStream, ok := from.GetStream(ctx); ok {
+				toStream.SyncFieldsDuringRead(ctx, fromStream)
+				to.SetStream(ctx, toStream)
+			}
+		}
+	}
+}
+
+func (m UpdateStreamRequest) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["stream"] = attrs["stream"].SetRequired()
+	attrs["name"] = attrs["name"].SetRequired()
+	attrs["update_mask"] = attrs["update_mask"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in UpdateStreamRequest.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m UpdateStreamRequest) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{
+		"stream": reflect.TypeOf(Stream{}),
+	}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, UpdateStreamRequest
+// only implements ToObjectValue() and Type().
+func (m UpdateStreamRequest) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"name":        m.Name,
+			"stream":      m.Stream,
+			"update_mask": m.UpdateMask,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m UpdateStreamRequest) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"name":        types.StringType,
+			"stream":      Stream{}.Type(ctx),
+			"update_mask": types.StringType,
+		},
+	}
+}
+
+// GetStream returns the value of the Stream field in UpdateStreamRequest as
+// a Stream value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *UpdateStreamRequest) GetStream(ctx context.Context) (Stream, bool) {
+	var e Stream
+	if m.Stream.IsNull() || m.Stream.IsUnknown() {
+		return e, false
+	}
+	var v Stream
+	d := m.Stream.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetStream sets the value of the Stream field in UpdateStreamRequest.
+func (m *UpdateStreamRequest) SetStream(ctx context.Context, v Stream) {
+	vs := v.ToObjectValue(ctx)
+	m.Stream = vs
+}
+
 type UpdateWebhookResponse struct {
 	Webhook types.Object `tfsdk:"webhook"`
 }
@@ -21183,4 +27031,102 @@ func (m *UpdateWebhookResponse) GetWebhook(ctx context.Context) (RegistryWebhook
 func (m *UpdateWebhookResponse) SetWebhook(ctx context.Context, v RegistryWebhook) {
 	vs := v.ToObjectValue(ctx)
 	m.Webhook = vs
+}
+
+// Computes the population variance.
+type VarPopFunction struct {
+	// The input column from which the population variance is computed.
+	Input types.String `tfsdk:"input"`
+}
+
+func (to *VarPopFunction) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from VarPopFunction) {
+}
+
+func (to *VarPopFunction) SyncFieldsDuringRead(ctx context.Context, from VarPopFunction) {
+}
+
+func (m VarPopFunction) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["input"] = attrs["input"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in VarPopFunction.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m VarPopFunction) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, VarPopFunction
+// only implements ToObjectValue() and Type().
+func (m VarPopFunction) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"input": m.Input,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m VarPopFunction) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"input": types.StringType,
+		},
+	}
+}
+
+// Computes the sample variance.
+type VarSampFunction struct {
+	// The input column from which the sample variance is computed.
+	Input types.String `tfsdk:"input"`
+}
+
+func (to *VarSampFunction) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from VarSampFunction) {
+}
+
+func (to *VarSampFunction) SyncFieldsDuringRead(ctx context.Context, from VarSampFunction) {
+}
+
+func (m VarSampFunction) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["input"] = attrs["input"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in VarSampFunction.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m VarSampFunction) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, VarSampFunction
+// only implements ToObjectValue() and Type().
+func (m VarSampFunction) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"input": m.Input,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m VarSampFunction) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"input": types.StringType,
+		},
+	}
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"reflect"
 
+	"github.com/databricks/databricks-sdk-go/config"
 	"github.com/databricks/databricks-sdk-go/service/iam"
 	"github.com/databricks/terraform-provider-databricks/common"
 	pluginfwcommon "github.com/databricks/terraform-provider-databricks/internal/providers/pluginfw/common"
@@ -32,19 +33,24 @@ type UsersList struct {
 	Filter          types.String `tfsdk:"filter"`
 	ExtraAttributes types.String `tfsdk:"extra_attributes"`
 	Users           types.List   `tfsdk:"users"`
+	Api             types.String `tfsdk:"api"`
+	tfschema.Namespace
 }
 
 func (UsersList) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
 	attrs["users"] = attrs["users"].SetComputed().SetOptional()
 	attrs["filter"] = attrs["filter"].SetOptional()
 	attrs["extra_attributes"] = attrs["extra_attributes"].SetOptional()
+	attrs["api"] = attrs["api"].SetOptional()
+	attrs["provider_config"] = attrs["provider_config"].SetOptional()
 
 	return attrs
 }
 
 func (UsersList) GetComplexFieldTypes(context.Context) map[string]reflect.Type {
 	return map[string]reflect.Type{
-		"users": reflect.TypeOf(iam_tf.User{}),
+		"users":           reflect.TypeOf(iam_tf.User{}),
+		"provider_config": reflect.TypeOf(tfschema.ProviderConfigData{}),
 	}
 }
 
@@ -77,13 +83,22 @@ func (d *UsersDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 
 	if !(usersInfo.ExtraAttributes.IsNull()) {
 		attributes += ","
-		attributes += usersInfo.ExtraAttributes.String()
+		attributes += usersInfo.ExtraAttributes.ValueString()
 	}
 
 	var users []iam.User
 	var err error
 
-	if d.Client.Config.IsAccountClient() {
+	isAccount := d.Client.HostTypeForTerraform() == config.AccountHost
+	if !usersInfo.Api.IsNull() && !usersInfo.Api.IsUnknown() {
+		apiLevel := usersInfo.Api.ValueString()
+		if apiLevel != "account" && apiLevel != "workspace" {
+			resp.Diagnostics.AddError("Invalid api value", "api must be either \"account\" or \"workspace\"")
+			return
+		}
+		isAccount = apiLevel == "account"
+	}
+	if isAccount {
 		a, diags := d.Client.GetAccountClient()
 		resp.Diagnostics.Append(diags...)
 		if resp.Diagnostics.HasError() {
@@ -95,13 +110,18 @@ func (d *UsersDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 			resp.Diagnostics.AddError("Error listing account users", err.Error())
 		}
 	} else {
-		w, diags := d.Client.GetWorkspaceClient()
+		workspaceID, diags := tfschema.GetWorkspaceIDDataSource(ctx, usersInfo.ProviderConfig)
+		resp.Diagnostics.Append(diags...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		w, diags := d.Client.GetWorkspaceClientForUnifiedProviderWithDiagnostics(ctx, workspaceID)
 		resp.Diagnostics.Append(diags...)
 		if resp.Diagnostics.HasError() {
 			return
 		}
 
-		users, err = w.Users.ListAll(ctx, iam.ListUsersRequest{Filter: usersInfo.Filter.ValueString()})
+		users, err = w.Users.ListAll(ctx, iam.ListUsersRequest{Filter: usersInfo.Filter.ValueString(), Attributes: attributes})
 		if err != nil {
 			resp.Diagnostics.AddError("Error listing workspace users", err.Error())
 		}

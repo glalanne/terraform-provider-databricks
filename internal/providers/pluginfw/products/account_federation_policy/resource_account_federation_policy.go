@@ -14,6 +14,7 @@ import (
 	pluginfwcommon "github.com/databricks/terraform-provider-databricks/internal/providers/pluginfw/common"
 	pluginfwcontext "github.com/databricks/terraform-provider-databricks/internal/providers/pluginfw/context"
 	"github.com/databricks/terraform-provider-databricks/internal/providers/pluginfw/converters"
+	"github.com/databricks/terraform-provider-databricks/internal/providers/pluginfw/declarative"
 	"github.com/databricks/terraform-provider-databricks/internal/providers/pluginfw/tfschema"
 	"github.com/databricks/terraform-provider-databricks/internal/service/oauth2_tf"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -211,44 +212,6 @@ func (r *FederationPolicyResource) Configure(ctx context.Context, req resource.C
 	r.Client = autogen.ConfigureResource(req, resp)
 }
 
-func (r *FederationPolicyResource) update(ctx context.Context, plan FederationPolicy, diags *diag.Diagnostics, state *tfsdk.State) {
-	var federation_policy oauth2.FederationPolicy
-
-	diags.Append(converters.TfSdkToGoSdkStruct(ctx, plan, &federation_policy)...)
-	if diags.HasError() {
-		return
-	}
-
-	updateRequest := oauth2.UpdateAccountFederationPolicyRequest{
-		Policy:     federation_policy,
-		PolicyId:   plan.PolicyId.ValueString(),
-		UpdateMask: "description,oidc_policy",
-	}
-
-	client, clientDiags := r.Client.GetAccountClient()
-
-	diags.Append(clientDiags...)
-	if diags.HasError() {
-		return
-	}
-	response, err := client.FederationPolicy.Update(ctx, updateRequest)
-	if err != nil {
-		diags.AddError("failed to update account_federation_policy", err.Error())
-		return
-	}
-
-	var newState FederationPolicy
-
-	diags.Append(converters.GoSdkToTfSdkStruct(ctx, response, &newState)...)
-
-	if diags.HasError() {
-		return
-	}
-
-	newState.SyncFieldsDuringCreateOrUpdate(ctx, plan)
-	diags.Append(state.Set(ctx, newState)...)
-}
-
 func (r *FederationPolicyResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	ctx = pluginfwcontext.SetUserAgentInResourceContext(ctx, resourceName)
 
@@ -325,7 +288,6 @@ func (r *FederationPolicyResource) Read(ctx context.Context, req resource.ReadRe
 			resp.State.RemoveResource(ctx)
 			return
 		}
-
 		resp.Diagnostics.AddError("failed to get account_federation_policy", err.Error())
 		return
 	}
@@ -339,6 +301,44 @@ func (r *FederationPolicyResource) Read(ctx context.Context, req resource.ReadRe
 	newState.SyncFieldsDuringRead(ctx, existingState)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, newState)...)
+}
+
+func (r *FederationPolicyResource) update(ctx context.Context, plan FederationPolicy, diags *diag.Diagnostics, state *tfsdk.State) {
+	var federation_policy oauth2.FederationPolicy
+
+	diags.Append(converters.TfSdkToGoSdkStruct(ctx, plan, &federation_policy)...)
+	if diags.HasError() {
+		return
+	}
+
+	updateRequest := oauth2.UpdateAccountFederationPolicyRequest{
+		Policy:     federation_policy,
+		PolicyId:   plan.PolicyId.ValueString(),
+		UpdateMask: "description,oidc_policy",
+	}
+
+	client, clientDiags := r.Client.GetAccountClient()
+
+	diags.Append(clientDiags...)
+	if diags.HasError() {
+		return
+	}
+	response, err := client.FederationPolicy.Update(ctx, updateRequest)
+	if err != nil {
+		diags.AddError("failed to update account_federation_policy", err.Error())
+		return
+	}
+
+	var newState FederationPolicy
+
+	diags.Append(converters.GoSdkToTfSdkStruct(ctx, response, &newState)...)
+
+	if diags.HasError() {
+		return
+	}
+
+	newState.SyncFieldsDuringCreateOrUpdate(ctx, plan)
+	diags.Append(state.Set(ctx, newState)...)
 }
 
 func (r *FederationPolicyResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
@@ -376,6 +376,9 @@ func (r *FederationPolicyResource) Delete(ctx context.Context, req resource.Dele
 	}
 
 	err := client.FederationPolicy.Delete(ctx, deleteRequest)
+	if !declarative.IsDeleteError(err) {
+		err = nil
+	}
 	if err != nil && !apierr.IsMissing(err) {
 		resp.Diagnostics.AddError("failed to delete account_federation_policy", err.Error())
 		return

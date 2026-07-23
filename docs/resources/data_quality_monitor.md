@@ -4,6 +4,8 @@ subcategory: "Data Quality Monitoring"
 # databricks_data_quality_monitor Resource
 [![Public Preview](https://img.shields.io/badge/Release_Stage-Public_Preview-yellowgreen)](https://docs.databricks.com/aws/en/release-notes/release-types)
 
+[API Documentation](https://docs.databricks.com/api/workspace/dataquality)
+
 This resource allows you to set up data quality monitoring checks for Unity Catalog objects, currently schema and table. 
 
 For the `table` `object_type`, you must either:
@@ -46,6 +48,13 @@ The following arguments are supported:
 * `anomaly_detection_config` (AnomalyDetectionConfig, optional) - Anomaly Detection Configuration, applicable to `schema` object types
 * `data_profiling_config` (DataProfilingConfig, optional) - Data Profiling Configuration, applicable to `table` object types. Exactly one `Analysis Configuration`
   must be present
+* `provider_config` (ProviderConfig, optional) - Configure the provider for management through account provider.
+
+### ProviderConfig
+* `workspace_id` (string,optional) - Workspace ID which the resource belongs to. This workspace must be part of the account which the provider is configured with.
+
+### AnomalyDetectionConfig
+* `excluded_table_full_names` (list of string, optional) - List of fully qualified table names to exclude from anomaly detection
 
 ### CronSchedule
 * `quartz_cron_expression` (string, required) - The expression that determines when to run the monitor. See [examples](https://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/crontrigger.html)

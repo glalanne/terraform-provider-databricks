@@ -83,8 +83,9 @@ Resources are being migrated from SDKv2 to Plugin Framework. When migrating:
 
 ### Client Architecture
 - `common.DatabricksClient` - Core client wrapper
-- Access workspace client via `client.GetWorkspaceClient()`
+- Access workspace client via `client.GetWorkspaceClientForUnifiedProvider()`
 - Access account client via `client.GetAccountClient()`
+- **Always use `c.WorkspaceClientUnifiedProvider()` instead of `c.WorkspaceClient()`** when contributing new or modified resources.
 - Client automatically handles authentication and retries
 
 ### Testing Structure
@@ -142,6 +143,7 @@ Within each section, maintain alphabetical order.
 
 ### Documentation
 - All resources and data sources require Terraform Registry compatible documentation in `docs/`
+- Docs marked `linguist-generated=true` in `.gitattributes` (most files under `docs/resources/` and `docs/data-sources/`) are auto-generated. Do not edit them or open PRs against them — direct changes are overwritten on the next regeneration. They must be updated at their upstream source instead.
 - Code samples must be formatted with `make fmt-docs`
 - Cross-link integrity between markdown files is required
 - Use Terraform Registry Doc Preview Tool for validation

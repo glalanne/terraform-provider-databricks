@@ -38,6 +38,16 @@ type AppResource struct {
 func (a AppResource) ApplySchemaCustomizations(s map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
 	s["no_compute"] = s["no_compute"].SetOptional()
 	s["provider_config"] = s["provider_config"].SetOptional()
+	s["provider_config"] = s["provider_config"].SetComputed()
+	s["provider_config"] = s["provider_config"].(tfschema.SingleNestedAttributeBuilder).AddPlanModifier(tfschema.ProviderConfigPlanModifier{})
+	// Override workspace_id inside provider_config to Optional+Computed.
+	// ProviderConfig.ApplySchemaCustomizations sets it to Required (for migrated
+	// SDKv2 resources), but PF-native resources need Optional+Computed so the
+	// provider can populate it during apply when the user omits provider_config.
+	pcBuilder := s["provider_config"].(tfschema.SingleNestedAttributeBuilder)
+	pcBuilder.Attributes["workspace_id"] = pcBuilder.Attributes["workspace_id"].SetOptional()
+	pcBuilder.Attributes["workspace_id"] = pcBuilder.Attributes["workspace_id"].SetComputed()
+	s["provider_config"] = pcBuilder
 	s["compute_size"] = s["compute_size"].SetComputed()
 	s = apps_tf.App{}.ApplySchemaCustomizations(s)
 	return s
@@ -100,6 +110,37 @@ func (a *resourceApp) Configure(ctx context.Context, req resource.ConfigureReque
 	}
 }
 
+func (a *resourceApp) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	// Skip entirely on destroy (no plan state).
+	if req.Plan.Raw.IsNull() {
+		return
+	}
+	if a.client == nil {
+		return
+	}
+	tfschema.WorkspaceDriftDetection(ctx, a.client, req, resp)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	tfschema.ValidateWorkspaceID(ctx, a.client, req, resp)
+}
+
+// reconcileEmptyUserApiScopes preserves a user-configured empty user_api_scopes list
+// when the Apps API omits the field from its response. The API only echoes
+// user_api_scopes back while OBO authorization is active, so an app created or updated
+// with `user_api_scopes = []` (to disable OBO) deserializes back to a null list.
+// Terraform treats a known empty list and null as distinct values, so without this the
+// provider reports "inconsistent result after apply" (and then a perpetual diff). An
+// empty list is indistinguishable from "unset" on the wire, so we only restore when the
+// configured value is a known, non-null, empty list. This mirrors the SyncFields
+// reconciliation generated for databricks_app_space.
+func reconcileEmptyUserApiScopes(configured, fromAPI types.List) types.List {
+	if !configured.IsNull() && !configured.IsUnknown() && fromAPI.IsNull() && len(configured.Elements()) == 0 {
+		return configured
+	}
+	return fromAPI
+}
+
 func (a *resourceApp) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	ctx = pluginfwcontext.SetUserAgentInResourceContext(ctx, resourceName)
 
@@ -150,6 +191,7 @@ func (a *resourceApp) Create(ctx context.Context, req resource.CreateRequest, re
 	}
 	newApp.NoCompute = app.NoCompute
 	newApp.ProviderConfig = app.ProviderConfig
+	newApp.UserApiScopes = reconcileEmptyUserApiScopes(app.UserApiScopes, newApp.UserApiScopes)
 	resp.Diagnostics.Append(resp.State.Set(ctx, newApp)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -168,10 +210,16 @@ func (a *resourceApp) Create(ctx context.Context, req resource.CreateRequest, re
 		return
 	}
 	newApp.ProviderConfig = app.ProviderConfig
+	newApp.UserApiScopes = reconcileEmptyUserApiScopes(app.UserApiScopes, newApp.UserApiScopes)
 	resp.Diagnostics.Append(resp.State.Set(ctx, newApp)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	// Populate provider_config in state after Create.
+	// If the user set provider_config.workspace_id, it's already copied above.
+	// If the user relies on the provider-level workspace_id, this resolves the
+	// unknown value to the effective workspace ID.
+	resp.Diagnostics.Append(tfschema.PopulateProviderConfigInState(ctx, a.client, app.ProviderConfig, &resp.State)...)
 }
 
 // This is copied from the retries package of the databricks-sdk-go. It should be made public,
@@ -234,6 +282,10 @@ func (a *resourceApp) Read(ctx context.Context, req resource.ReadRequest, resp *
 
 	appGoSdk, err := w.Apps.GetByName(ctx, app.Name.ValueString())
 	if err != nil {
+		if apierr.IsMissing(err) {
+			resp.State.RemoveResource(ctx)
+			return
+		}
 		resp.Diagnostics.AddError("failed to read app", err.Error())
 		return
 	}
@@ -245,10 +297,15 @@ func (a *resourceApp) Read(ctx context.Context, req resource.ReadRequest, resp *
 	}
 	newApp.NoCompute = app.NoCompute
 	newApp.ProviderConfig = app.ProviderConfig
+	newApp.UserApiScopes = reconcileEmptyUserApiScopes(app.UserApiScopes, newApp.UserApiScopes)
 	resp.Diagnostics.Append(resp.State.Set(ctx, newApp)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	// Populate provider_config in state after Read.
+	// During normal refresh, provider_config is in prior state and was copied above.
+	// During import (no prior state), this resolves the effective workspace ID.
+	resp.Diagnostics.Append(tfschema.PopulateProviderConfigInState(ctx, a.client, app.ProviderConfig, &resp.State)...)
 }
 
 func (a *resourceApp) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
@@ -293,10 +350,12 @@ func (a *resourceApp) Update(ctx context.Context, req resource.UpdateRequest, re
 	// Modifying no_compute after creation has no effect.
 	newApp.NoCompute = app.NoCompute
 	newApp.ProviderConfig = app.ProviderConfig
+	newApp.UserApiScopes = reconcileEmptyUserApiScopes(app.UserApiScopes, newApp.UserApiScopes)
 	resp.Diagnostics.Append(resp.State.Set(ctx, newApp)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+	// No PopulateProviderConfigInState needed for Update: provider_config.workspace_id
+	// is already in state from a previous Create, and if the workspace ID had changed,
+	// ModifyPlan would have triggered RequiresReplace (destroy+create), so Update only
+	// runs when it's unchanged.
 }
 
 func (a *resourceApp) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {

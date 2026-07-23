@@ -17,6 +17,7 @@ import (
 	pluginfwcommon "github.com/databricks/terraform-provider-databricks/internal/providers/pluginfw/common"
 	"github.com/databricks/terraform-provider-databricks/internal/providers/pluginfw/tfschema"
 
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
@@ -1160,6 +1161,9 @@ func (m ApiKeyAuth) Type(ctx context.Context) attr.Type {
 	}
 }
 
+// Deprecated: legacy inference table configuration. Please use AI Gateway
+// inference tables instead. See
+// https://docs.databricks.com/aws/en/ai-gateway/inference-tables.
 type AutoCaptureConfigInput struct {
 	// The name of the catalog in Unity Catalog. NOTE: On update, you cannot
 	// change the catalog name if the inference table is already enabled.
@@ -1226,6 +1230,9 @@ func (m AutoCaptureConfigInput) Type(ctx context.Context) attr.Type {
 	}
 }
 
+// Deprecated: legacy inference table configuration. Please use AI Gateway
+// inference tables instead. See
+// https://docs.databricks.com/aws/en/ai-gateway/inference-tables.
 type AutoCaptureConfigOutput struct {
 	// The name of the catalog in Unity Catalog. NOTE: On update, you cannot
 	// change the catalog name if the inference table is already enabled.
@@ -1980,6 +1987,9 @@ type CreateServingEndpoint struct {
 	// Tags to be attached to the serving endpoint and automatically propagated
 	// to billing logs.
 	Tags types.List `tfsdk:"tags"`
+	// Configuration for persisting endpoint telemetry (logs, traces, and
+	// metrics) to Unity Catalog tables.
+	TelemetryConfig types.Object `tfsdk:"telemetry_config"`
 }
 
 func (to *CreateServingEndpoint) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from CreateServingEndpoint) {
@@ -2022,6 +2032,15 @@ func (to *CreateServingEndpoint) SyncFieldsDuringCreateOrUpdate(ctx context.Cont
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Tags = from.Tags
 	}
+	if !from.TelemetryConfig.IsNull() && !from.TelemetryConfig.IsUnknown() {
+		if toTelemetryConfig, ok := to.GetTelemetryConfig(ctx); ok {
+			if fromTelemetryConfig, ok := from.GetTelemetryConfig(ctx); ok {
+				// Recursively sync the fields of TelemetryConfig
+				toTelemetryConfig.SyncFieldsDuringCreateOrUpdate(ctx, fromTelemetryConfig)
+				to.SetTelemetryConfig(ctx, toTelemetryConfig)
+			}
+		}
+	}
 }
 
 func (to *CreateServingEndpoint) SyncFieldsDuringRead(ctx context.Context, from CreateServingEndpoint) {
@@ -2061,6 +2080,14 @@ func (to *CreateServingEndpoint) SyncFieldsDuringRead(ctx context.Context, from 
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Tags = from.Tags
 	}
+	if !from.TelemetryConfig.IsNull() && !from.TelemetryConfig.IsUnknown() {
+		if toTelemetryConfig, ok := to.GetTelemetryConfig(ctx); ok {
+			if fromTelemetryConfig, ok := from.GetTelemetryConfig(ctx); ok {
+				toTelemetryConfig.SyncFieldsDuringRead(ctx, fromTelemetryConfig)
+				to.SetTelemetryConfig(ctx, toTelemetryConfig)
+			}
+		}
+	}
 }
 
 func (m CreateServingEndpoint) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
@@ -2073,6 +2100,7 @@ func (m CreateServingEndpoint) ApplySchemaCustomizations(attrs map[string]tfsche
 	attrs["rate_limits"] = attrs["rate_limits"].SetOptional()
 	attrs["route_optimized"] = attrs["route_optimized"].SetOptional()
 	attrs["tags"] = attrs["tags"].SetOptional()
+	attrs["telemetry_config"] = attrs["telemetry_config"].SetOptional()
 
 	return attrs
 }
@@ -2091,6 +2119,7 @@ func (m CreateServingEndpoint) GetComplexFieldTypes(ctx context.Context) map[str
 		"email_notifications": reflect.TypeOf(EmailNotifications{}),
 		"rate_limits":         reflect.TypeOf(RateLimit{}),
 		"tags":                reflect.TypeOf(EndpointTag{}),
+		"telemetry_config":    reflect.TypeOf(TelemetryConfig{}),
 	}
 }
 
@@ -2110,6 +2139,7 @@ func (m CreateServingEndpoint) ToObjectValue(ctx context.Context) basetypes.Obje
 			"rate_limits":         m.RateLimits,
 			"route_optimized":     m.RouteOptimized,
 			"tags":                m.Tags,
+			"telemetry_config":    m.TelemetryConfig,
 		})
 }
 
@@ -2130,6 +2160,7 @@ func (m CreateServingEndpoint) Type(ctx context.Context) attr.Type {
 			"tags": basetypes.ListType{
 				ElemType: EndpointTag{}.Type(ctx),
 			},
+			"telemetry_config": TelemetryConfig{}.Type(ctx),
 		},
 	}
 }
@@ -2259,6 +2290,31 @@ func (m *CreateServingEndpoint) SetTags(ctx context.Context, v []EndpointTag) {
 	t := m.Type(ctx).(basetypes.ObjectType).AttrTypes["tags"]
 	t = t.(attr.TypeWithElementType).ElementType()
 	m.Tags = types.ListValueMust(t, vs)
+}
+
+// GetTelemetryConfig returns the value of the TelemetryConfig field in CreateServingEndpoint as
+// a TelemetryConfig value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *CreateServingEndpoint) GetTelemetryConfig(ctx context.Context) (TelemetryConfig, bool) {
+	var e TelemetryConfig
+	if m.TelemetryConfig.IsNull() || m.TelemetryConfig.IsUnknown() {
+		return e, false
+	}
+	var v TelemetryConfig
+	d := m.TelemetryConfig.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetTelemetryConfig sets the value of the TelemetryConfig field in CreateServingEndpoint.
+func (m *CreateServingEndpoint) SetTelemetryConfig(ctx context.Context, v TelemetryConfig) {
+	vs := v.ToObjectValue(ctx)
+	m.TelemetryConfig = vs
 }
 
 // Configs needed to create a custom provider model route.
@@ -3000,11 +3056,10 @@ func (m *EmbeddingsV1ResponseEmbeddingElement) SetEmbedding(ctx context.Context,
 }
 
 type EndpointCoreConfigInput struct {
-	// Configuration for Inference Tables which automatically logs requests and
-	// responses to Unity Catalog. Note: this field is deprecated for creating
-	// new provisioned throughput endpoints, or updating existing provisioned
-	// throughput endpoints that never have inference table configured; in these
-	// cases please use AI Gateway to manage inference tables.
+	// Configuration for legacy Inference Tables which automatically log
+	// requests and responses to Unity Catalog. Deprecated: please use AI
+	// Gateway inference tables instead. See
+	// https://docs.databricks.com/aws/en/ai-gateway/inference-tables.
 	AutoCaptureConfig types.Object `tfsdk:"auto_capture_config"`
 	// The name of the serving endpoint to update. This field is required.
 	Name types.String `tfsdk:"-"`
@@ -3242,11 +3297,10 @@ func (m *EndpointCoreConfigInput) SetTrafficConfig(ctx context.Context, v Traffi
 }
 
 type EndpointCoreConfigOutput struct {
-	// Configuration for Inference Tables which automatically logs requests and
-	// responses to Unity Catalog. Note: this field is deprecated for creating
-	// new provisioned throughput endpoints, or updating existing provisioned
-	// throughput endpoints that never have inference table configured; in these
-	// cases please use AI Gateway to manage inference tables.
+	// Configuration for legacy Inference Tables which automatically log
+	// requests and responses to Unity Catalog. Deprecated: please use AI
+	// Gateway inference tables instead. See
+	// https://docs.databricks.com/aws/en/ai-gateway/inference-tables.
 	AutoCaptureConfig types.Object `tfsdk:"auto_capture_config"`
 	// The config version that the serving endpoint is currently serving.
 	ConfigVersion types.Int64 `tfsdk:"config_version"`
@@ -3621,11 +3675,10 @@ func (m *EndpointCoreConfigSummary) SetServedModels(ctx context.Context, v []Ser
 }
 
 type EndpointPendingConfig struct {
-	// Configuration for Inference Tables which automatically logs requests and
-	// responses to Unity Catalog. Note: this field is deprecated for creating
-	// new provisioned throughput endpoints, or updating existing provisioned
-	// throughput endpoints that never have inference table configured; in these
-	// cases please use AI Gateway to manage inference tables.
+	// Configuration for legacy Inference Tables which automatically log
+	// requests and responses to Unity Catalog. Deprecated: please use AI
+	// Gateway inference tables instead. See
+	// https://docs.databricks.com/aws/en/ai-gateway/inference-tables.
 	AutoCaptureConfig types.Object `tfsdk:"auto_capture_config"`
 	// The config version that the serving endpoint is currently serving.
 	ConfigVersion types.Int64 `tfsdk:"config_version"`
@@ -4183,6 +4236,12 @@ type ExternalFunctionRequest struct {
 	Params types.String `tfsdk:"params"`
 	// The relative path for the API endpoint. This is required.
 	Path types.String `tfsdk:"path"`
+	// Optional subdomain to prepend to the connection URL's host. If provided,
+	// this will be added as a prefix to the connection URL's host. For example,
+	// if the connection URL is `https://api.example.com/v1` and `sub_domain` is
+	// `"custom"`, the resulting URL will be
+	// `https://custom.api.example.com/v1`.
+	SubDomain types.String `tfsdk:"sub_domain"`
 }
 
 func (to *ExternalFunctionRequest) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from ExternalFunctionRequest) {
@@ -4198,6 +4257,7 @@ func (m ExternalFunctionRequest) ApplySchemaCustomizations(attrs map[string]tfsc
 	attrs["method"] = attrs["method"].SetRequired()
 	attrs["params"] = attrs["params"].SetOptional()
 	attrs["path"] = attrs["path"].SetRequired()
+	attrs["sub_domain"] = attrs["sub_domain"].SetOptional()
 
 	return attrs
 }
@@ -4226,6 +4286,7 @@ func (m ExternalFunctionRequest) ToObjectValue(ctx context.Context) basetypes.Ob
 			"method":          m.Method,
 			"params":          m.Params,
 			"path":            m.Path,
+			"sub_domain":      m.SubDomain,
 		})
 }
 
@@ -4239,6 +4300,7 @@ func (m ExternalFunctionRequest) Type(ctx context.Context) attr.Type {
 			"method":          types.StringType,
 			"params":          types.StringType,
 			"path":            types.StringType,
+			"sub_domain":      types.StringType,
 		},
 	}
 }
@@ -6181,6 +6243,11 @@ func (m *PtEndpointCoreConfig) SetTrafficConfig(ctx context.Context, v TrafficCo
 }
 
 type PtServedModel struct {
+	// Whether burst scaling is enabled. When enabled (default), the endpoint
+	// can automatically scale up beyond provisioned capacity to handle traffic
+	// spikes. When disabled, the endpoint maintains fixed capacity at
+	// provisioned_model_units.
+	BurstScalingEnabled types.Bool `tfsdk:"burst_scaling_enabled"`
 	// The name of the entity to be served. The entity may be a model in the
 	// Databricks Model Registry, a model in the Unity Catalog (UC), or a
 	// function of type FEATURE_SPEC in the UC. If it is a UC object, the full
@@ -6206,6 +6273,7 @@ func (to *PtServedModel) SyncFieldsDuringRead(ctx context.Context, from PtServed
 }
 
 func (m PtServedModel) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["burst_scaling_enabled"] = attrs["burst_scaling_enabled"].SetOptional()
 	attrs["entity_name"] = attrs["entity_name"].SetRequired()
 	attrs["entity_version"] = attrs["entity_version"].SetOptional()
 	attrs["name"] = attrs["name"].SetOptional()
@@ -6232,6 +6300,7 @@ func (m PtServedModel) ToObjectValue(ctx context.Context) basetypes.ObjectValue 
 	return types.ObjectValueMust(
 		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
 		map[string]attr.Value{
+			"burst_scaling_enabled":   m.BurstScalingEnabled,
 			"entity_name":             m.EntityName,
 			"entity_version":          m.EntityVersion,
 			"name":                    m.Name,
@@ -6243,6 +6312,7 @@ func (m PtServedModel) ToObjectValue(ctx context.Context) basetypes.ObjectValue 
 func (m PtServedModel) Type(ctx context.Context) attr.Type {
 	return types.ObjectType{
 		AttrTypes: map[string]attr.Type{
+			"burst_scaling_enabled":   types.BoolType,
 			"entity_name":             types.StringType,
 			"entity_version":          types.StringType,
 			"name":                    types.StringType,
@@ -7454,6 +7524,8 @@ type QueryEndpointResponse struct {
 	// endpoint, one of [text_completion, chat.completion, list (of
 	// embeddings)].
 	Object types.String `tfsdk:"object"`
+	// The outputs of the feature serving endpoint.
+	Outputs types.List `tfsdk:"outputs"`
 	// The predictions returned by the serving endpoint.
 	Predictions types.List `tfsdk:"predictions"`
 	// The name of the served model that served the request. This is useful when
@@ -7477,6 +7549,12 @@ func (to *QueryEndpointResponse) SyncFieldsDuringCreateOrUpdate(ctx context.Cont
 		// If a user specified a non-Null, empty list for Data, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Data = from.Data
+	}
+	if !from.Outputs.IsNull() && !from.Outputs.IsUnknown() && to.Outputs.IsNull() && len(from.Outputs.Elements()) == 0 {
+		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
+		// If a user specified a non-Null, empty list for Outputs, and the deserialized field value is Null,
+		// set the resulting resource state to the empty list to match the planned value.
+		to.Outputs = from.Outputs
 	}
 	if !from.Predictions.IsNull() && !from.Predictions.IsUnknown() && to.Predictions.IsNull() && len(from.Predictions.Elements()) == 0 {
 		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
@@ -7508,6 +7586,12 @@ func (to *QueryEndpointResponse) SyncFieldsDuringRead(ctx context.Context, from 
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Data = from.Data
 	}
+	if !from.Outputs.IsNull() && !from.Outputs.IsUnknown() && to.Outputs.IsNull() && len(from.Outputs.Elements()) == 0 {
+		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
+		// If a user specified a non-Null, empty list for Outputs, and the deserialized field value is Null,
+		// set the resulting resource state to the empty list to match the planned value.
+		to.Outputs = from.Outputs
+	}
 	if !from.Predictions.IsNull() && !from.Predictions.IsUnknown() && to.Predictions.IsNull() && len(from.Predictions.Elements()) == 0 {
 		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
 		// If a user specified a non-Null, empty list for Predictions, and the deserialized field value is Null,
@@ -7531,6 +7615,7 @@ func (m QueryEndpointResponse) ApplySchemaCustomizations(attrs map[string]tfsche
 	attrs["id"] = attrs["id"].SetOptional()
 	attrs["model"] = attrs["model"].SetOptional()
 	attrs["object"] = attrs["object"].SetOptional()
+	attrs["outputs"] = attrs["outputs"].SetOptional()
 	attrs["predictions"] = attrs["predictions"].SetOptional()
 	attrs["usage"] = attrs["usage"].SetOptional()
 	attrs["served_model_name"] = attrs["served_model_name"].SetOptional()
@@ -7549,6 +7634,7 @@ func (m QueryEndpointResponse) GetComplexFieldTypes(ctx context.Context) map[str
 	return map[string]reflect.Type{
 		"choices":     reflect.TypeOf(V1ResponseChoiceElement{}),
 		"data":        reflect.TypeOf(EmbeddingsV1ResponseEmbeddingElement{}),
+		"outputs":     reflect.TypeOf(types.Object{}),
 		"predictions": reflect.TypeOf(types.Object{}),
 		"usage":       reflect.TypeOf(ExternalModelUsageElement{}),
 	}
@@ -7567,6 +7653,7 @@ func (m QueryEndpointResponse) ToObjectValue(ctx context.Context) basetypes.Obje
 			"id":                m.Id,
 			"model":             m.Model,
 			"object":            m.Object,
+			"outputs":           m.Outputs,
 			"predictions":       m.Predictions,
 			"served_model_name": m.ServedModelName,
 			"usage":             m.Usage,
@@ -7587,6 +7674,9 @@ func (m QueryEndpointResponse) Type(ctx context.Context) attr.Type {
 			"id":     types.StringType,
 			"model":  types.StringType,
 			"object": types.StringType,
+			"outputs": basetypes.ListType{
+				ElemType: jsontypes.NormalizedType{},
+			},
 			"predictions": basetypes.ListType{
 				ElemType: types.ObjectType{},
 			},
@@ -7646,6 +7736,32 @@ func (m *QueryEndpointResponse) SetData(ctx context.Context, v []EmbeddingsV1Res
 	t := m.Type(ctx).(basetypes.ObjectType).AttrTypes["data"]
 	t = t.(attr.TypeWithElementType).ElementType()
 	m.Data = types.ListValueMust(t, vs)
+}
+
+// GetOutputs returns the value of the Outputs field in QueryEndpointResponse as
+// a slice of types.Object values.
+// If the field is unknown or null, the boolean return value is false.
+func (m *QueryEndpointResponse) GetOutputs(ctx context.Context) ([]types.Object, bool) {
+	if m.Outputs.IsNull() || m.Outputs.IsUnknown() {
+		return nil, false
+	}
+	var v []types.Object
+	d := m.Outputs.ElementsAs(ctx, &v, true)
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetOutputs sets the value of the Outputs field in QueryEndpointResponse.
+func (m *QueryEndpointResponse) SetOutputs(ctx context.Context, v []types.Object) {
+	vs := make([]attr.Value, 0, len(v))
+	for _, e := range v {
+		vs = append(vs, e)
+	}
+	t := m.Type(ctx).(basetypes.ObjectType).AttrTypes["outputs"]
+	t = t.(attr.TypeWithElementType).ElementType()
+	m.Outputs = types.ListValueMust(t, vs)
 }
 
 // GetPredictions returns the value of the Predictions field in QueryEndpointResponse as
@@ -7820,6 +7936,11 @@ func (m Route) Type(ctx context.Context) attr.Type {
 }
 
 type ServedEntityInput struct {
+	// Whether burst scaling is enabled. When enabled (default), the endpoint
+	// can automatically scale up beyond provisioned capacity to handle traffic
+	// spikes. When disabled, the endpoint maintains fixed capacity at
+	// provisioned_model_units.
+	BurstScalingEnabled types.Bool `tfsdk:"burst_scaling_enabled"`
 	// The name of the entity to be served. The entity may be a model in the
 	// Databricks Model Registry, a model in the Unity Catalog (UC), or a
 	// function of type FEATURE_SPEC in the UC. If it is a UC object, the full
@@ -7913,6 +8034,7 @@ func (to *ServedEntityInput) SyncFieldsDuringRead(ctx context.Context, from Serv
 }
 
 func (m ServedEntityInput) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["burst_scaling_enabled"] = attrs["burst_scaling_enabled"].SetOptional()
 	attrs["entity_name"] = attrs["entity_name"].SetOptional()
 	attrs["entity_version"] = attrs["entity_version"].SetOptional()
 	attrs["environment_vars"] = attrs["environment_vars"].SetOptional()
@@ -7952,6 +8074,7 @@ func (m ServedEntityInput) ToObjectValue(ctx context.Context) basetypes.ObjectVa
 	return types.ObjectValueMust(
 		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
 		map[string]attr.Value{
+			"burst_scaling_enabled":       m.BurstScalingEnabled,
 			"entity_name":                 m.EntityName,
 			"entity_version":              m.EntityVersion,
 			"environment_vars":            m.EnvironmentVars,
@@ -7973,8 +8096,9 @@ func (m ServedEntityInput) ToObjectValue(ctx context.Context) basetypes.ObjectVa
 func (m ServedEntityInput) Type(ctx context.Context) attr.Type {
 	return types.ObjectType{
 		AttrTypes: map[string]attr.Type{
-			"entity_name":    types.StringType,
-			"entity_version": types.StringType,
+			"burst_scaling_enabled": types.BoolType,
+			"entity_name":           types.StringType,
+			"entity_version":        types.StringType,
 			"environment_vars": basetypes.MapType{
 				ElemType: types.StringType,
 			},
@@ -8045,6 +8169,12 @@ func (m *ServedEntityInput) SetExternalModel(ctx context.Context, v ExternalMode
 }
 
 type ServedEntityOutput struct {
+	// Whether burst scaling is enabled. When enabled (default), the endpoint
+	// can automatically scale up beyond provisioned capacity to handle traffic
+	// spikes. When disabled, the endpoint maintains fixed capacity at
+	// provisioned_model_units.
+	BurstScalingEnabled types.Bool `tfsdk:"burst_scaling_enabled"`
+
 	CreationTimestamp types.Int64 `tfsdk:"creation_timestamp"`
 
 	Creator types.String `tfsdk:"creator"`
@@ -8179,6 +8309,7 @@ func (to *ServedEntityOutput) SyncFieldsDuringRead(ctx context.Context, from Ser
 }
 
 func (m ServedEntityOutput) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["burst_scaling_enabled"] = attrs["burst_scaling_enabled"].SetOptional()
 	attrs["creation_timestamp"] = attrs["creation_timestamp"].SetOptional()
 	attrs["creator"] = attrs["creator"].SetOptional()
 	attrs["entity_name"] = attrs["entity_name"].SetOptional()
@@ -8224,6 +8355,7 @@ func (m ServedEntityOutput) ToObjectValue(ctx context.Context) basetypes.ObjectV
 	return types.ObjectValueMust(
 		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
 		map[string]attr.Value{
+			"burst_scaling_enabled":       m.BurstScalingEnabled,
 			"creation_timestamp":          m.CreationTimestamp,
 			"creator":                     m.Creator,
 			"entity_name":                 m.EntityName,
@@ -8249,10 +8381,11 @@ func (m ServedEntityOutput) ToObjectValue(ctx context.Context) basetypes.ObjectV
 func (m ServedEntityOutput) Type(ctx context.Context) attr.Type {
 	return types.ObjectType{
 		AttrTypes: map[string]attr.Type{
-			"creation_timestamp": types.Int64Type,
-			"creator":            types.StringType,
-			"entity_name":        types.StringType,
-			"entity_version":     types.StringType,
+			"burst_scaling_enabled": types.BoolType,
+			"creation_timestamp":    types.Int64Type,
+			"creator":               types.StringType,
+			"entity_name":           types.StringType,
+			"entity_version":        types.StringType,
 			"environment_vars": basetypes.MapType{
 				ElemType: types.StringType,
 			},
@@ -8529,6 +8662,11 @@ func (m *ServedEntitySpec) SetFoundationModel(ctx context.Context, v FoundationM
 }
 
 type ServedModelInput struct {
+	// Whether burst scaling is enabled. When enabled (default), the endpoint
+	// can automatically scale up beyond provisioned capacity to handle traffic
+	// spikes. When disabled, the endpoint maintains fixed capacity at
+	// provisioned_model_units.
+	BurstScalingEnabled types.Bool `tfsdk:"burst_scaling_enabled"`
 	// An object containing a set of optional, user-specified environment
 	// variable key-value pairs used for serving this entity. Note: this is an
 	// experimental feature and subject to change. Example entity environment
@@ -8592,6 +8730,7 @@ func (to *ServedModelInput) SyncFieldsDuringRead(ctx context.Context, from Serve
 }
 
 func (m ServedModelInput) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["burst_scaling_enabled"] = attrs["burst_scaling_enabled"].SetOptional()
 	attrs["environment_vars"] = attrs["environment_vars"].SetOptional()
 	attrs["instance_profile_arn"] = attrs["instance_profile_arn"].SetOptional()
 	attrs["max_provisioned_concurrency"] = attrs["max_provisioned_concurrency"].SetOptional()
@@ -8629,6 +8768,7 @@ func (m ServedModelInput) ToObjectValue(ctx context.Context) basetypes.ObjectVal
 	return types.ObjectValueMust(
 		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
 		map[string]attr.Value{
+			"burst_scaling_enabled":       m.BurstScalingEnabled,
 			"environment_vars":            m.EnvironmentVars,
 			"instance_profile_arn":        m.InstanceProfileArn,
 			"max_provisioned_concurrency": m.MaxProvisionedConcurrency,
@@ -8649,6 +8789,7 @@ func (m ServedModelInput) ToObjectValue(ctx context.Context) basetypes.ObjectVal
 func (m ServedModelInput) Type(ctx context.Context) attr.Type {
 	return types.ObjectType{
 		AttrTypes: map[string]attr.Type{
+			"burst_scaling_enabled": types.BoolType,
 			"environment_vars": basetypes.MapType{
 				ElemType: types.StringType,
 			},
@@ -8695,6 +8836,12 @@ func (m *ServedModelInput) SetEnvironmentVars(ctx context.Context, v map[string]
 }
 
 type ServedModelOutput struct {
+	// Whether burst scaling is enabled. When enabled (default), the endpoint
+	// can automatically scale up beyond provisioned capacity to handle traffic
+	// spikes. When disabled, the endpoint maintains fixed capacity at
+	// provisioned_model_units.
+	BurstScalingEnabled types.Bool `tfsdk:"burst_scaling_enabled"`
+
 	CreationTimestamp types.Int64 `tfsdk:"creation_timestamp"`
 
 	Creator types.String `tfsdk:"creator"`
@@ -8776,6 +8923,7 @@ func (to *ServedModelOutput) SyncFieldsDuringRead(ctx context.Context, from Serv
 }
 
 func (m ServedModelOutput) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["burst_scaling_enabled"] = attrs["burst_scaling_enabled"].SetOptional()
 	attrs["creation_timestamp"] = attrs["creation_timestamp"].SetOptional()
 	attrs["creator"] = attrs["creator"].SetOptional()
 	attrs["environment_vars"] = attrs["environment_vars"].SetOptional()
@@ -8815,6 +8963,7 @@ func (m ServedModelOutput) ToObjectValue(ctx context.Context) basetypes.ObjectVa
 	return types.ObjectValueMust(
 		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
 		map[string]attr.Value{
+			"burst_scaling_enabled":       m.BurstScalingEnabled,
 			"creation_timestamp":          m.CreationTimestamp,
 			"creator":                     m.Creator,
 			"environment_vars":            m.EnvironmentVars,
@@ -8836,8 +8985,9 @@ func (m ServedModelOutput) ToObjectValue(ctx context.Context) basetypes.ObjectVa
 func (m ServedModelOutput) Type(ctx context.Context) attr.Type {
 	return types.ObjectType{
 		AttrTypes: map[string]attr.Type{
-			"creation_timestamp": types.Int64Type,
-			"creator":            types.StringType,
+			"burst_scaling_enabled": types.BoolType,
+			"creation_timestamp":    types.Int64Type,
+			"creator":               types.StringType,
 			"environment_vars": basetypes.MapType{
 				ElemType: types.StringType,
 			},
@@ -9094,6 +9244,9 @@ type ServingEndpoint struct {
 	Tags types.List `tfsdk:"tags"`
 	// The task type of the serving endpoint.
 	Task types.String `tfsdk:"task"`
+	// Telemetry configuration for the endpoint, including inference-table
+	// payload logging.
+	TelemetryConfig types.Object `tfsdk:"telemetry_config"`
 	// The usage policy associated with serving endpoint.
 	UsagePolicyId types.String `tfsdk:"usage_policy_id"`
 }
@@ -9132,6 +9285,15 @@ func (to *ServingEndpoint) SyncFieldsDuringCreateOrUpdate(ctx context.Context, f
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Tags = from.Tags
 	}
+	if !from.TelemetryConfig.IsNull() && !from.TelemetryConfig.IsUnknown() {
+		if toTelemetryConfig, ok := to.GetTelemetryConfig(ctx); ok {
+			if fromTelemetryConfig, ok := from.GetTelemetryConfig(ctx); ok {
+				// Recursively sync the fields of TelemetryConfig
+				toTelemetryConfig.SyncFieldsDuringCreateOrUpdate(ctx, fromTelemetryConfig)
+				to.SetTelemetryConfig(ctx, toTelemetryConfig)
+			}
+		}
+	}
 }
 
 func (to *ServingEndpoint) SyncFieldsDuringRead(ctx context.Context, from ServingEndpoint) {
@@ -9165,6 +9327,14 @@ func (to *ServingEndpoint) SyncFieldsDuringRead(ctx context.Context, from Servin
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Tags = from.Tags
 	}
+	if !from.TelemetryConfig.IsNull() && !from.TelemetryConfig.IsUnknown() {
+		if toTelemetryConfig, ok := to.GetTelemetryConfig(ctx); ok {
+			if fromTelemetryConfig, ok := from.GetTelemetryConfig(ctx); ok {
+				toTelemetryConfig.SyncFieldsDuringRead(ctx, fromTelemetryConfig)
+				to.SetTelemetryConfig(ctx, toTelemetryConfig)
+			}
+		}
+	}
 }
 
 func (m ServingEndpoint) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
@@ -9180,6 +9350,7 @@ func (m ServingEndpoint) ApplySchemaCustomizations(attrs map[string]tfschema.Att
 	attrs["state"] = attrs["state"].SetOptional()
 	attrs["tags"] = attrs["tags"].SetOptional()
 	attrs["task"] = attrs["task"].SetOptional()
+	attrs["telemetry_config"] = attrs["telemetry_config"].SetOptional()
 	attrs["usage_policy_id"] = attrs["usage_policy_id"].SetOptional()
 
 	return attrs
@@ -9194,10 +9365,11 @@ func (m ServingEndpoint) ApplySchemaCustomizations(attrs map[string]tfschema.Att
 // SDK values.
 func (m ServingEndpoint) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
 	return map[string]reflect.Type{
-		"ai_gateway": reflect.TypeOf(AiGatewayConfig{}),
-		"config":     reflect.TypeOf(EndpointCoreConfigSummary{}),
-		"state":      reflect.TypeOf(EndpointState{}),
-		"tags":       reflect.TypeOf(EndpointTag{}),
+		"ai_gateway":       reflect.TypeOf(AiGatewayConfig{}),
+		"config":           reflect.TypeOf(EndpointCoreConfigSummary{}),
+		"state":            reflect.TypeOf(EndpointState{}),
+		"tags":             reflect.TypeOf(EndpointTag{}),
+		"telemetry_config": reflect.TypeOf(TelemetryConfig{}),
 	}
 }
 
@@ -9220,6 +9392,7 @@ func (m ServingEndpoint) ToObjectValue(ctx context.Context) basetypes.ObjectValu
 			"state":                  m.State,
 			"tags":                   m.Tags,
 			"task":                   m.Task,
+			"telemetry_config":       m.TelemetryConfig,
 			"usage_policy_id":        m.UsagePolicyId,
 		})
 }
@@ -9241,8 +9414,9 @@ func (m ServingEndpoint) Type(ctx context.Context) attr.Type {
 			"tags": basetypes.ListType{
 				ElemType: EndpointTag{}.Type(ctx),
 			},
-			"task":            types.StringType,
-			"usage_policy_id": types.StringType,
+			"task":             types.StringType,
+			"telemetry_config": TelemetryConfig{}.Type(ctx),
+			"usage_policy_id":  types.StringType,
 		},
 	}
 }
@@ -9346,6 +9520,31 @@ func (m *ServingEndpoint) SetTags(ctx context.Context, v []EndpointTag) {
 	t := m.Type(ctx).(basetypes.ObjectType).AttrTypes["tags"]
 	t = t.(attr.TypeWithElementType).ElementType()
 	m.Tags = types.ListValueMust(t, vs)
+}
+
+// GetTelemetryConfig returns the value of the TelemetryConfig field in ServingEndpoint as
+// a TelemetryConfig value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *ServingEndpoint) GetTelemetryConfig(ctx context.Context) (TelemetryConfig, bool) {
+	var e TelemetryConfig
+	if m.TelemetryConfig.IsNull() || m.TelemetryConfig.IsUnknown() {
+		return e, false
+	}
+	var v TelemetryConfig
+	d := m.TelemetryConfig.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetTelemetryConfig sets the value of the TelemetryConfig field in ServingEndpoint.
+func (m *ServingEndpoint) SetTelemetryConfig(ctx context.Context, v TelemetryConfig) {
+	vs := v.ToObjectValue(ctx)
+	m.TelemetryConfig = vs
 }
 
 type ServingEndpointAccessControlRequest struct {
@@ -9562,6 +9761,9 @@ type ServingEndpointDetailed struct {
 	Tags types.List `tfsdk:"tags"`
 	// The task type of the serving endpoint.
 	Task types.String `tfsdk:"task"`
+	// Telemetry configuration for the endpoint, including inference-table
+	// payload logging.
+	TelemetryConfig types.Object `tfsdk:"telemetry_config"`
 }
 
 func (to *ServingEndpointDetailed) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from ServingEndpointDetailed) {
@@ -9625,6 +9827,15 @@ func (to *ServingEndpointDetailed) SyncFieldsDuringCreateOrUpdate(ctx context.Co
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Tags = from.Tags
 	}
+	if !from.TelemetryConfig.IsNull() && !from.TelemetryConfig.IsUnknown() {
+		if toTelemetryConfig, ok := to.GetTelemetryConfig(ctx); ok {
+			if fromTelemetryConfig, ok := from.GetTelemetryConfig(ctx); ok {
+				// Recursively sync the fields of TelemetryConfig
+				toTelemetryConfig.SyncFieldsDuringCreateOrUpdate(ctx, fromTelemetryConfig)
+				to.SetTelemetryConfig(ctx, toTelemetryConfig)
+			}
+		}
+	}
 }
 
 func (to *ServingEndpointDetailed) SyncFieldsDuringRead(ctx context.Context, from ServingEndpointDetailed) {
@@ -9682,6 +9893,14 @@ func (to *ServingEndpointDetailed) SyncFieldsDuringRead(ctx context.Context, fro
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Tags = from.Tags
 	}
+	if !from.TelemetryConfig.IsNull() && !from.TelemetryConfig.IsUnknown() {
+		if toTelemetryConfig, ok := to.GetTelemetryConfig(ctx); ok {
+			if fromTelemetryConfig, ok := from.GetTelemetryConfig(ctx); ok {
+				toTelemetryConfig.SyncFieldsDuringRead(ctx, fromTelemetryConfig)
+				to.SetTelemetryConfig(ctx, toTelemetryConfig)
+			}
+		}
+	}
 }
 
 func (m ServingEndpointDetailed) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
@@ -9703,6 +9922,7 @@ func (m ServingEndpointDetailed) ApplySchemaCustomizations(attrs map[string]tfsc
 	attrs["state"] = attrs["state"].SetOptional()
 	attrs["tags"] = attrs["tags"].SetOptional()
 	attrs["task"] = attrs["task"].SetOptional()
+	attrs["telemetry_config"] = attrs["telemetry_config"].SetOptional()
 
 	return attrs
 }
@@ -9723,6 +9943,7 @@ func (m ServingEndpointDetailed) GetComplexFieldTypes(ctx context.Context) map[s
 		"pending_config":      reflect.TypeOf(EndpointPendingConfig{}),
 		"state":               reflect.TypeOf(EndpointState{}),
 		"tags":                reflect.TypeOf(EndpointTag{}),
+		"telemetry_config":    reflect.TypeOf(TelemetryConfig{}),
 	}
 }
 
@@ -9751,6 +9972,7 @@ func (m ServingEndpointDetailed) ToObjectValue(ctx context.Context) basetypes.Ob
 			"state":                  m.State,
 			"tags":                   m.Tags,
 			"task":                   m.Task,
+			"telemetry_config":       m.TelemetryConfig,
 		})
 }
 
@@ -9777,7 +9999,8 @@ func (m ServingEndpointDetailed) Type(ctx context.Context) attr.Type {
 			"tags": basetypes.ListType{
 				ElemType: EndpointTag{}.Type(ctx),
 			},
-			"task": types.StringType,
+			"task":             types.StringType,
+			"telemetry_config": TelemetryConfig{}.Type(ctx),
 		},
 	}
 }
@@ -9956,6 +10179,31 @@ func (m *ServingEndpointDetailed) SetTags(ctx context.Context, v []EndpointTag) 
 	t := m.Type(ctx).(basetypes.ObjectType).AttrTypes["tags"]
 	t = t.(attr.TypeWithElementType).ElementType()
 	m.Tags = types.ListValueMust(t, vs)
+}
+
+// GetTelemetryConfig returns the value of the TelemetryConfig field in ServingEndpointDetailed as
+// a TelemetryConfig value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *ServingEndpointDetailed) GetTelemetryConfig(ctx context.Context) (TelemetryConfig, bool) {
+	var e TelemetryConfig
+	if m.TelemetryConfig.IsNull() || m.TelemetryConfig.IsUnknown() {
+		return e, false
+	}
+	var v TelemetryConfig
+	d := m.TelemetryConfig.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetTelemetryConfig sets the value of the TelemetryConfig field in ServingEndpointDetailed.
+func (m *ServingEndpointDetailed) SetTelemetryConfig(ctx context.Context, v TelemetryConfig) {
+	vs := v.ToObjectValue(ctx)
+	m.TelemetryConfig = vs
 }
 
 type ServingEndpointPermission struct {
@@ -10300,6 +10548,153 @@ func (m *ServingEndpointPermissionsRequest) SetAccessControlList(ctx context.Con
 	t := m.Type(ctx).(basetypes.ObjectType).AttrTypes["access_control_list"]
 	t = t.(attr.TypeWithElementType).ElementType()
 	m.AccessControlList = types.ListValueMust(t, vs)
+}
+
+type TelemetryConfig struct {
+	// Configuration for inference table payload logging, including sampling.
+	InferenceTableConfig types.Object `tfsdk:"inference_table_config"`
+}
+
+func (to *TelemetryConfig) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from TelemetryConfig) {
+	if !from.InferenceTableConfig.IsNull() && !from.InferenceTableConfig.IsUnknown() {
+		if toInferenceTableConfig, ok := to.GetInferenceTableConfig(ctx); ok {
+			if fromInferenceTableConfig, ok := from.GetInferenceTableConfig(ctx); ok {
+				// Recursively sync the fields of InferenceTableConfig
+				toInferenceTableConfig.SyncFieldsDuringCreateOrUpdate(ctx, fromInferenceTableConfig)
+				to.SetInferenceTableConfig(ctx, toInferenceTableConfig)
+			}
+		}
+	}
+}
+
+func (to *TelemetryConfig) SyncFieldsDuringRead(ctx context.Context, from TelemetryConfig) {
+	if !from.InferenceTableConfig.IsNull() && !from.InferenceTableConfig.IsUnknown() {
+		if toInferenceTableConfig, ok := to.GetInferenceTableConfig(ctx); ok {
+			if fromInferenceTableConfig, ok := from.GetInferenceTableConfig(ctx); ok {
+				toInferenceTableConfig.SyncFieldsDuringRead(ctx, fromInferenceTableConfig)
+				to.SetInferenceTableConfig(ctx, toInferenceTableConfig)
+			}
+		}
+	}
+}
+
+func (m TelemetryConfig) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["inference_table_config"] = attrs["inference_table_config"].SetOptional()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in TelemetryConfig.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m TelemetryConfig) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{
+		"inference_table_config": reflect.TypeOf(TelemetryInferenceTableConfig{}),
+	}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, TelemetryConfig
+// only implements ToObjectValue() and Type().
+func (m TelemetryConfig) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"inference_table_config": m.InferenceTableConfig,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m TelemetryConfig) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"inference_table_config": TelemetryInferenceTableConfig{}.Type(ctx),
+		},
+	}
+}
+
+// GetInferenceTableConfig returns the value of the InferenceTableConfig field in TelemetryConfig as
+// a TelemetryInferenceTableConfig value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *TelemetryConfig) GetInferenceTableConfig(ctx context.Context) (TelemetryInferenceTableConfig, bool) {
+	var e TelemetryInferenceTableConfig
+	if m.InferenceTableConfig.IsNull() || m.InferenceTableConfig.IsUnknown() {
+		return e, false
+	}
+	var v TelemetryInferenceTableConfig
+	d := m.InferenceTableConfig.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetInferenceTableConfig sets the value of the InferenceTableConfig field in TelemetryConfig.
+func (m *TelemetryConfig) SetInferenceTableConfig(ctx context.Context, v TelemetryInferenceTableConfig) {
+	vs := v.ToObjectValue(ctx)
+	m.InferenceTableConfig = vs
+}
+
+// Inference table payload logging configuration
+type TelemetryInferenceTableConfig struct {
+	// The full name of the inference table created for this endpoint.
+	Name types.String `tfsdk:"name"`
+	// Fraction of requests sampled for payload logging, in the range [0.0,
+	// 1.0], where 1.0 logs all requests.
+	SamplingFraction types.Float64 `tfsdk:"sampling_fraction"`
+}
+
+func (to *TelemetryInferenceTableConfig) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from TelemetryInferenceTableConfig) {
+}
+
+func (to *TelemetryInferenceTableConfig) SyncFieldsDuringRead(ctx context.Context, from TelemetryInferenceTableConfig) {
+}
+
+func (m TelemetryInferenceTableConfig) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["name"] = attrs["name"].SetComputed()
+	attrs["sampling_fraction"] = attrs["sampling_fraction"].SetOptional()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in TelemetryInferenceTableConfig.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m TelemetryInferenceTableConfig) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, TelemetryInferenceTableConfig
+// only implements ToObjectValue() and Type().
+func (m TelemetryInferenceTableConfig) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"name":              m.Name,
+			"sampling_fraction": m.SamplingFraction,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m TelemetryInferenceTableConfig) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"name":              types.StringType,
+			"sampling_fraction": types.Float64Type,
+		},
+	}
 }
 
 type TrafficConfig struct {

@@ -3,6 +3,8 @@ subcategory: "Unity Catalog"
 ---
 # databricks_storage_credential Resource
 
+[API Documentation](https://docs.databricks.com/api/workspace/storagecredentials)
+
 To work with external tables, Unity Catalog introduces two new objects to access and work with external cloud storage:
 
 - `databricks_storage_credential` represents authentication methods to access cloud storage (e.g. an IAM role for Amazon S3 or a service principal/managed identity for Azure Storage). Storage credentials are access-controlled to determine which users can use the credential.
@@ -83,6 +85,7 @@ The following arguments are required:
 - `force_destroy` - (Optional) Delete storage credential regardless of its dependencies.
 - `force_update` - (Optional) Update storage credential regardless of its dependents.
 - `isolation_mode` - (Optional) Whether the storage credential is accessible from all workspaces or a specific set of workspaces. Can be `ISOLATION_MODE_ISOLATED` or `ISOLATION_MODE_OPEN`. Setting the credential to `ISOLATION_MODE_ISOLATED` will automatically allow access from the current workspace.
+- `api` - (Optional) Specifies whether to use account-level or workspace-level API. Valid values are `account` and `workspace`. When not set, the API level is inferred from the provider host.
 
 `aws_iam_role` optional configuration block for credential details for AWS:
 
@@ -109,6 +112,9 @@ The following arguments are required:
 - `directory_id` - The directory ID corresponding to the Azure Active Directory (AAD) tenant of the application
 - `application_id` - The application ID of the application registration within the referenced AAD tenant
 - `client_secret` - The client secret generated for the above app ID in AAD. **This field is redacted on output**
+
+* `provider_config` - (Optional) Configure the provider for management through account provider. This block consists of the following fields:
+  * `workspace_id` - (Required) Workspace ID which the resource belongs to. This workspace must be part of the account which the provider is configured with.
 
 ## Attribute Reference
 

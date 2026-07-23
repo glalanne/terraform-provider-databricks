@@ -70,7 +70,13 @@ func readLibrary(ctx context.Context, w *databricks.WorkspaceClient, waitParams 
 			return libraryExtended, d
 		}
 	}
-	d.AddError("failed to find the installed library", fmt.Sprintf("failed to find %s on %s", libraryRep, waitParams.ClusterID))
+	if waitParams.IsRefresh {
+		// During Read, the library may have been removed outside of Terraform (e.g. via UI).
+		// Return nil without error so the caller can remove it from state and trigger re-creation.
+		d.AddWarning("library not found", fmt.Sprintf("library %s not found on cluster %s", libraryRep, waitParams.ClusterID))
+	} else {
+		d.AddError("failed to find the installed library", fmt.Sprintf("failed to find %s on %s", libraryRep, waitParams.ClusterID))
+	}
 	return nil, d
 }
 
@@ -130,6 +136,27 @@ func (r *LibraryResource) Configure(ctx context.Context, req resource.ConfigureR
 	if r.Client == nil {
 		r.Client = pluginfwcommon.ConfigureResource(req, resp)
 	}
+}
+
+func (r *LibraryResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	if req.Plan.Raw.IsNull() {
+		return
+	}
+	if r.Client == nil {
+		return
+	}
+	var plan LibraryExtended
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	workspaceID, diags := tfschema.GetWorkspaceID_SdkV2(ctx, plan.ProviderConfig)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	_, validateDiags := r.Client.GetWorkspaceClientForUnifiedProviderWithDiagnostics(ctx, workspaceID)
+	resp.Diagnostics.Append(validateDiags...)
 }
 
 func (r *LibraryResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

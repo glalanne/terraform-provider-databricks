@@ -1,15 +1,38 @@
 package catalog_test
 
 import (
+	"context"
 	"fmt"
 	"regexp"
+	"strconv"
 	"testing"
 
+	"github.com/databricks/databricks-sdk-go"
 	"github.com/databricks/terraform-provider-databricks/internal/acceptance"
 	"github.com/databricks/terraform-provider-databricks/qa"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
+	"github.com/stretchr/testify/require"
 )
+
+func TestUcAccCatalogForceDestroyConsistentAfterImport(t *testing.T) {
+	acceptance.LoadUcwsEnv(t)
+	template := `
+		resource "databricks_catalog" "test" {
+			name          = "sandbox{var.STICKY_RANDOM}"
+			comment       = "test force_destroy import consistency"
+		}`
+	acceptance.UnityWorkspaceLevel(t,
+		acceptance.Step{
+			Template: template,
+		},
+		acceptance.Step{
+			ImportState:       true,
+			ResourceName:      "databricks_catalog.test",
+			ImportStateVerify: true,
+		},
+	)
+}
 
 func TestUcAccCatalog(t *testing.T) {
 	acceptance.LoadUcwsEnv(t)
@@ -133,7 +156,7 @@ func TestUcAccCatalogHmsConnectionUpdate(t *testing.T) {
 	otherAuthorizedPath := fmt.Sprintf("s3://%s/path/to/authorized", qa.RandomName("hms-other-bucket-"))
 	otherInfra := fmt.Sprintf(`
 		resource "databricks_connection" "sandbox" {
-			name = "hms_connection{var.STICKY_RANDOM}"
+			name = "tf-test-hms-connection-{var.STICKY_RANDOM}"
 			connection_type = "HIVE_METASTORE"
 			comment         = "created in TestUcAccCatalogHmsConnectionUpdate"
 			options = {
@@ -223,5 +246,121 @@ func TestUcAccCatalogHmsConnectionUpdate(t *testing.T) {
 				authorized_paths = "%s,%s"
 			}
 		}`, authorizedPath, otherAuthorizedPath),
+	})
+}
+
+func catalogProviderConfigTemplate(catalogName string, providerConfig string) string {
+	return fmt.Sprintf(`
+	resource "databricks_catalog" "this" {
+		name = "%s"
+		comment = "test catalog"
+		force_destroy = true
+		%s
+	}
+`, catalogName, providerConfig)
+}
+
+func TestAccCatalog_ProviderConfig_EmptyID(t *testing.T) {
+	acceptance.UnityWorkspaceLevel(t, acceptance.Step{
+		Template: catalogProviderConfigTemplate("test_catalog_{var.STICKY_RANDOM}", `
+			provider_config {
+				workspace_id = ""
+			}
+		`),
+		ExpectError: regexp.MustCompile(`expected "provider_config.0.workspace_id" to not be an empty string`),
+		PlanOnly:    true,
+	})
+}
+
+func TestAccCatalog_ProviderConfig_Mismatched(t *testing.T) {
+	acceptance.UnityWorkspaceLevel(t, acceptance.Step{
+		Template: catalogProviderConfigTemplate("test_catalog_{var.STICKY_RANDOM}", `
+			provider_config {
+				workspace_id = "123"
+			}
+		`),
+		ExpectError: regexp.MustCompile(`workspace_id mismatch.*please check the workspace_id provided in provider_config`),
+	})
+}
+
+func TestAccCatalog_ProviderConfig_Match(t *testing.T) {
+	acceptance.LoadUcwsEnv(t)
+	ctx := context.Background()
+	w := databricks.Must(databricks.NewWorkspaceClient())
+	workspaceID, err := w.CurrentWorkspaceID(ctx)
+	require.NoError(t, err)
+	workspaceIDStr := strconv.FormatInt(workspaceID, 10)
+	catalogName := "test_catalog_{var.STICKY_RANDOM}"
+	acceptance.UnityWorkspaceLevel(t, acceptance.Step{
+		Template: catalogProviderConfigTemplate(catalogName, ""),
+	}, acceptance.Step{
+		Template: catalogProviderConfigTemplate(catalogName, fmt.Sprintf(`
+			provider_config {
+				workspace_id = "%s"
+			}
+		`, workspaceIDStr)),
+		ConfigPlanChecks: resource.ConfigPlanChecks{
+			PreApply: []plancheck.PlanCheck{
+				plancheck.ExpectResourceAction("databricks_catalog.this", plancheck.ResourceActionNoop),
+			},
+		},
+	})
+}
+
+func TestAccCatalog_ProviderConfig_Recreate(t *testing.T) {
+	acceptance.LoadUcwsEnv(t)
+	ctx := context.Background()
+	w := databricks.Must(databricks.NewWorkspaceClient())
+	workspaceID, err := w.CurrentWorkspaceID(ctx)
+	require.NoError(t, err)
+	workspaceIDStr := strconv.FormatInt(workspaceID, 10)
+	catalogName := "test_catalog_{var.STICKY_RANDOM}"
+	acceptance.UnityWorkspaceLevel(t, acceptance.Step{
+		Template: catalogProviderConfigTemplate(catalogName, ""),
+	}, acceptance.Step{
+		Template: catalogProviderConfigTemplate(catalogName, fmt.Sprintf(`
+			provider_config {
+				workspace_id = "%s"
+			}
+		`, workspaceIDStr)),
+	}, acceptance.Step{
+		Template: catalogProviderConfigTemplate(catalogName, `
+			provider_config {
+				workspace_id = "123"
+			}
+		`),
+		ConfigPlanChecks: resource.ConfigPlanChecks{
+			PostApplyPreRefresh: []plancheck.PlanCheck{
+				plancheck.ExpectResourceAction("databricks_catalog.this", plancheck.ResourceActionDestroyBeforeCreate),
+			},
+		},
+		PlanOnly:           true,
+		ExpectNonEmptyPlan: true,
+	})
+}
+
+func TestAccCatalog_ProviderConfig_Remove(t *testing.T) {
+	acceptance.LoadUcwsEnv(t)
+	ctx := context.Background()
+	w := databricks.Must(databricks.NewWorkspaceClient())
+	workspaceID, err := w.CurrentWorkspaceID(ctx)
+	require.NoError(t, err)
+	workspaceIDStr := strconv.FormatInt(workspaceID, 10)
+	catalogName := "test_catalog_{var.STICKY_RANDOM}"
+	acceptance.UnityWorkspaceLevel(t, acceptance.Step{
+		Template: catalogProviderConfigTemplate(catalogName, ""),
+	}, acceptance.Step{
+		Template: catalogProviderConfigTemplate(catalogName, fmt.Sprintf(`
+			provider_config {
+				workspace_id = "%s"
+			}
+		`, workspaceIDStr)),
+	}, acceptance.Step{
+		Template: catalogProviderConfigTemplate(catalogName, ""),
+		ConfigPlanChecks: resource.ConfigPlanChecks{
+			PreApply: []plancheck.PlanCheck{
+				plancheck.ExpectResourceAction("databricks_catalog.this", plancheck.ResourceActionNoop),
+			},
+		},
 	})
 }

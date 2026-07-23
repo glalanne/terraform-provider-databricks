@@ -16,8 +16,10 @@ import (
 	"time"
 
 	"github.com/databricks/databricks-sdk-go"
+	"github.com/databricks/databricks-sdk-go/config"
 	"github.com/databricks/databricks-sdk-go/service/catalog"
 	"github.com/databricks/databricks-sdk-go/service/compute"
+	"github.com/databricks/databricks-sdk-go/service/iam"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
@@ -126,6 +128,8 @@ type importContext struct {
 	notebooksFormat                         string
 	updatedSinceStr                         string
 	updatedSinceMs                          int64
+	targetCloud                             string
+	nodeTypeMappings                        *nodeTypeMappings
 
 	waitGroup *sync.WaitGroup
 
@@ -453,7 +457,7 @@ func (ic *importContext) Run() error {
 		return fmt.Errorf("the path %s is not a directory", ic.Directory)
 	}
 
-	ic.accountLevel = ic.Client.Config.IsAccountClient()
+	ic.accountLevel = ic.Client.HostTypeForTerraform() == config.AccountHost
 	if ic.accountLevel {
 		ic.meAdmin = true
 		// TODO: check if we can get the current user from the account client
@@ -466,7 +470,7 @@ func (ic *importContext) Run() error {
 		if err != nil {
 			return err
 		}
-		me, err := ic.workspaceClient.CurrentUser.Me(ic.Context)
+		me, err := ic.workspaceClient.CurrentUser.Me(ic.Context, iam.MeRequest{ExcludedAttributes: "entitlements"})
 		if err != nil {
 			return err
 		}
@@ -793,24 +797,15 @@ func (ic *importContext) regexFix(s string, fixes []regexFix) string {
 
 func (ic *importContext) ResourceName(r *resource) string {
 	name := r.Name
-	if name == "" && ic.Importables[r.Resource].Name != nil {
-		// For Plugin Framework resources, r.Data is nil but r.DataWrapper exists
-		// We need to handle name generation differently
-		ir := ic.Importables[r.Resource]
-		if ir.PluginFramework && r.Data == nil && r.DataWrapper != nil {
-			// For Plugin Framework, generate name directly from wrapper
-			// Most Plugin Framework resources use makeNamePlusIdFunc("field_name")
-			// For alert_v2, it's makeNamePlusIdFunc("display_name")
-			// We'll extract the display_name value and append the ID
-			if displayName, ok := r.DataWrapper.GetOk("display_name"); ok && displayName != "" {
-				name = displayName.(string) + "_" + r.ID
-			} else {
-				// Fallback to just using ID
-				name = r.ID
-			}
-		} else {
-			name = ir.Name(ic, r.Data)
-		}
+	ir := ic.Importables[r.Resource]
+
+	// Try NameUnified first (works for both SDKv2 and Plugin Framework)
+	if name == "" && ir.NameUnified != nil && r.DataWrapper != nil {
+		name = ir.NameUnified(ic, r.DataWrapper)
+	}
+	// If name is still empty, try the legacy Name function
+	if name == "" && ir.Name != nil && r.Data != nil {
+		name = ir.Name(ic, r.Data)
 	}
 	if name == "" {
 		name = r.ID
@@ -1063,7 +1058,11 @@ func (ic *importContext) readPluginFrameworkResource(r *resource, ir importable)
 		return nil
 	}
 
-	return &PluginFrameworkResourceData{state: finalState, schema: pfSchema}
+	return &PluginFrameworkResourceData{
+		state:      finalState,
+		schema:     pfSchema,
+		resourceId: r.ID,
+	}
 }
 
 // convertPluginFrameworkToGoSdk is a generic helper that converts Plugin Framework state to Go SDK struct.

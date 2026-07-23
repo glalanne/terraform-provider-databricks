@@ -3,6 +3,8 @@ subcategory: "Security"
 ---
 # databricks_group Resource
 
+[API Documentation](https://docs.databricks.com/api/workspace/groups)
+
 This resource allows you to manage both [account groups and workspace-local groups](https://docs.databricks.com/administration-guide/users-groups/groups.html). You can use the [databricks_group_member resource](group_member.md) to assign Databricks users, [service principals](service_principal.md) as well as other groups as members of the group. This is useful if you are using an application to sync users & groups with SCIM API.
 
 -> This resource can be used with an account or workspace-level provider.
@@ -97,6 +99,7 @@ The following arguments are supported:
 * `workspace_access` - (Optional) This is a field to allow the group to have access to a Databricks Workspace UI and [Databricks One](https://docs.databricks.com/aws/en/workspace/databricks-one#who-can-access-databricks-one).
 * `workspace_consume` - (Optional) This is a field to allow the group to have access only to [Databricks One](https://docs.databricks.com/aws/en/workspace/databricks-one#who-can-access-databricks-one).  Couldn't be used with `workspace_access` or `databricks_sql_access`.
 * `force` - (Optional) Ignore `cannot create group: Group with name X already exists.` errors and implicitly import the specific group into Terraform state, enforcing entitlements defined in the instance of resource. _This functionality is experimental_ and is designed to simplify corner cases, like Azure Active Directory synchronisation.
+* `api` - (Optional) Specifies whether to use account-level or workspace-level API. Valid values are `account` and `workspace`. When not set, the API level is inferred from the provider host.
 
 ## Attribute Reference
 

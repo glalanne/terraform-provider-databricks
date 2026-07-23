@@ -6,7 +6,6 @@ import (
 	"context"
 	"reflect"
 
-	"github.com/databricks/databricks-sdk-go/apierr"
 	"github.com/databricks/databricks-sdk-go/service/settings"
 	"github.com/databricks/terraform-provider-databricks/internal/providers/pluginfw/autogen"
 	pluginfwcontext "github.com/databricks/terraform-provider-databricks/internal/providers/pluginfw/context"
@@ -38,6 +37,12 @@ type AccountNetworkPolicyData struct {
 	AccountId types.String `tfsdk:"account_id"`
 	// The network policies applying for egress traffic.
 	Egress types.Object `tfsdk:"egress"`
+	// The network policies applying for ingress traffic.
+	Ingress types.Object `tfsdk:"ingress"`
+	// The ingress policy for dry run mode. Dry run will always run even if the
+	// request is allowed by the ingress policy. When this field is set, the
+	// policy will be evaluated and emit logs only without blocking requests.
+	IngressDryRun types.Object `tfsdk:"ingress_dry_run"`
 	// The unique identifier for the network policy.
 	NetworkPolicyId types.String `tfsdk:"network_policy_id"`
 }
@@ -51,7 +56,9 @@ type AccountNetworkPolicyData struct {
 // (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF SDK values.
 func (m AccountNetworkPolicyData) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
 	return map[string]reflect.Type{
-		"egress": reflect.TypeOf(settings_tf.NetworkPolicyEgress{}),
+		"egress":          reflect.TypeOf(settings_tf.NetworkPolicyEgress{}),
+		"ingress":         reflect.TypeOf(settings_tf.CustomerFacingIngressNetworkPolicy{}),
+		"ingress_dry_run": reflect.TypeOf(settings_tf.CustomerFacingIngressNetworkPolicy{}),
 	}
 }
 
@@ -67,6 +74,8 @@ func (m AccountNetworkPolicyData) ToObjectValue(ctx context.Context) basetypes.O
 		map[string]attr.Value{
 			"account_id":        m.AccountId,
 			"egress":            m.Egress,
+			"ingress":           m.Ingress,
+			"ingress_dry_run":   m.IngressDryRun,
 			"network_policy_id": m.NetworkPolicyId,
 		},
 	)
@@ -79,6 +88,8 @@ func (m AccountNetworkPolicyData) Type(ctx context.Context) attr.Type {
 		AttrTypes: map[string]attr.Type{
 			"account_id":        types.StringType,
 			"egress":            settings_tf.NetworkPolicyEgress{}.Type(ctx),
+			"ingress":           settings_tf.CustomerFacingIngressNetworkPolicy{}.Type(ctx),
+			"ingress_dry_run":   settings_tf.CustomerFacingIngressNetworkPolicy{}.Type(ctx),
 			"network_policy_id": types.StringType,
 		},
 	}
@@ -87,6 +98,8 @@ func (m AccountNetworkPolicyData) Type(ctx context.Context) attr.Type {
 func (m AccountNetworkPolicyData) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
 	attrs["account_id"] = attrs["account_id"].SetComputed()
 	attrs["egress"] = attrs["egress"].SetComputed()
+	attrs["ingress"] = attrs["ingress"].SetComputed()
+	attrs["ingress_dry_run"] = attrs["ingress_dry_run"].SetComputed()
 	attrs["network_policy_id"] = attrs["network_policy_id"].SetRequired()
 
 	return attrs
@@ -133,11 +146,6 @@ func (r *AccountNetworkPolicyDataSource) Read(ctx context.Context, req datasourc
 
 	response, err := client.NetworkPolicies.GetNetworkPolicyRpc(ctx, readRequest)
 	if err != nil {
-		if apierr.IsMissing(err) {
-			resp.State.RemoveResource(ctx)
-			return
-		}
-
 		resp.Diagnostics.AddError("failed to get account_network_policy", err.Error())
 		return
 	}

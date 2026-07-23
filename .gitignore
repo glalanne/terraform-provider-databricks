@@ -349,3 +349,9 @@ common/testdata/.azure
 
 # Claude local memory
 CLAUDE.local.md
+*.orig
+*.rej
+
+# JFrog CLI config
+.jfrog/
+/exporter/LOGGING_MIGRATION.md

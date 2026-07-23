@@ -4,6 +4,8 @@ subcategory: "Compute"
 
 # databricks_job Resource
 
+[API Documentation](https://docs.databricks.com/api/workspace/jobs)
+
 The `databricks_job` resource allows you to manage [Databricks Jobs](https://docs.databricks.com/jobs.html) to run non-interactive code in a [databricks_cluster](cluster.md).
 
 -> This resource can only be used with a workspace-level provider!
@@ -142,6 +144,7 @@ This block describes individual tasks:
 * `disable_auto_optimization` - (Optional) A flag to disable auto optimization in serverless tasks.
 * `email_notifications` - (Optional) An optional block to specify a set of email addresses notified when this task begins, completes or fails. The default behavior is to not send any emails. This block is [documented below](#email_notifications-configuration-block).
 * `environment_key` - (Optional) identifier of an `environment` block that is used to specify libraries.  Required for some tasks (`spark_python_task`, `python_wheel_task`, ...) running on serverless compute.
+* `disabled` - (Optional) (Bool) An optional flag to disable the task. If set to `true`, the task will not run even if it is part of a job.
 * `existing_cluster_id` - (Optional) Identifier of the [interactive cluster](cluster.md) to run job on.  *Note: running tasks on interactive clusters may lead to increased costs!*
 * `health` - (Optional) block described below that specifies health conditions for a given task.
 * `job_cluster_key` - (Optional) Identifier of the Job cluster specified in the `job_cluster` block.
@@ -153,6 +156,7 @@ This block describes individual tasks:
 * `run_if` - (Optional) An optional value indicating the condition that determines whether the task should be run once its dependencies have been completed. One of `ALL_SUCCESS`, `AT_LEAST_ONE_SUCCESS`, `NONE_FAILED`, `ALL_DONE`, `AT_LEAST_ONE_FAILED` or `ALL_FAILED`. When omitted, defaults to `ALL_SUCCESS`.
 * `timeout_seconds` - (Optional) (Integer) An optional timeout applied to each run of this job. The default behavior is to have no timeout.
 * `webhook_notifications` - (Optional) (List) An optional set of system destinations (for example, webhook destinations or Slack) to be notified when runs of this task begins, completes or fails. The default behavior is to not send any notifications. This field is a block and is documented below.
+* `compute` - (Optional) Task level compute configuration. This block is [documented below](#compute-configuration-block).
 
 -> If no `job_cluster_key`, `existing_cluster_id`, or `new_cluster` were specified in task definition, then task will executed using serverless compute.
 
@@ -541,6 +545,14 @@ resource "databricks_job" "this" {
   }
 }
 ```
+
+### compute Configuration Block
+
+This block describes task level compute configuration.
+
+* `hardware_accelerator` - (Optional) Hardware accelerator configuration for Serverless GPU workloads. Supported values are:
+  * `GPU_1xA10`: GPU_1xA10: Single A10 GPU configuration.
+  * `GPU_8xH100`: GPU_8xH100: 8x H100 GPU configuration.
 
 ## Attribute Reference
 

@@ -19,6 +19,7 @@ import (
 	"github.com/databricks/databricks-sdk-go/client"
 	"github.com/databricks/databricks-sdk-go/config"
 	"github.com/databricks/databricks-sdk-go/logger"
+	"github.com/databricks/databricks-sdk-go/service/iam"
 	"github.com/databricks/terraform-provider-databricks/commands"
 	"github.com/databricks/terraform-provider-databricks/common"
 	"github.com/databricks/terraform-provider-databricks/internal/providers"
@@ -178,6 +179,22 @@ func ProvidersWithResourceFallbacks(resourceFallbacks []string) (*schema.Provide
 	return sdkV2Provider, pluginFrameworkProvider
 }
 
+// ProvidersWithPluginFrameworkOverrides is the mirror of
+// ProvidersWithResourceFallbacks for opt-in plugin framework resources: it
+// forces the named resources through the plugin framework implementation
+// (registering them with the PF provider and dropping them from the SDKv2
+// map), without relying on the DATABRICKS_TF_ENABLED_PF_RESOURCES env var
+// (which would race across parallel acceptance tests).
+func ProvidersWithPluginFrameworkOverrides(resourceOptIns []string) (*schema.Provider, provider.Provider) {
+	pluginfwOpt := pluginfw.WithPluginFrameworkResources(resourceOptIns)
+	pluginFrameworkProvider := PluginFrameworkProviderForTest(pluginfwOpt)
+
+	sdkV2Opt := sdkv2.WithPluginFrameworkResources(resourceOptIns)
+	sdkV2Provider := SdkV2ProviderForTest(sdkV2Opt)
+
+	return sdkV2Provider, pluginFrameworkProvider
+}
+
 // SdkV2ProviderForTest creates a test provider with the default config customizer.
 func SdkV2ProviderForTest(sdkV2Options ...sdkv2.SdkV2ProviderOption) *schema.Provider {
 	opts := append(sdkV2Options, sdkv2.WithConfigCustomizer(DefaultConfigCustomizer), sdkv2.WithConfigCustomizer(OidcConfigCustomizer))
@@ -305,13 +322,18 @@ func OidcConfigCustomizer(cfg *config.Config) error {
 	if !slices.Contains([]string{"MWS", "ucws", "ucacct"}, os.Getenv("CLOUD_ENV")) {
 		return nil
 	}
-	if _, err := os.Stat("/tmp/ACTIONS_ID_TOKEN_REQUEST_URL"); err == nil {
-		bs, err := os.ReadFile("/tmp/ACTIONS_ID_TOKEN_REQUEST_URL")
-		if err != nil {
-			return fmt.Errorf("cannot read /tmp/ACTIONS_ID_TOKEN_REQUEST_URL: %w", err)
-		}
-		cfg.ActionsIDTokenRequestURL = strings.TrimSpace(string(bs))
+	// The OIDC token files are only written when running in Github Actions. When they are
+	// absent (e.g. running acceptance tests locally against injected credentials), this is a
+	// no-op: leave AuthType untouched so the SDK's default credential chain resolves normally,
+	// rather than pinning auth to github-oidc, which can only work from within a Github action.
+	if _, err := os.Stat("/tmp/ACTIONS_ID_TOKEN_REQUEST_URL"); err != nil {
+		return nil
 	}
+	bs, err := os.ReadFile("/tmp/ACTIONS_ID_TOKEN_REQUEST_URL")
+	if err != nil {
+		return fmt.Errorf("cannot read /tmp/ACTIONS_ID_TOKEN_REQUEST_URL: %w", err)
+	}
+	cfg.ActionsIDTokenRequestURL = strings.TrimSpace(string(bs))
 	if _, err := os.Stat("/tmp/ACTIONS_ID_TOKEN_REQUEST_TOKEN"); err == nil {
 		bs, err := os.ReadFile("/tmp/ACTIONS_ID_TOKEN_REQUEST_TOKEN")
 		if err != nil {
@@ -436,36 +458,37 @@ func setDebugLogger() {
 
 func LoadWorkspaceEnv(t *testing.T) {
 	initTest(t, "workspace")
-	if os.Getenv("DATABRICKS_ACCOUNT_ID") != "" {
-		Skipf(t)("Skipping workspace test on account level")
-	}
+	skipIfNotEnvironmentType(t, "WORKSPACE", "UC_WORKSPACE")
 }
 
 func LoadAccountEnv(t *testing.T) {
 	initTest(t, "account")
-	if os.Getenv("DATABRICKS_ACCOUNT_ID") == "" {
-		Skipf(t)("Skipping account test on workspace level")
-	}
+	skipIfNotEnvironmentType(t, "ACCOUNT", "UC_ACCOUNT")
 }
 
 func LoadUcwsEnv(t *testing.T) {
 	initTest(t, "ucws")
-	if os.Getenv("TEST_METASTORE_ID") == "" {
-		Skipf(t)("Skipping non-Unity Catalog test")
-	}
-	if os.Getenv("DATABRICKS_ACCOUNT_ID") != "" {
-		Skipf(t)("Skipping workspace test on account level")
-	}
+	skipIfNotEnvironmentType(t, "UC_WORKSPACE")
 }
 
 func LoadUcacctEnv(t *testing.T) {
 	initTest(t, "ucacct")
-	if os.Getenv("TEST_METASTORE_ID") == "" {
-		Skipf(t)("Skipping non-Unity Catalog test")
+	skipIfNotEnvironmentType(t, "UC_ACCOUNT")
+}
+
+// skipIfNotEnvironmentType skips the test if TEST_ENVIRONMENT_TYPE doesn't match any of the expected types.
+// TEST_ENVIRONMENT_TYPE values: "ACCOUNT", "WORKSPACE", "UC_ACCOUNT", "UC_WORKSPACE".
+func skipIfNotEnvironmentType(t *testing.T, expectedTypes ...string) {
+	envType := os.Getenv("TEST_ENVIRONMENT_TYPE")
+	if envType == "" {
+		Skipf(t)("Skipping test because TEST_ENVIRONMENT_TYPE is not set")
 	}
-	if os.Getenv("DATABRICKS_ACCOUNT_ID") == "" {
-		Skipf(t)("Skipping account test on workspace level")
+	for _, expected := range expectedTypes {
+		if envType == expected {
+			return
+		}
 	}
+	Skipf(t)("Skipping %s test in %s environment", strings.Join(expectedTypes, "/"), envType)
 }
 
 func IsAws(t *testing.T) bool {
@@ -526,7 +549,7 @@ func LoadDebugEnvIfRunsFromIDE(t *testing.T, key string) {
 
 func isAuthedAsWorkspaceServicePrincipal(ctx context.Context) (bool, error) {
 	w := databricks.Must(databricks.NewWorkspaceClient())
-	user, err := w.CurrentUser.Me(ctx)
+	user, err := w.CurrentUser.Me(ctx, iam.MeRequest{ExcludedAttributes: "entitlements"})
 	if err != nil {
 		return false, err
 	}

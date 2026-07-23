@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/databricks/databricks-sdk-go/apierr"
 	"github.com/databricks/databricks-sdk-go/service/workspace"
 	"github.com/databricks/terraform-provider-databricks/common"
 
@@ -111,7 +112,7 @@ func (a NotebooksAPI) Create(r ImportPath) (ImportResponse, error) {
 		defer mtx.Unlock()
 	}
 	var response ImportResponse
-	err := a.client.Post(a.context, "/workspace/import", r, &response)
+	err := a.client.Post(a.context, "/workspace/import", r, &response, a.client.AddWorkspaceIdHeader)
 	return response, err
 }
 
@@ -130,7 +131,7 @@ func (a NotebooksAPI) GetStatus(path string, returnGitInfo bool) (ObjectStatus, 
 		params["return_git_info"] = "true"
 	}
 	_, err := common.RetryOnTimeout(a.context, func(ctx context.Context) (*ObjectStatus, error) {
-		err := a.client.Get(a.context, "/workspace/get-status", params, &notebookInfo)
+		err := a.client.Get(a.context, "/workspace/get-status", params, &notebookInfo, a.client.AddWorkspaceIdHeader)
 		return nil, err
 	})
 	return notebookInfo, err
@@ -147,7 +148,7 @@ func (a NotebooksAPI) Export(path string, format string) (string, error) {
 	err := a.client.Get(a.context, "/workspace/export", workspacePathRequest{
 		Format: format,
 		Path:   path,
-	}, &notebookContent)
+	}, &notebookContent, a.client.AddWorkspaceIdHeader)
 	// TODO: return decoded []byte
 	return notebookContent.Content, err
 }
@@ -161,7 +162,7 @@ func (a NotebooksAPI) Mkdirs(path string) error {
 
 	return a.client.Post(a.context, "/workspace/mkdirs", map[string]string{
 		"path": path,
-	}, nil)
+	}, nil, a.client.AddWorkspaceIdHeader)
 }
 
 // List will list all objects in a path on the workspace
@@ -204,7 +205,7 @@ func (a NotebooksAPI) ListInternalImpl(path string) ([]ObjectStatus, error) {
 	var notebookList ObjectList
 	err := a.client.Get(a.context, "/workspace/list", map[string]string{
 		"path": path,
-	}, &notebookList)
+	}, &notebookList, a.client.AddWorkspaceIdHeader)
 	return notebookList.Objects, err
 }
 
@@ -218,7 +219,7 @@ func (a NotebooksAPI) Delete(path string, recursive bool) error {
 	return a.client.Post(a.context, "/workspace/delete", DeletePath{
 		Path:      path,
 		Recursive: recursive,
-	}, nil)
+	}, nil, a.client.AddWorkspaceIdHeader)
 }
 
 func SetWorkspaceObjectComputedProperties(d *schema.ResourceData, c *common.DatabricksClient) {
@@ -314,12 +315,17 @@ func ResourceNotebook() common.Resource {
 			}
 			resp, err := notebooksAPI.Create(createNotebook)
 			if err != nil {
-				if isParentDoesntExistError(err) {
-					parent := filepath.ToSlash(filepath.Dir(path))
+				// If import failed, check if the parent folder is missing and create it.
+				parent := filepath.ToSlash(filepath.Dir(path))
+				w, errStatus := c.WorkspaceClientUnifiedProvider(ctx, d)
+				if errStatus != nil {
+					return err
+				}
+				_, errStatus = w.Workspace.GetStatusByPath(ctx, parent)
+				if errStatus != nil && apierr.IsMissing(errStatus) {
 					log.Printf("[DEBUG] Parent folder '%s' doesn't exist, creating...", parent)
-					err = notebooksAPI.Mkdirs(parent)
-					if err != nil {
-						return err
+					if errStatus = notebooksAPI.Mkdirs(parent); errStatus != nil {
+						return errStatus
 					}
 					resp, err = notebooksAPI.Create(createNotebook)
 				}
@@ -351,7 +357,7 @@ func ResourceNotebook() common.Resource {
 					oldFormat = "SOURCE"
 				}
 			}
-			w, err := c.WorkspaceClient()
+			w, err := c.WorkspaceClientUnifiedProvider(ctx, d)
 			if err != nil {
 				return err
 			}
@@ -419,9 +425,4 @@ func ResourceNotebook() common.Resource {
 			return common.NamespaceCustomizeDiff(ctx, d, c)
 		},
 	}
-}
-
-func isParentDoesntExistError(err error) bool {
-	errStr := strings.ToLower(err.Error())
-	return strings.Contains(errStr, "parent folder ") && strings.Contains(errStr, " does not exist")
 }

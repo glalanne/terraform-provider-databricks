@@ -1,6 +1,8 @@
 package user_test
 
 import (
+	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/databricks/terraform-provider-databricks/internal/acceptance"
@@ -109,6 +111,48 @@ func TestWorkspaceDataSourceDataUsers(t *testing.T) {
 	})
 }
 
+const dataSourceTemplateSingleExtraAttribute = `
+	resource "databricks_user" "user1" {
+		user_name = "tf-{var.STICKY_RANDOM}-1@databricks.com"
+	}
+
+	data "databricks_users" "this" {
+		filter = "userName eq \"tf-{var.STICKY_RANDOM}-1@databricks.com\""
+		extra_attributes = "active"
+		depends_on = [databricks_user.user1]
+	}
+`
+
+func checkUsersDataSourceActive(t *testing.T) func(s *terraform.State) error {
+	return func(s *terraform.State) error {
+		ds, ok := s.Modules[0].Resources["data.databricks_users.this"]
+		require.True(t, ok, "data.databricks_users.this must be present")
+
+		usersCount := ds.Primary.Attributes["users.#"]
+		require.Equal(t, "1", usersCount, "expected one user")
+
+		active, exists := ds.Primary.Attributes["users.0.active"]
+		require.True(t, exists, "attribute active should be present")
+		assert.Equal(t, "true", active, "expected user to be active")
+
+		return nil
+	}
+}
+
+func TestAccDataSourceUsers_SingleExtraAttribute(t *testing.T) {
+	acceptance.AccountLevel(t, acceptance.Step{
+		Template: dataSourceTemplateSingleExtraAttribute,
+		Check:    checkUsersDataSourceActive(t),
+	})
+}
+
+func TestWorkspaceDataSourceUsers_SingleExtraAttribute(t *testing.T) {
+	acceptance.WorkspaceLevel(t, acceptance.Step{
+		Template: dataSourceTemplateSingleExtraAttribute,
+		Check:    checkUsersDataSourceActive(t),
+	})
+}
+
 func TestAccDataSourceUsers_WithGroups(t *testing.T) {
 	acceptance.AccountLevel(t, acceptance.Step{
 		Template: dataSourceTemplateExtraAttributes,
@@ -120,5 +164,38 @@ func TestWorkspaceDataSourceUsers_WithGroups(t *testing.T) {
 	acceptance.WorkspaceLevel(t, acceptance.Step{
 		Template: dataSourceTemplateExtraAttributes,
 		Check:    checkUsersDataSourceWithGroups(t),
+	})
+}
+
+func dataUsersProviderConfigTemplate(providerConfig string) string {
+	return fmt.Sprintf(`
+	data "databricks_users" "this" {
+		filter = "userName co \"testuser\""
+		%s
+	}
+	`, providerConfig)
+}
+
+func TestAccDataSourceUsers_ProviderConfig_EmptyID(t *testing.T) {
+	acceptance.WorkspaceLevel(t, acceptance.Step{
+		Template: dataUsersProviderConfigTemplate(`
+			provider_config = {
+				workspace_id = ""
+			}
+		`),
+		ExpectError: regexp.MustCompile(`Invalid Attribute Value Length`),
+		PlanOnly:    true,
+	})
+}
+
+func TestAccDataSourceUsers_ProviderConfig_Mismatched(t *testing.T) {
+	acceptance.WorkspaceLevel(t, acceptance.Step{
+		Template: dataUsersProviderConfigTemplate(`
+			provider_config = {
+				workspace_id = "123"
+			}
+		`),
+		ExpectError: regexp.MustCompile(`failed to get workspace client`),
+		PlanOnly:    true,
 	})
 }

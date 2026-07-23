@@ -61,7 +61,7 @@ func (a PermissionsAPI) getCurrentUser() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	me, err := w.CurrentUser.Me(a.context)
+	me, err := w.CurrentUser.Me(a.context, iam.MeRequest{ExcludedAttributes: "entitlements"})
 	if err != nil {
 		return "", err
 	}
@@ -164,9 +164,15 @@ func (a PermissionsAPI) Read(objectID string, mapping resourcePermissions, exist
 	return mapping.prepareResponse(objectID, permissions, existing, me)
 }
 
+// PermissionsSchemaStruct is used to generate schema with provider_config
+type PermissionsSchemaStruct struct {
+	entity.PermissionsEntity
+	common.Namespace
+}
+
 // ResourcePermissions definition
 func ResourcePermissions() common.Resource {
-	s := common.StructToSchema(entity.PermissionsEntity{}, func(s map[string]*schema.Schema) map[string]*schema.Schema {
+	s := common.StructToSchema(PermissionsSchemaStruct{}, func(s map[string]*schema.Schema) map[string]*schema.Schema {
 		for _, mapping := range allResourcePermissions() {
 			s[mapping.field] = &schema.Schema{
 				ForceNew: true,
@@ -182,36 +188,42 @@ func ResourcePermissions() common.Resource {
 		}
 		s["access_control"].MinItems = 1
 
-		// Use a custom hash function that only considers non-empty fields.
-		// This prevents spurious diffs when comparing {group_name: "X", permission_level: "Y"}
-		// with {group_name: "X", permission_level: "Y", service_principal_name: "", user_name: ""}
+		// Use a custom hash function that normalizes case-insensitive identity
+		// fields before hashing. Emails (user_name) and service principal names
+		// are case-insensitive, but the API may return them with different casing
+		// than the user's config, causing permanent drift (#5183).
 		acSchema := s["access_control"].Elem.(*schema.Resource).Schema
 		s["access_control"].Set = func(v interface{}) int {
 			m, ok := v.(map[string]interface{})
 			if !ok {
 				return 0
 			}
-			// Build a normalized map with only non-empty string fields for hashing
 			normalized := make(map[string]interface{})
 			for key, val := range m {
 				if _, exists := acSchema[key]; !exists {
-					continue // Skip fields not in schema
+					continue
 				}
 				if strVal, ok := val.(string); ok {
 					if strVal != "" {
+						if key == "user_name" || key == "service_principal_name" {
+							strVal = strings.ToLower(strVal)
+						}
 						normalized[key] = strVal
 					}
 				}
 			}
-			// Use HashResource with a schema that only includes the fields we care about
 			hashSchema := &schema.Resource{Schema: acSchema}
 			return schema.HashResource(hashSchema)(normalized)
 		}
+		common.NamespaceCustomizeSchemaMap(s)
 		return s
 	})
 	return common.Resource{
 		Schema: s,
 		CustomizeDiff: func(ctx context.Context, diff *schema.ResourceDiff, c *common.DatabricksClient) error {
+			if err := common.NamespaceCustomizeDiff(ctx, diff, c); err != nil {
+				return err
+			}
 			mapping, _, err := getResourcePermissionsFromState(diff)
 			if err != nil {
 				// This preserves current behavior but is likely only exercised in tests where
@@ -237,7 +249,11 @@ func ResourcePermissions() common.Resource {
 			return nil
 		},
 		Read: func(ctx context.Context, d *schema.ResourceData, c *common.DatabricksClient) error {
-			a := NewPermissionsAPI(ctx, c)
+			newClient, err := c.DatabricksClientForUnifiedProvider(ctx, d)
+			if err != nil {
+				return err
+			}
+			a := NewPermissionsAPI(ctx, newClient)
 			mapping, err := getResourcePermissionsFromId(d.Id())
 			if err != nil {
 				return err
@@ -269,9 +285,13 @@ func ResourcePermissions() common.Resource {
 			return common.StructToData(entity, s, d)
 		},
 		Create: func(ctx context.Context, d *schema.ResourceData, c *common.DatabricksClient) error {
+			newClient, err := c.DatabricksClientForUnifiedProvider(ctx, d)
+			if err != nil {
+				return err
+			}
 			var entity entity.PermissionsEntity
 			common.DataToStructPointer(d, s, &entity)
-			w, err := c.WorkspaceClient()
+			w, err := newClient.WorkspaceClient()
 			if err != nil {
 				return err
 			}
@@ -283,7 +303,7 @@ func ResourcePermissions() common.Resource {
 			if err != nil {
 				return err
 			}
-			err = NewPermissionsAPI(ctx, c).Update(objectID, entity, mapping)
+			err = NewPermissionsAPI(ctx, newClient).Update(objectID, entity, mapping)
 			if err != nil {
 				return err
 			}
@@ -291,20 +311,28 @@ func ResourcePermissions() common.Resource {
 			return nil
 		},
 		Update: func(ctx context.Context, d *schema.ResourceData, c *common.DatabricksClient) error {
+			newClient, err := c.DatabricksClientForUnifiedProvider(ctx, d)
+			if err != nil {
+				return err
+			}
 			var entity entity.PermissionsEntity
 			common.DataToStructPointer(d, s, &entity)
 			mapping, err := getResourcePermissionsFromId(d.Id())
 			if err != nil {
 				return err
 			}
-			return NewPermissionsAPI(ctx, c).Update(d.Id(), entity, mapping)
+			return NewPermissionsAPI(ctx, newClient).Update(d.Id(), entity, mapping)
 		},
 		Delete: func(ctx context.Context, d *schema.ResourceData, c *common.DatabricksClient) error {
+			newClient, err := c.DatabricksClientForUnifiedProvider(ctx, d)
+			if err != nil {
+				return err
+			}
 			mapping, err := getResourcePermissionsFromId(d.Id())
 			if err != nil {
 				return err
 			}
-			return NewPermissionsAPI(ctx, c).Delete(d.Id(), mapping)
+			return NewPermissionsAPI(ctx, newClient).Delete(d.Id(), mapping)
 		},
 	}
 }

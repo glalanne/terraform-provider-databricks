@@ -14,13 +14,16 @@ import (
 	pluginfwcommon "github.com/databricks/terraform-provider-databricks/internal/providers/pluginfw/common"
 	pluginfwcontext "github.com/databricks/terraform-provider-databricks/internal/providers/pluginfw/context"
 	"github.com/databricks/terraform-provider-databricks/internal/providers/pluginfw/converters"
+	"github.com/databricks/terraform-provider-databricks/internal/providers/pluginfw/declarative"
 	"github.com/databricks/terraform-provider-databricks/internal/providers/pluginfw/tfschema"
 	"github.com/databricks/terraform-provider-databricks/internal/service/database_tf"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -30,6 +33,7 @@ import (
 const resourceName = "database_synced_database_table"
 
 var _ resource.ResourceWithConfigure = &SyncedDatabaseTableResource{}
+var _ resource.ResourceWithModifyPlan = &SyncedDatabaseTableResource{}
 
 func ResourceSyncedDatabaseTable() resource.Resource {
 	return &SyncedDatabaseTableResource{}
@@ -37,6 +41,69 @@ func ResourceSyncedDatabaseTable() resource.Resource {
 
 type SyncedDatabaseTableResource struct {
 	Client *autogen.DatabricksClient
+}
+
+// ProviderConfig contains the fields to configure the provider.
+type ProviderConfig struct {
+	WorkspaceID types.String `tfsdk:"workspace_id"`
+}
+
+// ApplySchemaCustomizations applies the schema customizations to the ProviderConfig type.
+func (r ProviderConfig) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["workspace_id"] = attrs["workspace_id"].SetOptional()
+	attrs["workspace_id"] = attrs["workspace_id"].SetComputed()
+	attrs["workspace_id"] = attrs["workspace_id"].(tfschema.StringAttributeBuilder).AddPlanModifier(
+		stringplanmodifier.RequiresReplaceIf(ProviderConfigWorkspaceIDPlanModifier, "", ""))
+	attrs["workspace_id"] = attrs["workspace_id"].(tfschema.StringAttributeBuilder).AddValidator(stringvalidator.LengthAtLeast(1))
+	return attrs
+}
+
+// ProviderConfigWorkspaceIDPlanModifier is plan modifier for the workspace_id field.
+// Resource requires replacement if the workspace_id changes from one non-empty value to another.
+func ProviderConfigWorkspaceIDPlanModifier(ctx context.Context, req planmodifier.StringRequest, resp *stringplanmodifier.RequiresReplaceIfFuncResponse) {
+	// Require replacement if workspace_id changes from one non-empty value to another
+	oldValue := req.StateValue.ValueString()
+	newValue := req.PlanValue.ValueString()
+
+	if oldValue != "" && newValue != "" && oldValue != newValue {
+		resp.RequiresReplace = true
+	}
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in the extended
+// ProviderConfig struct. Container types (types.Map, types.List, types.Set) and
+// object types (types.Object) do not carry the type information of their elements in the Go
+// type system. This function provides a way to retrieve the type information of the elements in
+// complex fields at runtime. The values of the map are the reflected types of the contained elements.
+// They must be either primitive values from the plugin framework type system
+// (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF SDK values.
+func (r ProviderConfig) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// ToObjectValue returns the object value for the resource, combining attributes from the
+// embedded TFSDK model and contains additional fields.
+//
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, ProviderConfig
+// only implements ToObjectValue() and Type().
+func (r ProviderConfig) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		r.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"workspace_id": r.WorkspaceID,
+		},
+	)
+}
+
+// Type returns the object type with attributes from both the embedded TFSDK model
+// and contains additional fields.
+func (r ProviderConfig) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"workspace_id": types.StringType,
+		},
+	}
 }
 
 // SyncedDatabaseTable extends the main model with additional fields.
@@ -52,9 +119,15 @@ type SyncedDatabaseTable struct {
 	DatabaseInstanceName types.String `tfsdk:"database_instance_name"`
 	// The name of the database instance that this table is registered to. This
 	// field is always returned, and for tables inside database catalogs is
-	// inferred database instance associated with the catalog.
+	// inferred database instance associated with the catalog. This is an output
+	// only field that contains the value computed from the input field combined
+	// with server side defaults. Use the field without the effective_ prefix to
+	// set the value.
 	EffectiveDatabaseInstanceName types.String `tfsdk:"effective_database_instance_name"`
-	// The name of the logical database that this table is registered to.
+	// The name of the logical database that this table is registered to. This
+	// is an output only field that contains the value computed from the input
+	// field combined with server side defaults. Use the field without the
+	// effective_ prefix to set the value.
 	EffectiveLogicalDatabaseName types.String `tfsdk:"effective_logical_database_name"`
 	// Target Postgres database object (logical database) name for this table.
 	//
@@ -78,6 +151,7 @@ type SyncedDatabaseTable struct {
 	// table may be in "ACTIVE" but the pipeline may be in "PROVISIONING" as it
 	// runs asynchronously).
 	UnityCatalogProvisioningState types.String `tfsdk:"unity_catalog_provisioning_state"`
+	ProviderConfig                types.Object `tfsdk:"provider_config"`
 }
 
 // GetComplexFieldTypes returns a map of the types of elements in complex fields in the extended
@@ -91,6 +165,7 @@ func (m SyncedDatabaseTable) GetComplexFieldTypes(ctx context.Context) map[strin
 	return map[string]reflect.Type{
 		"data_synchronization_status": reflect.TypeOf(database_tf.SyncedTableStatus{}),
 		"spec":                        reflect.TypeOf(database_tf.SyncedTableSpec{}),
+		"provider_config":             reflect.TypeOf(ProviderConfig{}),
 	}
 }
 
@@ -111,6 +186,8 @@ func (m SyncedDatabaseTable) ToObjectValue(ctx context.Context) basetypes.Object
 			"name":                             m.Name,
 			"spec":                             m.Spec,
 			"unity_catalog_provisioning_state": m.UnityCatalogProvisioningState,
+
+			"provider_config": m.ProviderConfig,
 		},
 	)
 }
@@ -127,6 +204,8 @@ func (m SyncedDatabaseTable) Type(ctx context.Context) attr.Type {
 			"name":                             types.StringType,
 			"spec":                             database_tf.SyncedTableSpec{}.Type(ctx),
 			"unity_catalog_provisioning_state": types.StringType,
+
+			"provider_config": ProviderConfig{}.Type(ctx),
 		},
 	}
 }
@@ -161,6 +240,8 @@ func (to *SyncedDatabaseTable) SyncFieldsDuringCreateOrUpdate(ctx context.Contex
 			}
 		}
 	}
+	to.ProviderConfig = from.ProviderConfig
+
 }
 
 // SyncFieldsDuringRead copies values from the existing state into the receiver,
@@ -191,6 +272,8 @@ func (to *SyncedDatabaseTable) SyncFieldsDuringRead(ctx context.Context, from Sy
 			}
 		}
 	}
+	to.ProviderConfig = from.ProviderConfig
+
 }
 
 func (m SyncedDatabaseTable) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
@@ -208,6 +291,10 @@ func (m SyncedDatabaseTable) ApplySchemaCustomizations(attrs map[string]tfschema
 	attrs["unity_catalog_provisioning_state"] = attrs["unity_catalog_provisioning_state"].SetComputed()
 
 	attrs["name"] = attrs["name"].(tfschema.StringAttributeBuilder).AddPlanModifier(stringplanmodifier.UseStateForUnknown()).(tfschema.AttributeBuilder)
+	attrs["provider_config"] = attrs["provider_config"].SetOptional()
+	attrs["provider_config"] = attrs["provider_config"].SetComputed()
+	attrs["provider_config"] = attrs["provider_config"].(tfschema.SingleNestedAttributeBuilder).AddPlanModifier(tfschema.ProviderConfigPlanModifier{})
+
 	return attrs
 }
 
@@ -278,42 +365,19 @@ func (r *SyncedDatabaseTableResource) Configure(ctx context.Context, req resourc
 	r.Client = autogen.ConfigureResource(req, resp)
 }
 
-func (r *SyncedDatabaseTableResource) update(ctx context.Context, plan SyncedDatabaseTable, diags *diag.Diagnostics, state *tfsdk.State) {
-	var synced_database_table database.SyncedDatabaseTable
-
-	diags.Append(converters.TfSdkToGoSdkStruct(ctx, plan, &synced_database_table)...)
-	if diags.HasError() {
+func (r *SyncedDatabaseTableResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	// Skip entirely on destroy (no plan state).
+	if req.Plan.Raw.IsNull() {
 		return
 	}
-
-	updateRequest := database.UpdateSyncedDatabaseTableRequest{
-		SyncedTable: synced_database_table,
-		Name:        plan.Name.ValueString(),
-		UpdateMask:  "database_instance_name,logical_database_name,spec",
-	}
-
-	client, clientDiags := r.Client.GetWorkspaceClient()
-
-	diags.Append(clientDiags...)
-	if diags.HasError() {
+	if r.Client == nil {
 		return
 	}
-	response, err := client.Database.UpdateSyncedDatabaseTable(ctx, updateRequest)
-	if err != nil {
-		diags.AddError("failed to update database_synced_database_table", err.Error())
+	tfschema.WorkspaceDriftDetection(ctx, r.Client, req, resp)
+	if resp.Diagnostics.HasError() {
 		return
 	}
-
-	var newState SyncedDatabaseTable
-
-	diags.Append(converters.GoSdkToTfSdkStruct(ctx, response, &newState)...)
-
-	if diags.HasError() {
-		return
-	}
-
-	newState.SyncFieldsDuringCreateOrUpdate(ctx, plan)
-	diags.Append(state.Set(ctx, newState)...)
+	tfschema.ValidateWorkspaceID(ctx, r.Client, req, resp)
 }
 
 func (r *SyncedDatabaseTableResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -335,7 +399,15 @@ func (r *SyncedDatabaseTableResource) Create(ctx context.Context, req resource.C
 		SyncedTable: synced_database_table,
 	}
 
-	client, clientDiags := r.Client.GetWorkspaceClient()
+	var namespace ProviderConfig
+	resp.Diagnostics.Append(plan.ProviderConfig.As(ctx, &namespace, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	client, clientDiags := r.Client.GetWorkspaceClientForUnifiedProviderWithDiagnostics(ctx, namespace.WorkspaceID.ValueString())
 
 	resp.Diagnostics.Append(clientDiags...)
 	if resp.Diagnostics.HasError() {
@@ -362,6 +434,7 @@ func (r *SyncedDatabaseTableResource) Create(ctx context.Context, req resource.C
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	resp.Diagnostics.Append(tfschema.PopulateProviderConfigInState(ctx, r.Client, plan.ProviderConfig, &resp.State)...)
 }
 
 func (r *SyncedDatabaseTableResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -379,7 +452,15 @@ func (r *SyncedDatabaseTableResource) Read(ctx context.Context, req resource.Rea
 		return
 	}
 
-	client, clientDiags := r.Client.GetWorkspaceClient()
+	var namespace ProviderConfig
+	resp.Diagnostics.Append(existingState.ProviderConfig.As(ctx, &namespace, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	client, clientDiags := r.Client.GetWorkspaceClientForUnifiedProviderWithDiagnostics(ctx, namespace.WorkspaceID.ValueString())
 
 	resp.Diagnostics.Append(clientDiags...)
 	if resp.Diagnostics.HasError() {
@@ -391,7 +472,6 @@ func (r *SyncedDatabaseTableResource) Read(ctx context.Context, req resource.Rea
 			resp.State.RemoveResource(ctx)
 			return
 		}
-
 		resp.Diagnostics.AddError("failed to get database_synced_database_table", err.Error())
 		return
 	}
@@ -405,6 +485,56 @@ func (r *SyncedDatabaseTableResource) Read(ctx context.Context, req resource.Rea
 	newState.SyncFieldsDuringRead(ctx, existingState)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, newState)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	resp.Diagnostics.Append(tfschema.PopulateProviderConfigInState(ctx, r.Client, existingState.ProviderConfig, &resp.State)...)
+}
+
+func (r *SyncedDatabaseTableResource) update(ctx context.Context, plan SyncedDatabaseTable, diags *diag.Diagnostics, state *tfsdk.State) {
+	var synced_database_table database.SyncedDatabaseTable
+
+	diags.Append(converters.TfSdkToGoSdkStruct(ctx, plan, &synced_database_table)...)
+	if diags.HasError() {
+		return
+	}
+
+	updateRequest := database.UpdateSyncedDatabaseTableRequest{
+		SyncedTable: synced_database_table,
+		Name:        plan.Name.ValueString(),
+		UpdateMask:  "database_instance_name,logical_database_name,spec",
+	}
+
+	var namespace ProviderConfig
+	diags.Append(plan.ProviderConfig.As(ctx, &namespace, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})...)
+	if diags.HasError() {
+		return
+	}
+	client, clientDiags := r.Client.GetWorkspaceClientForUnifiedProviderWithDiagnostics(ctx, namespace.WorkspaceID.ValueString())
+
+	diags.Append(clientDiags...)
+	if diags.HasError() {
+		return
+	}
+	response, err := client.Database.UpdateSyncedDatabaseTable(ctx, updateRequest)
+	if err != nil {
+		diags.AddError("failed to update database_synced_database_table", err.Error())
+		return
+	}
+
+	var newState SyncedDatabaseTable
+
+	diags.Append(converters.GoSdkToTfSdkStruct(ctx, response, &newState)...)
+
+	if diags.HasError() {
+		return
+	}
+
+	newState.SyncFieldsDuringCreateOrUpdate(ctx, plan)
+	diags.Append(state.Set(ctx, newState)...)
 }
 
 func (r *SyncedDatabaseTableResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
@@ -434,7 +564,15 @@ func (r *SyncedDatabaseTableResource) Delete(ctx context.Context, req resource.D
 		return
 	}
 
-	client, clientDiags := r.Client.GetWorkspaceClient()
+	var namespace ProviderConfig
+	resp.Diagnostics.Append(state.ProviderConfig.As(ctx, &namespace, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	client, clientDiags := r.Client.GetWorkspaceClientForUnifiedProviderWithDiagnostics(ctx, namespace.WorkspaceID.ValueString())
 
 	resp.Diagnostics.Append(clientDiags...)
 	if resp.Diagnostics.HasError() {
@@ -442,6 +580,9 @@ func (r *SyncedDatabaseTableResource) Delete(ctx context.Context, req resource.D
 	}
 
 	err := client.Database.DeleteSyncedDatabaseTable(ctx, deleteRequest)
+	if !declarative.IsDeleteError(err) {
+		err = nil
+	}
 	if err != nil && !apierr.IsMissing(err) {
 		resp.Diagnostics.AddError("failed to delete database_synced_database_table", err.Error())
 		return

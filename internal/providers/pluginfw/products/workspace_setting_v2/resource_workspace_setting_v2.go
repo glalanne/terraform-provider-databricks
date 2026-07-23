@@ -16,11 +16,13 @@ import (
 	"github.com/databricks/terraform-provider-databricks/internal/providers/pluginfw/converters"
 	"github.com/databricks/terraform-provider-databricks/internal/providers/pluginfw/tfschema"
 	"github.com/databricks/terraform-provider-databricks/internal/service/settingsv2_tf"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -30,6 +32,7 @@ import (
 const resourceName = "workspace_setting_v2"
 
 var _ resource.ResourceWithConfigure = &SettingResource{}
+var _ resource.ResourceWithModifyPlan = &SettingResource{}
 
 func ResourceSetting() resource.Resource {
 	return &SettingResource{}
@@ -37,6 +40,69 @@ func ResourceSetting() resource.Resource {
 
 type SettingResource struct {
 	Client *autogen.DatabricksClient
+}
+
+// ProviderConfig contains the fields to configure the provider.
+type ProviderConfig struct {
+	WorkspaceID types.String `tfsdk:"workspace_id"`
+}
+
+// ApplySchemaCustomizations applies the schema customizations to the ProviderConfig type.
+func (r ProviderConfig) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["workspace_id"] = attrs["workspace_id"].SetOptional()
+	attrs["workspace_id"] = attrs["workspace_id"].SetComputed()
+	attrs["workspace_id"] = attrs["workspace_id"].(tfschema.StringAttributeBuilder).AddPlanModifier(
+		stringplanmodifier.RequiresReplaceIf(ProviderConfigWorkspaceIDPlanModifier, "", ""))
+	attrs["workspace_id"] = attrs["workspace_id"].(tfschema.StringAttributeBuilder).AddValidator(stringvalidator.LengthAtLeast(1))
+	return attrs
+}
+
+// ProviderConfigWorkspaceIDPlanModifier is plan modifier for the workspace_id field.
+// Resource requires replacement if the workspace_id changes from one non-empty value to another.
+func ProviderConfigWorkspaceIDPlanModifier(ctx context.Context, req planmodifier.StringRequest, resp *stringplanmodifier.RequiresReplaceIfFuncResponse) {
+	// Require replacement if workspace_id changes from one non-empty value to another
+	oldValue := req.StateValue.ValueString()
+	newValue := req.PlanValue.ValueString()
+
+	if oldValue != "" && newValue != "" && oldValue != newValue {
+		resp.RequiresReplace = true
+	}
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in the extended
+// ProviderConfig struct. Container types (types.Map, types.List, types.Set) and
+// object types (types.Object) do not carry the type information of their elements in the Go
+// type system. This function provides a way to retrieve the type information of the elements in
+// complex fields at runtime. The values of the map are the reflected types of the contained elements.
+// They must be either primitive values from the plugin framework type system
+// (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF SDK values.
+func (r ProviderConfig) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// ToObjectValue returns the object value for the resource, combining attributes from the
+// embedded TFSDK model and contains additional fields.
+//
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, ProviderConfig
+// only implements ToObjectValue() and Type().
+func (r ProviderConfig) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		r.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"workspace_id": r.WorkspaceID,
+		},
+	)
+}
+
+// Type returns the object type with attributes from both the embedded TFSDK model
+// and contains additional fields.
+func (r ProviderConfig) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"workspace_id": types.StringType,
+		},
+	}
 }
 
 // Setting extends the main model with additional fields.
@@ -50,6 +116,10 @@ type Setting struct {
 	// effective_aibi_dashboard_embedding_approved_domains for final setting
 	// value.
 	AibiDashboardEmbeddingApprovedDomains types.Object `tfsdk:"aibi_dashboard_embedding_approved_domains"`
+	// Setting value for allowed_apps_user_api_scopes setting. This is the
+	// setting value set by consumers, check
+	// effective_allowed_apps_user_api_scopes for final setting value.
+	AllowedAppsUserApiScopes types.Object `tfsdk:"allowed_apps_user_api_scopes"`
 	// Setting value for automatic_cluster_update_workspace setting. This is the
 	// setting value set by consumers, check
 	// effective_automatic_cluster_update_workspace for final setting value.
@@ -57,6 +127,10 @@ type Setting struct {
 	// Setting value for boolean type setting. This is the setting value set by
 	// consumers, check effective_boolean_val for final setting value.
 	BooleanVal types.Object `tfsdk:"boolean_val"`
+	// Setting value for collaboration_platform_connectivity setting. This is
+	// the setting value set by consumers, check
+	// effective_collaboration_platform_connectivity for final setting value.
+	CollaborationPlatformConnectivity types.Object `tfsdk:"collaboration_platform_connectivity"`
 	// Effective setting value for aibi_dashboard_embedding_access_policy
 	// setting. This is the final effective value of setting. To set a value use
 	// aibi_dashboard_embedding_access_policy.
@@ -65,6 +139,10 @@ type Setting struct {
 	// setting. This is the final effective value of setting. To set a value use
 	// aibi_dashboard_embedding_approved_domains.
 	EffectiveAibiDashboardEmbeddingApprovedDomains types.Object `tfsdk:"effective_aibi_dashboard_embedding_approved_domains"`
+	// Effective setting value for allowed_apps_user_api_scopes setting. This is
+	// the final effective value of setting. To set a value use
+	// allowed_apps_user_api_scopes.
+	EffectiveAllowedAppsUserApiScopes types.Object `tfsdk:"effective_allowed_apps_user_api_scopes"`
 	// Effective setting value for automatic_cluster_update_workspace setting.
 	// This is the final effective value of setting. To set a value use
 	// automatic_cluster_update_workspace.
@@ -72,9 +150,17 @@ type Setting struct {
 	// Effective setting value for boolean type setting. This is the final
 	// effective value of setting. To set a value use boolean_val.
 	EffectiveBooleanVal types.Object `tfsdk:"effective_boolean_val"`
+	// Effective setting value for collaboration_platform_connectivity setting.
+	// This is the final effective value of setting. To set a value use
+	// collaboration_platform_connectivity.
+	EffectiveCollaborationPlatformConnectivity types.Object `tfsdk:"effective_collaboration_platform_connectivity"`
 	// Effective setting value for integer type setting. This is the final
 	// effective value of setting. To set a value use integer_val.
 	EffectiveIntegerVal types.Object `tfsdk:"effective_integer_val"`
+	// Effective setting value for operational_email_custom_recipient setting.
+	// This is the final effective value of setting. To set a value use
+	// operational_email_custom_recipient.
+	EffectiveOperationalEmailCustomRecipient types.Object `tfsdk:"effective_operational_email_custom_recipient"`
 	// Effective setting value for personal_compute setting. This is the final
 	// effective value of setting. To set a value use personal_compute.
 	EffectivePersonalCompute types.Object `tfsdk:"effective_personal_compute"`
@@ -90,6 +176,10 @@ type Setting struct {
 	IntegerVal types.Object `tfsdk:"integer_val"`
 	// Name of the setting.
 	Name types.String `tfsdk:"name"`
+	// Setting value for operational_email_custom_recipient setting. This is the
+	// setting value set by consumers, check
+	// effective_operational_email_custom_recipient for final setting value.
+	OperationalEmailCustomRecipient types.Object `tfsdk:"operational_email_custom_recipient"`
 	// Setting value for personal_compute setting. This is the setting value set
 	// by consumers, check effective_personal_compute for final setting value.
 	PersonalCompute types.Object `tfsdk:"personal_compute"`
@@ -99,7 +189,8 @@ type Setting struct {
 	RestrictWorkspaceAdmins types.Object `tfsdk:"restrict_workspace_admins"`
 	// Setting value for string type setting. This is the setting value set by
 	// consumers, check effective_string_val for final setting value.
-	StringVal types.Object `tfsdk:"string_val"`
+	StringVal      types.Object `tfsdk:"string_val"`
+	ProviderConfig types.Object `tfsdk:"provider_config"`
 }
 
 // GetComplexFieldTypes returns a map of the types of elements in complex fields in the extended
@@ -113,20 +204,27 @@ func (m Setting) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Ty
 	return map[string]reflect.Type{
 		"aibi_dashboard_embedding_access_policy":              reflect.TypeOf(settingsv2_tf.AibiDashboardEmbeddingAccessPolicy{}),
 		"aibi_dashboard_embedding_approved_domains":           reflect.TypeOf(settingsv2_tf.AibiDashboardEmbeddingApprovedDomains{}),
+		"allowed_apps_user_api_scopes":                        reflect.TypeOf(settingsv2_tf.AllowedAppsUserApiScopesMessage{}),
 		"automatic_cluster_update_workspace":                  reflect.TypeOf(settingsv2_tf.ClusterAutoRestartMessage{}),
 		"boolean_val":                                         reflect.TypeOf(settingsv2_tf.BooleanMessage{}),
+		"collaboration_platform_connectivity":                 reflect.TypeOf(settingsv2_tf.CollaborationPlatformConnectivityMessage{}),
 		"effective_aibi_dashboard_embedding_access_policy":    reflect.TypeOf(settingsv2_tf.AibiDashboardEmbeddingAccessPolicy{}),
 		"effective_aibi_dashboard_embedding_approved_domains": reflect.TypeOf(settingsv2_tf.AibiDashboardEmbeddingApprovedDomains{}),
+		"effective_allowed_apps_user_api_scopes":              reflect.TypeOf(settingsv2_tf.AllowedAppsUserApiScopesMessage{}),
 		"effective_automatic_cluster_update_workspace":        reflect.TypeOf(settingsv2_tf.ClusterAutoRestartMessage{}),
 		"effective_boolean_val":                               reflect.TypeOf(settingsv2_tf.BooleanMessage{}),
+		"effective_collaboration_platform_connectivity":       reflect.TypeOf(settingsv2_tf.CollaborationPlatformConnectivityMessage{}),
 		"effective_integer_val":                               reflect.TypeOf(settingsv2_tf.IntegerMessage{}),
+		"effective_operational_email_custom_recipient":        reflect.TypeOf(settingsv2_tf.OperationalEmailCustomRecipientMessage{}),
 		"effective_personal_compute":                          reflect.TypeOf(settingsv2_tf.PersonalComputeMessage{}),
 		"effective_restrict_workspace_admins":                 reflect.TypeOf(settingsv2_tf.RestrictWorkspaceAdminsMessage{}),
 		"effective_string_val":                                reflect.TypeOf(settingsv2_tf.StringMessage{}),
 		"integer_val":                                         reflect.TypeOf(settingsv2_tf.IntegerMessage{}),
+		"operational_email_custom_recipient":                  reflect.TypeOf(settingsv2_tf.OperationalEmailCustomRecipientMessage{}),
 		"personal_compute":                                    reflect.TypeOf(settingsv2_tf.PersonalComputeMessage{}),
 		"restrict_workspace_admins":                           reflect.TypeOf(settingsv2_tf.RestrictWorkspaceAdminsMessage{}),
 		"string_val":                                          reflect.TypeOf(settingsv2_tf.StringMessage{}),
+		"provider_config":                                     reflect.TypeOf(ProviderConfig{}),
 	}
 }
 
@@ -141,21 +239,29 @@ func (m Setting) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
 		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
 		map[string]attr.Value{"aibi_dashboard_embedding_access_policy": m.AibiDashboardEmbeddingAccessPolicy,
 			"aibi_dashboard_embedding_approved_domains":           m.AibiDashboardEmbeddingApprovedDomains,
+			"allowed_apps_user_api_scopes":                        m.AllowedAppsUserApiScopes,
 			"automatic_cluster_update_workspace":                  m.AutomaticClusterUpdateWorkspace,
 			"boolean_val":                                         m.BooleanVal,
+			"collaboration_platform_connectivity":                 m.CollaborationPlatformConnectivity,
 			"effective_aibi_dashboard_embedding_access_policy":    m.EffectiveAibiDashboardEmbeddingAccessPolicy,
 			"effective_aibi_dashboard_embedding_approved_domains": m.EffectiveAibiDashboardEmbeddingApprovedDomains,
+			"effective_allowed_apps_user_api_scopes":              m.EffectiveAllowedAppsUserApiScopes,
 			"effective_automatic_cluster_update_workspace":        m.EffectiveAutomaticClusterUpdateWorkspace,
 			"effective_boolean_val":                               m.EffectiveBooleanVal,
+			"effective_collaboration_platform_connectivity":       m.EffectiveCollaborationPlatformConnectivity,
 			"effective_integer_val":                               m.EffectiveIntegerVal,
+			"effective_operational_email_custom_recipient":        m.EffectiveOperationalEmailCustomRecipient,
 			"effective_personal_compute":                          m.EffectivePersonalCompute,
 			"effective_restrict_workspace_admins":                 m.EffectiveRestrictWorkspaceAdmins,
 			"effective_string_val":                                m.EffectiveStringVal,
 			"integer_val":                                         m.IntegerVal,
 			"name":                                                m.Name,
+			"operational_email_custom_recipient":                  m.OperationalEmailCustomRecipient,
 			"personal_compute":                                    m.PersonalCompute,
 			"restrict_workspace_admins":                           m.RestrictWorkspaceAdmins,
 			"string_val":                                          m.StringVal,
+
+			"provider_config": m.ProviderConfig,
 		},
 	)
 }
@@ -166,21 +272,29 @@ func (m Setting) Type(ctx context.Context) attr.Type {
 	return types.ObjectType{
 		AttrTypes: map[string]attr.Type{"aibi_dashboard_embedding_access_policy": settingsv2_tf.AibiDashboardEmbeddingAccessPolicy{}.Type(ctx),
 			"aibi_dashboard_embedding_approved_domains":           settingsv2_tf.AibiDashboardEmbeddingApprovedDomains{}.Type(ctx),
+			"allowed_apps_user_api_scopes":                        settingsv2_tf.AllowedAppsUserApiScopesMessage{}.Type(ctx),
 			"automatic_cluster_update_workspace":                  settingsv2_tf.ClusterAutoRestartMessage{}.Type(ctx),
 			"boolean_val":                                         settingsv2_tf.BooleanMessage{}.Type(ctx),
+			"collaboration_platform_connectivity":                 settingsv2_tf.CollaborationPlatformConnectivityMessage{}.Type(ctx),
 			"effective_aibi_dashboard_embedding_access_policy":    settingsv2_tf.AibiDashboardEmbeddingAccessPolicy{}.Type(ctx),
 			"effective_aibi_dashboard_embedding_approved_domains": settingsv2_tf.AibiDashboardEmbeddingApprovedDomains{}.Type(ctx),
+			"effective_allowed_apps_user_api_scopes":              settingsv2_tf.AllowedAppsUserApiScopesMessage{}.Type(ctx),
 			"effective_automatic_cluster_update_workspace":        settingsv2_tf.ClusterAutoRestartMessage{}.Type(ctx),
 			"effective_boolean_val":                               settingsv2_tf.BooleanMessage{}.Type(ctx),
+			"effective_collaboration_platform_connectivity":       settingsv2_tf.CollaborationPlatformConnectivityMessage{}.Type(ctx),
 			"effective_integer_val":                               settingsv2_tf.IntegerMessage{}.Type(ctx),
+			"effective_operational_email_custom_recipient":        settingsv2_tf.OperationalEmailCustomRecipientMessage{}.Type(ctx),
 			"effective_personal_compute":                          settingsv2_tf.PersonalComputeMessage{}.Type(ctx),
 			"effective_restrict_workspace_admins":                 settingsv2_tf.RestrictWorkspaceAdminsMessage{}.Type(ctx),
 			"effective_string_val":                                settingsv2_tf.StringMessage{}.Type(ctx),
 			"integer_val":                                         settingsv2_tf.IntegerMessage{}.Type(ctx),
 			"name":                                                types.StringType,
+			"operational_email_custom_recipient":                  settingsv2_tf.OperationalEmailCustomRecipientMessage{}.Type(ctx),
 			"personal_compute":                                    settingsv2_tf.PersonalComputeMessage{}.Type(ctx),
 			"restrict_workspace_admins":                           settingsv2_tf.RestrictWorkspaceAdminsMessage{}.Type(ctx),
 			"string_val":                                          settingsv2_tf.StringMessage{}.Type(ctx),
+
+			"provider_config": ProviderConfig{}.Type(ctx),
 		},
 	}
 }
@@ -207,6 +321,15 @@ func (to *Setting) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from Sett
 			}
 		}
 	}
+	if !from.AllowedAppsUserApiScopes.IsNull() && !from.AllowedAppsUserApiScopes.IsUnknown() {
+		if toAllowedAppsUserApiScopes, ok := to.GetAllowedAppsUserApiScopes(ctx); ok {
+			if fromAllowedAppsUserApiScopes, ok := from.GetAllowedAppsUserApiScopes(ctx); ok {
+				// Recursively sync the fields of AllowedAppsUserApiScopes
+				toAllowedAppsUserApiScopes.SyncFieldsDuringCreateOrUpdate(ctx, fromAllowedAppsUserApiScopes)
+				to.SetAllowedAppsUserApiScopes(ctx, toAllowedAppsUserApiScopes)
+			}
+		}
+	}
 	if !from.AutomaticClusterUpdateWorkspace.IsNull() && !from.AutomaticClusterUpdateWorkspace.IsUnknown() {
 		if toAutomaticClusterUpdateWorkspace, ok := to.GetAutomaticClusterUpdateWorkspace(ctx); ok {
 			if fromAutomaticClusterUpdateWorkspace, ok := from.GetAutomaticClusterUpdateWorkspace(ctx); ok {
@@ -222,6 +345,15 @@ func (to *Setting) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from Sett
 				// Recursively sync the fields of BooleanVal
 				toBooleanVal.SyncFieldsDuringCreateOrUpdate(ctx, fromBooleanVal)
 				to.SetBooleanVal(ctx, toBooleanVal)
+			}
+		}
+	}
+	if !from.CollaborationPlatformConnectivity.IsNull() && !from.CollaborationPlatformConnectivity.IsUnknown() {
+		if toCollaborationPlatformConnectivity, ok := to.GetCollaborationPlatformConnectivity(ctx); ok {
+			if fromCollaborationPlatformConnectivity, ok := from.GetCollaborationPlatformConnectivity(ctx); ok {
+				// Recursively sync the fields of CollaborationPlatformConnectivity
+				toCollaborationPlatformConnectivity.SyncFieldsDuringCreateOrUpdate(ctx, fromCollaborationPlatformConnectivity)
+				to.SetCollaborationPlatformConnectivity(ctx, toCollaborationPlatformConnectivity)
 			}
 		}
 	}
@@ -243,6 +375,15 @@ func (to *Setting) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from Sett
 			}
 		}
 	}
+	if !from.EffectiveAllowedAppsUserApiScopes.IsNull() && !from.EffectiveAllowedAppsUserApiScopes.IsUnknown() {
+		if toEffectiveAllowedAppsUserApiScopes, ok := to.GetEffectiveAllowedAppsUserApiScopes(ctx); ok {
+			if fromEffectiveAllowedAppsUserApiScopes, ok := from.GetEffectiveAllowedAppsUserApiScopes(ctx); ok {
+				// Recursively sync the fields of EffectiveAllowedAppsUserApiScopes
+				toEffectiveAllowedAppsUserApiScopes.SyncFieldsDuringCreateOrUpdate(ctx, fromEffectiveAllowedAppsUserApiScopes)
+				to.SetEffectiveAllowedAppsUserApiScopes(ctx, toEffectiveAllowedAppsUserApiScopes)
+			}
+		}
+	}
 	if !from.EffectiveAutomaticClusterUpdateWorkspace.IsNull() && !from.EffectiveAutomaticClusterUpdateWorkspace.IsUnknown() {
 		if toEffectiveAutomaticClusterUpdateWorkspace, ok := to.GetEffectiveAutomaticClusterUpdateWorkspace(ctx); ok {
 			if fromEffectiveAutomaticClusterUpdateWorkspace, ok := from.GetEffectiveAutomaticClusterUpdateWorkspace(ctx); ok {
@@ -261,12 +402,30 @@ func (to *Setting) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from Sett
 			}
 		}
 	}
+	if !from.EffectiveCollaborationPlatformConnectivity.IsNull() && !from.EffectiveCollaborationPlatformConnectivity.IsUnknown() {
+		if toEffectiveCollaborationPlatformConnectivity, ok := to.GetEffectiveCollaborationPlatformConnectivity(ctx); ok {
+			if fromEffectiveCollaborationPlatformConnectivity, ok := from.GetEffectiveCollaborationPlatformConnectivity(ctx); ok {
+				// Recursively sync the fields of EffectiveCollaborationPlatformConnectivity
+				toEffectiveCollaborationPlatformConnectivity.SyncFieldsDuringCreateOrUpdate(ctx, fromEffectiveCollaborationPlatformConnectivity)
+				to.SetEffectiveCollaborationPlatformConnectivity(ctx, toEffectiveCollaborationPlatformConnectivity)
+			}
+		}
+	}
 	if !from.EffectiveIntegerVal.IsNull() && !from.EffectiveIntegerVal.IsUnknown() {
 		if toEffectiveIntegerVal, ok := to.GetEffectiveIntegerVal(ctx); ok {
 			if fromEffectiveIntegerVal, ok := from.GetEffectiveIntegerVal(ctx); ok {
 				// Recursively sync the fields of EffectiveIntegerVal
 				toEffectiveIntegerVal.SyncFieldsDuringCreateOrUpdate(ctx, fromEffectiveIntegerVal)
 				to.SetEffectiveIntegerVal(ctx, toEffectiveIntegerVal)
+			}
+		}
+	}
+	if !from.EffectiveOperationalEmailCustomRecipient.IsNull() && !from.EffectiveOperationalEmailCustomRecipient.IsUnknown() {
+		if toEffectiveOperationalEmailCustomRecipient, ok := to.GetEffectiveOperationalEmailCustomRecipient(ctx); ok {
+			if fromEffectiveOperationalEmailCustomRecipient, ok := from.GetEffectiveOperationalEmailCustomRecipient(ctx); ok {
+				// Recursively sync the fields of EffectiveOperationalEmailCustomRecipient
+				toEffectiveOperationalEmailCustomRecipient.SyncFieldsDuringCreateOrUpdate(ctx, fromEffectiveOperationalEmailCustomRecipient)
+				to.SetEffectiveOperationalEmailCustomRecipient(ctx, toEffectiveOperationalEmailCustomRecipient)
 			}
 		}
 	}
@@ -306,6 +465,15 @@ func (to *Setting) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from Sett
 			}
 		}
 	}
+	if !from.OperationalEmailCustomRecipient.IsNull() && !from.OperationalEmailCustomRecipient.IsUnknown() {
+		if toOperationalEmailCustomRecipient, ok := to.GetOperationalEmailCustomRecipient(ctx); ok {
+			if fromOperationalEmailCustomRecipient, ok := from.GetOperationalEmailCustomRecipient(ctx); ok {
+				// Recursively sync the fields of OperationalEmailCustomRecipient
+				toOperationalEmailCustomRecipient.SyncFieldsDuringCreateOrUpdate(ctx, fromOperationalEmailCustomRecipient)
+				to.SetOperationalEmailCustomRecipient(ctx, toOperationalEmailCustomRecipient)
+			}
+		}
+	}
 	if !from.PersonalCompute.IsNull() && !from.PersonalCompute.IsUnknown() {
 		if toPersonalCompute, ok := to.GetPersonalCompute(ctx); ok {
 			if fromPersonalCompute, ok := from.GetPersonalCompute(ctx); ok {
@@ -333,6 +501,8 @@ func (to *Setting) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from Sett
 			}
 		}
 	}
+	to.ProviderConfig = from.ProviderConfig
+
 }
 
 // SyncFieldsDuringRead copies values from the existing state into the receiver,
@@ -355,6 +525,14 @@ func (to *Setting) SyncFieldsDuringRead(ctx context.Context, from Setting) {
 			}
 		}
 	}
+	if !from.AllowedAppsUserApiScopes.IsNull() && !from.AllowedAppsUserApiScopes.IsUnknown() {
+		if toAllowedAppsUserApiScopes, ok := to.GetAllowedAppsUserApiScopes(ctx); ok {
+			if fromAllowedAppsUserApiScopes, ok := from.GetAllowedAppsUserApiScopes(ctx); ok {
+				toAllowedAppsUserApiScopes.SyncFieldsDuringRead(ctx, fromAllowedAppsUserApiScopes)
+				to.SetAllowedAppsUserApiScopes(ctx, toAllowedAppsUserApiScopes)
+			}
+		}
+	}
 	if !from.AutomaticClusterUpdateWorkspace.IsNull() && !from.AutomaticClusterUpdateWorkspace.IsUnknown() {
 		if toAutomaticClusterUpdateWorkspace, ok := to.GetAutomaticClusterUpdateWorkspace(ctx); ok {
 			if fromAutomaticClusterUpdateWorkspace, ok := from.GetAutomaticClusterUpdateWorkspace(ctx); ok {
@@ -368,6 +546,14 @@ func (to *Setting) SyncFieldsDuringRead(ctx context.Context, from Setting) {
 			if fromBooleanVal, ok := from.GetBooleanVal(ctx); ok {
 				toBooleanVal.SyncFieldsDuringRead(ctx, fromBooleanVal)
 				to.SetBooleanVal(ctx, toBooleanVal)
+			}
+		}
+	}
+	if !from.CollaborationPlatformConnectivity.IsNull() && !from.CollaborationPlatformConnectivity.IsUnknown() {
+		if toCollaborationPlatformConnectivity, ok := to.GetCollaborationPlatformConnectivity(ctx); ok {
+			if fromCollaborationPlatformConnectivity, ok := from.GetCollaborationPlatformConnectivity(ctx); ok {
+				toCollaborationPlatformConnectivity.SyncFieldsDuringRead(ctx, fromCollaborationPlatformConnectivity)
+				to.SetCollaborationPlatformConnectivity(ctx, toCollaborationPlatformConnectivity)
 			}
 		}
 	}
@@ -387,6 +573,14 @@ func (to *Setting) SyncFieldsDuringRead(ctx context.Context, from Setting) {
 			}
 		}
 	}
+	if !from.EffectiveAllowedAppsUserApiScopes.IsNull() && !from.EffectiveAllowedAppsUserApiScopes.IsUnknown() {
+		if toEffectiveAllowedAppsUserApiScopes, ok := to.GetEffectiveAllowedAppsUserApiScopes(ctx); ok {
+			if fromEffectiveAllowedAppsUserApiScopes, ok := from.GetEffectiveAllowedAppsUserApiScopes(ctx); ok {
+				toEffectiveAllowedAppsUserApiScopes.SyncFieldsDuringRead(ctx, fromEffectiveAllowedAppsUserApiScopes)
+				to.SetEffectiveAllowedAppsUserApiScopes(ctx, toEffectiveAllowedAppsUserApiScopes)
+			}
+		}
+	}
 	if !from.EffectiveAutomaticClusterUpdateWorkspace.IsNull() && !from.EffectiveAutomaticClusterUpdateWorkspace.IsUnknown() {
 		if toEffectiveAutomaticClusterUpdateWorkspace, ok := to.GetEffectiveAutomaticClusterUpdateWorkspace(ctx); ok {
 			if fromEffectiveAutomaticClusterUpdateWorkspace, ok := from.GetEffectiveAutomaticClusterUpdateWorkspace(ctx); ok {
@@ -403,11 +597,27 @@ func (to *Setting) SyncFieldsDuringRead(ctx context.Context, from Setting) {
 			}
 		}
 	}
+	if !from.EffectiveCollaborationPlatformConnectivity.IsNull() && !from.EffectiveCollaborationPlatformConnectivity.IsUnknown() {
+		if toEffectiveCollaborationPlatformConnectivity, ok := to.GetEffectiveCollaborationPlatformConnectivity(ctx); ok {
+			if fromEffectiveCollaborationPlatformConnectivity, ok := from.GetEffectiveCollaborationPlatformConnectivity(ctx); ok {
+				toEffectiveCollaborationPlatformConnectivity.SyncFieldsDuringRead(ctx, fromEffectiveCollaborationPlatformConnectivity)
+				to.SetEffectiveCollaborationPlatformConnectivity(ctx, toEffectiveCollaborationPlatformConnectivity)
+			}
+		}
+	}
 	if !from.EffectiveIntegerVal.IsNull() && !from.EffectiveIntegerVal.IsUnknown() {
 		if toEffectiveIntegerVal, ok := to.GetEffectiveIntegerVal(ctx); ok {
 			if fromEffectiveIntegerVal, ok := from.GetEffectiveIntegerVal(ctx); ok {
 				toEffectiveIntegerVal.SyncFieldsDuringRead(ctx, fromEffectiveIntegerVal)
 				to.SetEffectiveIntegerVal(ctx, toEffectiveIntegerVal)
+			}
+		}
+	}
+	if !from.EffectiveOperationalEmailCustomRecipient.IsNull() && !from.EffectiveOperationalEmailCustomRecipient.IsUnknown() {
+		if toEffectiveOperationalEmailCustomRecipient, ok := to.GetEffectiveOperationalEmailCustomRecipient(ctx); ok {
+			if fromEffectiveOperationalEmailCustomRecipient, ok := from.GetEffectiveOperationalEmailCustomRecipient(ctx); ok {
+				toEffectiveOperationalEmailCustomRecipient.SyncFieldsDuringRead(ctx, fromEffectiveOperationalEmailCustomRecipient)
+				to.SetEffectiveOperationalEmailCustomRecipient(ctx, toEffectiveOperationalEmailCustomRecipient)
 			}
 		}
 	}
@@ -443,6 +653,14 @@ func (to *Setting) SyncFieldsDuringRead(ctx context.Context, from Setting) {
 			}
 		}
 	}
+	if !from.OperationalEmailCustomRecipient.IsNull() && !from.OperationalEmailCustomRecipient.IsUnknown() {
+		if toOperationalEmailCustomRecipient, ok := to.GetOperationalEmailCustomRecipient(ctx); ok {
+			if fromOperationalEmailCustomRecipient, ok := from.GetOperationalEmailCustomRecipient(ctx); ok {
+				toOperationalEmailCustomRecipient.SyncFieldsDuringRead(ctx, fromOperationalEmailCustomRecipient)
+				to.SetOperationalEmailCustomRecipient(ctx, toOperationalEmailCustomRecipient)
+			}
+		}
+	}
 	if !from.PersonalCompute.IsNull() && !from.PersonalCompute.IsUnknown() {
 		if toPersonalCompute, ok := to.GetPersonalCompute(ctx); ok {
 			if fromPersonalCompute, ok := from.GetPersonalCompute(ctx); ok {
@@ -467,28 +685,40 @@ func (to *Setting) SyncFieldsDuringRead(ctx context.Context, from Setting) {
 			}
 		}
 	}
+	to.ProviderConfig = from.ProviderConfig
+
 }
 
 func (m Setting) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
 	attrs["aibi_dashboard_embedding_access_policy"] = attrs["aibi_dashboard_embedding_access_policy"].SetOptional()
 	attrs["aibi_dashboard_embedding_approved_domains"] = attrs["aibi_dashboard_embedding_approved_domains"].SetOptional()
+	attrs["allowed_apps_user_api_scopes"] = attrs["allowed_apps_user_api_scopes"].SetOptional()
 	attrs["automatic_cluster_update_workspace"] = attrs["automatic_cluster_update_workspace"].SetOptional()
 	attrs["boolean_val"] = attrs["boolean_val"].SetOptional()
+	attrs["collaboration_platform_connectivity"] = attrs["collaboration_platform_connectivity"].SetOptional()
 	attrs["effective_aibi_dashboard_embedding_access_policy"] = attrs["effective_aibi_dashboard_embedding_access_policy"].SetOptional()
 	attrs["effective_aibi_dashboard_embedding_approved_domains"] = attrs["effective_aibi_dashboard_embedding_approved_domains"].SetOptional()
+	attrs["effective_allowed_apps_user_api_scopes"] = attrs["effective_allowed_apps_user_api_scopes"].SetComputed()
 	attrs["effective_automatic_cluster_update_workspace"] = attrs["effective_automatic_cluster_update_workspace"].SetOptional()
 	attrs["effective_boolean_val"] = attrs["effective_boolean_val"].SetComputed()
+	attrs["effective_collaboration_platform_connectivity"] = attrs["effective_collaboration_platform_connectivity"].SetComputed()
 	attrs["effective_integer_val"] = attrs["effective_integer_val"].SetComputed()
+	attrs["effective_operational_email_custom_recipient"] = attrs["effective_operational_email_custom_recipient"].SetComputed()
 	attrs["effective_personal_compute"] = attrs["effective_personal_compute"].SetOptional()
 	attrs["effective_restrict_workspace_admins"] = attrs["effective_restrict_workspace_admins"].SetOptional()
 	attrs["effective_string_val"] = attrs["effective_string_val"].SetComputed()
 	attrs["integer_val"] = attrs["integer_val"].SetOptional()
 	attrs["name"] = attrs["name"].SetOptional()
+	attrs["operational_email_custom_recipient"] = attrs["operational_email_custom_recipient"].SetOptional()
 	attrs["personal_compute"] = attrs["personal_compute"].SetOptional()
 	attrs["restrict_workspace_admins"] = attrs["restrict_workspace_admins"].SetOptional()
 	attrs["string_val"] = attrs["string_val"].SetOptional()
 
 	attrs["name"] = attrs["name"].(tfschema.StringAttributeBuilder).AddPlanModifier(stringplanmodifier.UseStateForUnknown()).(tfschema.AttributeBuilder)
+	attrs["provider_config"] = attrs["provider_config"].SetOptional()
+	attrs["provider_config"] = attrs["provider_config"].SetComputed()
+	attrs["provider_config"] = attrs["provider_config"].(tfschema.SingleNestedAttributeBuilder).AddPlanModifier(tfschema.ProviderConfigPlanModifier{})
+
 	return attrs
 }
 
@@ -542,6 +772,31 @@ func (m *Setting) SetAibiDashboardEmbeddingApprovedDomains(ctx context.Context, 
 	m.AibiDashboardEmbeddingApprovedDomains = vs
 }
 
+// GetAllowedAppsUserApiScopes returns the value of the AllowedAppsUserApiScopes field in Setting as
+// a settingsv2_tf.AllowedAppsUserApiScopesMessage value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *Setting) GetAllowedAppsUserApiScopes(ctx context.Context) (settingsv2_tf.AllowedAppsUserApiScopesMessage, bool) {
+	var e settingsv2_tf.AllowedAppsUserApiScopesMessage
+	if m.AllowedAppsUserApiScopes.IsNull() || m.AllowedAppsUserApiScopes.IsUnknown() {
+		return e, false
+	}
+	var v settingsv2_tf.AllowedAppsUserApiScopesMessage
+	d := m.AllowedAppsUserApiScopes.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetAllowedAppsUserApiScopes sets the value of the AllowedAppsUserApiScopes field in Setting.
+func (m *Setting) SetAllowedAppsUserApiScopes(ctx context.Context, v settingsv2_tf.AllowedAppsUserApiScopesMessage) {
+	vs := v.ToObjectValue(ctx)
+	m.AllowedAppsUserApiScopes = vs
+}
+
 // GetAutomaticClusterUpdateWorkspace returns the value of the AutomaticClusterUpdateWorkspace field in Setting as
 // a settingsv2_tf.ClusterAutoRestartMessage value.
 // If the field is unknown or null, the boolean return value is false.
@@ -590,6 +845,31 @@ func (m *Setting) GetBooleanVal(ctx context.Context) (settingsv2_tf.BooleanMessa
 func (m *Setting) SetBooleanVal(ctx context.Context, v settingsv2_tf.BooleanMessage) {
 	vs := v.ToObjectValue(ctx)
 	m.BooleanVal = vs
+}
+
+// GetCollaborationPlatformConnectivity returns the value of the CollaborationPlatformConnectivity field in Setting as
+// a settingsv2_tf.CollaborationPlatformConnectivityMessage value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *Setting) GetCollaborationPlatformConnectivity(ctx context.Context) (settingsv2_tf.CollaborationPlatformConnectivityMessage, bool) {
+	var e settingsv2_tf.CollaborationPlatformConnectivityMessage
+	if m.CollaborationPlatformConnectivity.IsNull() || m.CollaborationPlatformConnectivity.IsUnknown() {
+		return e, false
+	}
+	var v settingsv2_tf.CollaborationPlatformConnectivityMessage
+	d := m.CollaborationPlatformConnectivity.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetCollaborationPlatformConnectivity sets the value of the CollaborationPlatformConnectivity field in Setting.
+func (m *Setting) SetCollaborationPlatformConnectivity(ctx context.Context, v settingsv2_tf.CollaborationPlatformConnectivityMessage) {
+	vs := v.ToObjectValue(ctx)
+	m.CollaborationPlatformConnectivity = vs
 }
 
 // GetEffectiveAibiDashboardEmbeddingAccessPolicy returns the value of the EffectiveAibiDashboardEmbeddingAccessPolicy field in Setting as
@@ -642,6 +922,31 @@ func (m *Setting) SetEffectiveAibiDashboardEmbeddingApprovedDomains(ctx context.
 	m.EffectiveAibiDashboardEmbeddingApprovedDomains = vs
 }
 
+// GetEffectiveAllowedAppsUserApiScopes returns the value of the EffectiveAllowedAppsUserApiScopes field in Setting as
+// a settingsv2_tf.AllowedAppsUserApiScopesMessage value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *Setting) GetEffectiveAllowedAppsUserApiScopes(ctx context.Context) (settingsv2_tf.AllowedAppsUserApiScopesMessage, bool) {
+	var e settingsv2_tf.AllowedAppsUserApiScopesMessage
+	if m.EffectiveAllowedAppsUserApiScopes.IsNull() || m.EffectiveAllowedAppsUserApiScopes.IsUnknown() {
+		return e, false
+	}
+	var v settingsv2_tf.AllowedAppsUserApiScopesMessage
+	d := m.EffectiveAllowedAppsUserApiScopes.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetEffectiveAllowedAppsUserApiScopes sets the value of the EffectiveAllowedAppsUserApiScopes field in Setting.
+func (m *Setting) SetEffectiveAllowedAppsUserApiScopes(ctx context.Context, v settingsv2_tf.AllowedAppsUserApiScopesMessage) {
+	vs := v.ToObjectValue(ctx)
+	m.EffectiveAllowedAppsUserApiScopes = vs
+}
+
 // GetEffectiveAutomaticClusterUpdateWorkspace returns the value of the EffectiveAutomaticClusterUpdateWorkspace field in Setting as
 // a settingsv2_tf.ClusterAutoRestartMessage value.
 // If the field is unknown or null, the boolean return value is false.
@@ -692,6 +997,31 @@ func (m *Setting) SetEffectiveBooleanVal(ctx context.Context, v settingsv2_tf.Bo
 	m.EffectiveBooleanVal = vs
 }
 
+// GetEffectiveCollaborationPlatformConnectivity returns the value of the EffectiveCollaborationPlatformConnectivity field in Setting as
+// a settingsv2_tf.CollaborationPlatformConnectivityMessage value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *Setting) GetEffectiveCollaborationPlatformConnectivity(ctx context.Context) (settingsv2_tf.CollaborationPlatformConnectivityMessage, bool) {
+	var e settingsv2_tf.CollaborationPlatformConnectivityMessage
+	if m.EffectiveCollaborationPlatformConnectivity.IsNull() || m.EffectiveCollaborationPlatformConnectivity.IsUnknown() {
+		return e, false
+	}
+	var v settingsv2_tf.CollaborationPlatformConnectivityMessage
+	d := m.EffectiveCollaborationPlatformConnectivity.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetEffectiveCollaborationPlatformConnectivity sets the value of the EffectiveCollaborationPlatformConnectivity field in Setting.
+func (m *Setting) SetEffectiveCollaborationPlatformConnectivity(ctx context.Context, v settingsv2_tf.CollaborationPlatformConnectivityMessage) {
+	vs := v.ToObjectValue(ctx)
+	m.EffectiveCollaborationPlatformConnectivity = vs
+}
+
 // GetEffectiveIntegerVal returns the value of the EffectiveIntegerVal field in Setting as
 // a settingsv2_tf.IntegerMessage value.
 // If the field is unknown or null, the boolean return value is false.
@@ -715,6 +1045,31 @@ func (m *Setting) GetEffectiveIntegerVal(ctx context.Context) (settingsv2_tf.Int
 func (m *Setting) SetEffectiveIntegerVal(ctx context.Context, v settingsv2_tf.IntegerMessage) {
 	vs := v.ToObjectValue(ctx)
 	m.EffectiveIntegerVal = vs
+}
+
+// GetEffectiveOperationalEmailCustomRecipient returns the value of the EffectiveOperationalEmailCustomRecipient field in Setting as
+// a settingsv2_tf.OperationalEmailCustomRecipientMessage value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *Setting) GetEffectiveOperationalEmailCustomRecipient(ctx context.Context) (settingsv2_tf.OperationalEmailCustomRecipientMessage, bool) {
+	var e settingsv2_tf.OperationalEmailCustomRecipientMessage
+	if m.EffectiveOperationalEmailCustomRecipient.IsNull() || m.EffectiveOperationalEmailCustomRecipient.IsUnknown() {
+		return e, false
+	}
+	var v settingsv2_tf.OperationalEmailCustomRecipientMessage
+	d := m.EffectiveOperationalEmailCustomRecipient.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetEffectiveOperationalEmailCustomRecipient sets the value of the EffectiveOperationalEmailCustomRecipient field in Setting.
+func (m *Setting) SetEffectiveOperationalEmailCustomRecipient(ctx context.Context, v settingsv2_tf.OperationalEmailCustomRecipientMessage) {
+	vs := v.ToObjectValue(ctx)
+	m.EffectiveOperationalEmailCustomRecipient = vs
 }
 
 // GetEffectivePersonalCompute returns the value of the EffectivePersonalCompute field in Setting as
@@ -817,6 +1172,31 @@ func (m *Setting) SetIntegerVal(ctx context.Context, v settingsv2_tf.IntegerMess
 	m.IntegerVal = vs
 }
 
+// GetOperationalEmailCustomRecipient returns the value of the OperationalEmailCustomRecipient field in Setting as
+// a settingsv2_tf.OperationalEmailCustomRecipientMessage value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *Setting) GetOperationalEmailCustomRecipient(ctx context.Context) (settingsv2_tf.OperationalEmailCustomRecipientMessage, bool) {
+	var e settingsv2_tf.OperationalEmailCustomRecipientMessage
+	if m.OperationalEmailCustomRecipient.IsNull() || m.OperationalEmailCustomRecipient.IsUnknown() {
+		return e, false
+	}
+	var v settingsv2_tf.OperationalEmailCustomRecipientMessage
+	d := m.OperationalEmailCustomRecipient.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetOperationalEmailCustomRecipient sets the value of the OperationalEmailCustomRecipient field in Setting.
+func (m *Setting) SetOperationalEmailCustomRecipient(ctx context.Context, v settingsv2_tf.OperationalEmailCustomRecipientMessage) {
+	vs := v.ToObjectValue(ctx)
+	m.OperationalEmailCustomRecipient = vs
+}
+
 // GetPersonalCompute returns the value of the PersonalCompute field in Setting as
 // a settingsv2_tf.PersonalComputeMessage value.
 // If the field is unknown or null, the boolean return value is false.
@@ -909,6 +1289,91 @@ func (r *SettingResource) Configure(ctx context.Context, req resource.ConfigureR
 	r.Client = autogen.ConfigureResource(req, resp)
 }
 
+func (r *SettingResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	// Skip entirely on destroy (no plan state).
+	if req.Plan.Raw.IsNull() {
+		return
+	}
+	if r.Client == nil {
+		return
+	}
+	tfschema.WorkspaceDriftDetection(ctx, r.Client, req, resp)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	tfschema.ValidateWorkspaceID(ctx, r.Client, req, resp)
+}
+
+func (r *SettingResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	ctx = pluginfwcontext.SetUserAgentInResourceContext(ctx, resourceName)
+
+	var plan Setting
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	r.update(ctx, plan, &resp.Diagnostics, &resp.State)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	resp.Diagnostics.Append(tfschema.PopulateProviderConfigInState(ctx, r.Client, plan.ProviderConfig, &resp.State)...)
+}
+
+func (r *SettingResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	ctx = pluginfwcontext.SetUserAgentInResourceContext(ctx, resourceName)
+
+	var existingState Setting
+	resp.Diagnostics.Append(req.State.Get(ctx, &existingState)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	var readRequest settingsv2.GetPublicWorkspaceSettingRequest
+	resp.Diagnostics.Append(converters.TfSdkToGoSdkStruct(ctx, existingState, &readRequest)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	var namespace ProviderConfig
+	resp.Diagnostics.Append(existingState.ProviderConfig.As(ctx, &namespace, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	client, clientDiags := r.Client.GetWorkspaceClientForUnifiedProviderWithDiagnostics(ctx, namespace.WorkspaceID.ValueString())
+
+	resp.Diagnostics.Append(clientDiags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	response, err := client.WorkspaceSettingsV2.GetPublicWorkspaceSetting(ctx, readRequest)
+	if err != nil {
+		if apierr.IsMissing(err) {
+			resp.State.RemoveResource(ctx)
+			return
+		}
+		resp.Diagnostics.AddError("failed to get workspace_setting_v2", err.Error())
+		return
+	}
+
+	var newState Setting
+	resp.Diagnostics.Append(converters.GoSdkToTfSdkStruct(ctx, response, &newState)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	newState.SyncFieldsDuringRead(ctx, existingState)
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, newState)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	resp.Diagnostics.Append(tfschema.PopulateProviderConfigInState(ctx, r.Client, existingState.ProviderConfig, &resp.State)...)
+}
+
 func (r *SettingResource) update(ctx context.Context, plan Setting, diags *diag.Diagnostics, state *tfsdk.State) {
 	var setting settingsv2.Setting
 
@@ -922,7 +1387,15 @@ func (r *SettingResource) update(ctx context.Context, plan Setting, diags *diag.
 		Name:    plan.Name.ValueString(),
 	}
 
-	client, clientDiags := r.Client.GetWorkspaceClient()
+	var namespace ProviderConfig
+	diags.Append(plan.ProviderConfig.As(ctx, &namespace, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})...)
+	if diags.HasError() {
+		return
+	}
+	client, clientDiags := r.Client.GetWorkspaceClientForUnifiedProviderWithDiagnostics(ctx, namespace.WorkspaceID.ValueString())
 
 	diags.Append(clientDiags...)
 	if diags.HasError() {
@@ -944,61 +1417,6 @@ func (r *SettingResource) update(ctx context.Context, plan Setting, diags *diag.
 
 	newState.SyncFieldsDuringCreateOrUpdate(ctx, plan)
 	diags.Append(state.Set(ctx, newState)...)
-}
-
-func (r *SettingResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	ctx = pluginfwcontext.SetUserAgentInResourceContext(ctx, resourceName)
-
-	var plan Setting
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	r.update(ctx, plan, &resp.Diagnostics, &resp.State)
-}
-
-func (r *SettingResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	ctx = pluginfwcontext.SetUserAgentInResourceContext(ctx, resourceName)
-
-	var existingState Setting
-	resp.Diagnostics.Append(req.State.Get(ctx, &existingState)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	var readRequest settingsv2.GetPublicWorkspaceSettingRequest
-	resp.Diagnostics.Append(converters.TfSdkToGoSdkStruct(ctx, existingState, &readRequest)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	client, clientDiags := r.Client.GetWorkspaceClient()
-
-	resp.Diagnostics.Append(clientDiags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	response, err := client.WorkspaceSettingsV2.GetPublicWorkspaceSetting(ctx, readRequest)
-	if err != nil {
-		if apierr.IsMissing(err) {
-			resp.State.RemoveResource(ctx)
-			return
-		}
-
-		resp.Diagnostics.AddError("failed to get workspace_setting_v2", err.Error())
-		return
-	}
-
-	var newState Setting
-	resp.Diagnostics.Append(converters.GoSdkToTfSdkStruct(ctx, response, &newState)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	newState.SyncFieldsDuringRead(ctx, existingState)
-
-	resp.Diagnostics.Append(resp.State.Set(ctx, newState)...)
 }
 
 func (r *SettingResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {

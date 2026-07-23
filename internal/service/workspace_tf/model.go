@@ -141,9 +141,11 @@ type CreateCredentialsRequest struct {
 	// https://docs.databricks.com/aws/en/repos/get-access-tokens-from-git-provider
 	GitEmail types.String `tfsdk:"git_email"`
 	// Git provider. This field is case-insensitive. The available Git providers
-	// are `gitHub`, `bitbucketCloud`, `gitLab`, `azureDevOpsServices`,
-	// `gitHubEnterprise`, `bitbucketServer`, `gitLabEnterpriseEdition` and
-	// `awsCodeCommit`.
+	// are `gitHub`, `bitbucketCloud`, `gitLab`, `azureDevOpsServices` (Azure
+	// DevOps Services, including Microsoft Entra ID authentication),
+	// `gitHubEnterprise`, `bitbucketServer` (Bitbucket Data Center),
+	// `gitLabEnterpriseEdition` (GitLab Self-Managed), and `awsCodeCommit`
+	// (deprecated by AWS, not accepting new customers).
 	GitProvider types.String `tfsdk:"git_provider"`
 	// The username provided with your Git provider account and associated with
 	// the credential. For most Git providers it is only used to set the Git
@@ -162,6 +164,9 @@ type CreateCredentialsRequest struct {
 	//
 	// [Learn more]: https://docs.databricks.com/repos/get-access-tokens-from-git-provider.html
 	PersonalAccessToken types.String `tfsdk:"personal_access_token"`
+	// The ID of the service principal whose credentials will be modified. Only
+	// service principal managers can perform this action.
+	PrincipalId types.Int64 `tfsdk:"principal_id"`
 }
 
 func (to *CreateCredentialsRequest) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from CreateCredentialsRequest) {
@@ -177,6 +182,7 @@ func (m CreateCredentialsRequest) ApplySchemaCustomizations(attrs map[string]tfs
 	attrs["is_default_for_provider"] = attrs["is_default_for_provider"].SetOptional()
 	attrs["name"] = attrs["name"].SetOptional()
 	attrs["personal_access_token"] = attrs["personal_access_token"].SetOptional()
+	attrs["principal_id"] = attrs["principal_id"].SetOptional()
 
 	return attrs
 }
@@ -205,6 +211,7 @@ func (m CreateCredentialsRequest) ToObjectValue(ctx context.Context) basetypes.O
 			"is_default_for_provider": m.IsDefaultForProvider,
 			"name":                    m.Name,
 			"personal_access_token":   m.PersonalAccessToken,
+			"principal_id":            m.PrincipalId,
 		})
 }
 
@@ -218,6 +225,7 @@ func (m CreateCredentialsRequest) Type(ctx context.Context) attr.Type {
 			"is_default_for_provider": types.BoolType,
 			"name":                    types.StringType,
 			"personal_access_token":   types.StringType,
+			"principal_id":            types.Int64Type,
 		},
 	}
 }
@@ -305,14 +313,19 @@ func (m CreateCredentialsResponse) Type(ctx context.Context) attr.Type {
 }
 
 type CreateRepoRequest struct {
+	// Git credential ID to use when cloning the repository. The Git credential
+	// must be configured for the current user.
+	GitCredentialId types.Int64 `tfsdk:"git_credential_id"`
 	// Desired path for the repo in the workspace. Almost any path in the
 	// workspace can be chosen. If repo is created in `/Repos`, path must be in
 	// the format `/Repos/{folder}/{repo-name}`.
 	Path types.String `tfsdk:"path"`
 	// Git provider. This field is case-insensitive. The available Git providers
-	// are `gitHub`, `bitbucketCloud`, `gitLab`, `azureDevOpsServices`,
-	// `gitHubEnterprise`, `bitbucketServer`, `gitLabEnterpriseEdition` and
-	// `awsCodeCommit`.
+	// are `gitHub`, `bitbucketCloud`, `gitLab`, `azureDevOpsServices` (Azure
+	// DevOps Services, including Microsoft Entra ID authentication),
+	// `gitHubEnterprise`, `bitbucketServer` (Bitbucket Data Center),
+	// `gitLabEnterpriseEdition` (GitLab Self-Managed), and `awsCodeCommit`
+	// (deprecated by AWS, not accepting new customers).
 	Provider types.String `tfsdk:"provider"`
 	// If specified, the repo will be created with sparse checkout enabled. You
 	// cannot enable/disable sparse checkout after the repo is created.
@@ -345,6 +358,7 @@ func (to *CreateRepoRequest) SyncFieldsDuringRead(ctx context.Context, from Crea
 }
 
 func (m CreateRepoRequest) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["git_credential_id"] = attrs["git_credential_id"].SetOptional()
 	attrs["path"] = attrs["path"].SetOptional()
 	attrs["provider"] = attrs["provider"].SetRequired()
 	attrs["sparse_checkout"] = attrs["sparse_checkout"].SetOptional()
@@ -373,10 +387,11 @@ func (m CreateRepoRequest) ToObjectValue(ctx context.Context) basetypes.ObjectVa
 	return types.ObjectValueMust(
 		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
 		map[string]attr.Value{
-			"path":            m.Path,
-			"provider":        m.Provider,
-			"sparse_checkout": m.SparseCheckout,
-			"url":             m.Url,
+			"git_credential_id": m.GitCredentialId,
+			"path":              m.Path,
+			"provider":          m.Provider,
+			"sparse_checkout":   m.SparseCheckout,
+			"url":               m.Url,
 		})
 }
 
@@ -384,10 +399,11 @@ func (m CreateRepoRequest) ToObjectValue(ctx context.Context) basetypes.ObjectVa
 func (m CreateRepoRequest) Type(ctx context.Context) attr.Type {
 	return types.ObjectType{
 		AttrTypes: map[string]attr.Type{
-			"path":            types.StringType,
-			"provider":        types.StringType,
-			"sparse_checkout": SparseCheckout{}.Type(ctx),
-			"url":             types.StringType,
+			"git_credential_id": types.Int64Type,
+			"path":              types.StringType,
+			"provider":          types.StringType,
+			"sparse_checkout":   SparseCheckout{}.Type(ctx),
+			"url":               types.StringType,
 		},
 	}
 }
@@ -427,7 +443,10 @@ type CreateRepoResponse struct {
 	Id types.Int64 `tfsdk:"id"`
 	// Path of the Git folder (repo) in the workspace.
 	Path types.String `tfsdk:"path"`
-	// Git provider of the linked Git repository.
+	// Git provider of the linked Git repository, e.g. `gitHub`,
+	// `azureDevOpsServices`, `bitbucketServer` (Bitbucket Data Center),
+	// `gitLabEnterpriseEdition` (GitLab Self-Managed), or `awsCodeCommit`
+	// (deprecated).
 	Provider types.String `tfsdk:"provider"`
 	// Sparse checkout settings for the Git folder (repo).
 	SparseCheckout types.Object `tfsdk:"sparse_checkout"`
@@ -658,7 +677,11 @@ type CredentialInfo struct {
 	// except AWS CodeCommit. Learn more at
 	// https://docs.databricks.com/aws/en/repos/get-access-tokens-from-git-provider
 	GitEmail types.String `tfsdk:"git_email"`
-	// The Git provider associated with the credential.
+	// The Git provider associated with the credential. One of `gitHub`,
+	// `bitbucketCloud`, `gitLab`, `azureDevOpsServices` (Azure DevOps Services,
+	// including Microsoft Entra ID authentication), `gitHubEnterprise`,
+	// `bitbucketServer` (Bitbucket Data Center), `gitLabEnterpriseEdition`
+	// (GitLab Self-Managed), or `awsCodeCommit` (deprecated).
 	GitProvider types.String `tfsdk:"git_provider"`
 	// The username provided with your Git provider account and associated with
 	// the credential. For most Git providers it is only used to set the Git
@@ -843,6 +866,9 @@ func (m DeleteAcl) Type(ctx context.Context) attr.Type {
 type DeleteCredentialsRequest struct {
 	// The ID for the corresponding credential to access.
 	CredentialId types.Int64 `tfsdk:"-"`
+	// The ID of the service principal whose credentials will be modified. Only
+	// service principal managers can perform this action.
+	PrincipalId types.Int64 `tfsdk:"-"`
 }
 
 func (to *DeleteCredentialsRequest) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from DeleteCredentialsRequest) {
@@ -853,6 +879,7 @@ func (to *DeleteCredentialsRequest) SyncFieldsDuringRead(ctx context.Context, fr
 
 func (m DeleteCredentialsRequest) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
 	attrs["credential_id"] = attrs["credential_id"].SetRequired()
+	attrs["principal_id"] = attrs["principal_id"].SetOptional()
 
 	return attrs
 }
@@ -876,6 +903,7 @@ func (m DeleteCredentialsRequest) ToObjectValue(ctx context.Context) basetypes.O
 		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
 		map[string]attr.Value{
 			"credential_id": m.CredentialId,
+			"principal_id":  m.PrincipalId,
 		})
 }
 
@@ -884,6 +912,7 @@ func (m DeleteCredentialsRequest) Type(ctx context.Context) attr.Type {
 	return types.ObjectType{
 		AttrTypes: map[string]attr.Type{
 			"credential_id": types.Int64Type,
+			"principal_id":  types.Int64Type,
 		},
 	}
 }
@@ -1380,6 +1409,9 @@ func (m GetAclRequest) Type(ctx context.Context) attr.Type {
 type GetCredentialsRequest struct {
 	// The ID for the corresponding credential to access.
 	CredentialId types.Int64 `tfsdk:"-"`
+	// The ID of the service principal whose credentials will be modified. Only
+	// service principal managers can perform this action.
+	PrincipalId types.Int64 `tfsdk:"-"`
 }
 
 func (to *GetCredentialsRequest) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from GetCredentialsRequest) {
@@ -1390,6 +1422,7 @@ func (to *GetCredentialsRequest) SyncFieldsDuringRead(ctx context.Context, from 
 
 func (m GetCredentialsRequest) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
 	attrs["credential_id"] = attrs["credential_id"].SetRequired()
+	attrs["principal_id"] = attrs["principal_id"].SetOptional()
 
 	return attrs
 }
@@ -1413,6 +1446,7 @@ func (m GetCredentialsRequest) ToObjectValue(ctx context.Context) basetypes.Obje
 		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
 		map[string]attr.Value{
 			"credential_id": m.CredentialId,
+			"principal_id":  m.PrincipalId,
 		})
 }
 
@@ -1421,6 +1455,7 @@ func (m GetCredentialsRequest) Type(ctx context.Context) attr.Type {
 	return types.ObjectType{
 		AttrTypes: map[string]attr.Type{
 			"credential_id": types.Int64Type,
+			"principal_id":  types.Int64Type,
 		},
 	}
 }
@@ -1750,7 +1785,10 @@ type GetRepoResponse struct {
 	Id types.Int64 `tfsdk:"id"`
 	// Path of the Git folder (repo) in the workspace.
 	Path types.String `tfsdk:"path"`
-	// Git provider of the linked Git repository.
+	// Git provider of the linked Git repository, e.g. `gitHub`,
+	// `azureDevOpsServices`, `bitbucketServer` (Bitbucket Data Center),
+	// `gitLabEnterpriseEdition` (GitLab Self-Managed), or `awsCodeCommit`
+	// (deprecated).
 	Provider types.String `tfsdk:"provider"`
 	// Sparse checkout settings for the Git folder (repo).
 	SparseCheckout types.Object `tfsdk:"sparse_checkout"`
@@ -2485,6 +2523,9 @@ func (m *ListAclsResponse) SetItems(ctx context.Context, v []AclItem) {
 }
 
 type ListCredentialsRequest struct {
+	// The ID of the service principal whose credentials will be listed. Only
+	// service principal managers can perform this action.
+	PrincipalId types.Int64 `tfsdk:"-"`
 }
 
 func (to *ListCredentialsRequest) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from ListCredentialsRequest) {
@@ -2494,6 +2535,7 @@ func (to *ListCredentialsRequest) SyncFieldsDuringRead(ctx context.Context, from
 }
 
 func (m ListCredentialsRequest) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["principal_id"] = attrs["principal_id"].SetOptional()
 
 	return attrs
 }
@@ -2515,13 +2557,17 @@ func (m ListCredentialsRequest) GetComplexFieldTypes(ctx context.Context) map[st
 func (m ListCredentialsRequest) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
 	return types.ObjectValueMust(
 		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
-		map[string]attr.Value{})
+		map[string]attr.Value{
+			"principal_id": m.PrincipalId,
+		})
 }
 
 // Type implements basetypes.ObjectValuable.
 func (m ListCredentialsRequest) Type(ctx context.Context) attr.Type {
 	return types.ObjectType{
-		AttrTypes: map[string]attr.Type{},
+		AttrTypes: map[string]attr.Type{
+			"principal_id": types.Int64Type,
+		},
 	}
 }
 
@@ -3277,7 +3323,7 @@ type ObjectInfo struct {
 	// Only applicable to files. The creation UTC timestamp.
 	CreatedAt types.Int64 `tfsdk:"created_at"`
 	// The language of the object. This value is set only if the object type is
-	// ``NOTEBOOK``.
+	// ``NOTEBOOK``. For Jupyter (.ipynb) notebooks, this is always ``PYTHON``.
 	Language types.String `tfsdk:"language"`
 	// Only applicable to files, the last modified UTC timestamp.
 	ModifiedAt types.Int64 `tfsdk:"modified_at"`
@@ -3666,7 +3712,10 @@ type RepoInfo struct {
 	Id types.Int64 `tfsdk:"id"`
 	// Root path of the git folder (repo) in the Workspace.
 	Path types.String `tfsdk:"path"`
-	// Git provider of the remote git repository, e.g. `gitHub`.
+	// Git provider of the remote git repository, e.g. `gitHub`,
+	// `azureDevOpsServices`, `bitbucketServer` (Bitbucket Data Center),
+	// `gitLabEnterpriseEdition` (GitLab Self-Managed), or `awsCodeCommit`
+	// (deprecated).
 	Provider types.String `tfsdk:"provider"`
 	// Sparse checkout config for the git folder (repo).
 	SparseCheckout types.Object `tfsdk:"sparse_checkout"`
@@ -4481,9 +4530,11 @@ type UpdateCredentialsRequest struct {
 	// https://docs.databricks.com/aws/en/repos/get-access-tokens-from-git-provider
 	GitEmail types.String `tfsdk:"git_email"`
 	// Git provider. This field is case-insensitive. The available Git providers
-	// are `gitHub`, `bitbucketCloud`, `gitLab`, `azureDevOpsServices`,
-	// `gitHubEnterprise`, `bitbucketServer`, `gitLabEnterpriseEdition` and
-	// `awsCodeCommit`.
+	// are `gitHub`, `bitbucketCloud`, `gitLab`, `azureDevOpsServices` (Azure
+	// DevOps Services, including Microsoft Entra ID authentication),
+	// `gitHubEnterprise`, `bitbucketServer` (Bitbucket Data Center),
+	// `gitLabEnterpriseEdition` (GitLab Self-Managed), and `awsCodeCommit`
+	// (deprecated by AWS, not accepting new customers).
 	GitProvider types.String `tfsdk:"git_provider"`
 	// The username provided with your Git provider account and associated with
 	// the credential. For most Git providers it is only used to set the Git
@@ -4502,6 +4553,9 @@ type UpdateCredentialsRequest struct {
 	//
 	// [Learn more]: https://docs.databricks.com/repos/get-access-tokens-from-git-provider.html
 	PersonalAccessToken types.String `tfsdk:"personal_access_token"`
+	// The ID of the service principal whose credentials will be modified. Only
+	// service principal managers can perform this action.
+	PrincipalId types.Int64 `tfsdk:"principal_id"`
 }
 
 func (to *UpdateCredentialsRequest) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from UpdateCredentialsRequest) {
@@ -4517,6 +4571,7 @@ func (m UpdateCredentialsRequest) ApplySchemaCustomizations(attrs map[string]tfs
 	attrs["is_default_for_provider"] = attrs["is_default_for_provider"].SetOptional()
 	attrs["name"] = attrs["name"].SetOptional()
 	attrs["personal_access_token"] = attrs["personal_access_token"].SetOptional()
+	attrs["principal_id"] = attrs["principal_id"].SetOptional()
 	attrs["credential_id"] = attrs["credential_id"].SetRequired()
 
 	return attrs
@@ -4547,6 +4602,7 @@ func (m UpdateCredentialsRequest) ToObjectValue(ctx context.Context) basetypes.O
 			"is_default_for_provider": m.IsDefaultForProvider,
 			"name":                    m.Name,
 			"personal_access_token":   m.PersonalAccessToken,
+			"principal_id":            m.PrincipalId,
 		})
 }
 
@@ -4561,6 +4617,7 @@ func (m UpdateCredentialsRequest) Type(ctx context.Context) attr.Type {
 			"is_default_for_provider": types.BoolType,
 			"name":                    types.StringType,
 			"personal_access_token":   types.StringType,
+			"principal_id":            types.Int64Type,
 		},
 	}
 }
@@ -4609,6 +4666,22 @@ func (m UpdateCredentialsResponse) Type(ctx context.Context) attr.Type {
 type UpdateRepoRequest struct {
 	// Branch that the local version of the repo is checked out to.
 	Branch types.String `tfsdk:"branch"`
+	// WARNING: DESTRUCTIVE AND IRREVERSIBLE. If true, permanently deletes ALL
+	// uncommitted changes in the Git folder — staged, unstaged, and untracked
+	// files — before updating. Lost data CANNOT be recovered.
+	//
+	// NEVER use this on Git folders where users author or edit files. This flag
+	// is intended ONLY for automated jobs that treat the Git folder as a
+	// read-only mirror of a remote branch and need to force-sync it. If any
+	// user has uncommitted work in the Git folder, that work will be
+	// permanently destroyed without warning.
+	//
+	// Local commits that have been made but not yet pushed to the remote are
+	// preserved.
+	DangerouslyForceDiscardAll types.Bool `tfsdk:"dangerously_force_discard_all"`
+	// Git credential ID to use for this update operation. The Git credential
+	// must be configured for the current user.
+	GitCredentialId types.Int64 `tfsdk:"git_credential_id"`
 	// ID of the Git folder (repo) object in the workspace.
 	RepoId types.Int64 `tfsdk:"-"`
 	// If specified, update the sparse checkout settings. The update will fail
@@ -4646,6 +4719,8 @@ func (to *UpdateRepoRequest) SyncFieldsDuringRead(ctx context.Context, from Upda
 
 func (m UpdateRepoRequest) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
 	attrs["branch"] = attrs["branch"].SetOptional()
+	attrs["dangerously_force_discard_all"] = attrs["dangerously_force_discard_all"].SetOptional()
+	attrs["git_credential_id"] = attrs["git_credential_id"].SetOptional()
 	attrs["sparse_checkout"] = attrs["sparse_checkout"].SetOptional()
 	attrs["tag"] = attrs["tag"].SetOptional()
 	attrs["repo_id"] = attrs["repo_id"].SetRequired()
@@ -4673,10 +4748,12 @@ func (m UpdateRepoRequest) ToObjectValue(ctx context.Context) basetypes.ObjectVa
 	return types.ObjectValueMust(
 		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
 		map[string]attr.Value{
-			"branch":          m.Branch,
-			"repo_id":         m.RepoId,
-			"sparse_checkout": m.SparseCheckout,
-			"tag":             m.Tag,
+			"branch":                        m.Branch,
+			"dangerously_force_discard_all": m.DangerouslyForceDiscardAll,
+			"git_credential_id":             m.GitCredentialId,
+			"repo_id":                       m.RepoId,
+			"sparse_checkout":               m.SparseCheckout,
+			"tag":                           m.Tag,
 		})
 }
 
@@ -4684,10 +4761,12 @@ func (m UpdateRepoRequest) ToObjectValue(ctx context.Context) basetypes.ObjectVa
 func (m UpdateRepoRequest) Type(ctx context.Context) attr.Type {
 	return types.ObjectType{
 		AttrTypes: map[string]attr.Type{
-			"branch":          types.StringType,
-			"repo_id":         types.Int64Type,
-			"sparse_checkout": SparseCheckoutUpdate{}.Type(ctx),
-			"tag":             types.StringType,
+			"branch":                        types.StringType,
+			"dangerously_force_discard_all": types.BoolType,
+			"git_credential_id":             types.Int64Type,
+			"repo_id":                       types.Int64Type,
+			"sparse_checkout":               SparseCheckoutUpdate{}.Type(ctx),
+			"tag":                           types.StringType,
 		},
 	}
 }

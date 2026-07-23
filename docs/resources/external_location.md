@@ -3,6 +3,8 @@ subcategory: "Unity Catalog"
 ---
 # databricks_external_location Resource
 
+[API Documentation](https://docs.databricks.com/api/workspace/externallocations)
+
 To work with external tables, Unity Catalog introduces two new objects to access and work with external cloud storage:
 
 - [databricks_storage_credential](storage_credential.md) represent authentication methods to access cloud storage (e.g. an IAM role for Amazon S3 or a service principal for Azure Storage). Storage credentials are access-controlled to determine which users can use the credential.
@@ -166,6 +168,8 @@ The `file_event_queue` block supports the following:
   - `queue_url` - (Required) The URL of the queue.
 - `provided_sqs` - (Optional) Configuration for provided Amazon SQS queue.
   - `queue_url` - (Required) The URL of the SQS queue.
+- `provider_config` - (Optional) Configure the provider for management through account provider. This block consists of the following fields:
+  - `workspace_id` - (Required) Workspace ID which the resource belongs to. This workspace must be part of the account which the provider is configured with.
 
 ## Attribute Reference
 

@@ -27,7 +27,14 @@ func TestDatabaseInstanceName(t *testing.T) {
 		"name": "test-instance",
 	})
 	d.SetId("test-instance")
-	name := resourcesMap["databricks_database_instance"].Name(ic, d)
+
+	// Create wrapper for the resource data
+	wrapper := &SDKv2ResourceData{
+		data:   d,
+		schema: &schema.Resource{Schema: map[string]*schema.Schema{"name": {Type: schema.TypeString, Required: true}}},
+	}
+
+	name := resourcesMap["databricks_database_instance"].NameUnified(ic, wrapper)
 	assert.Equal(t, "test-instance", name)
 }
 
@@ -148,6 +155,7 @@ func TestDatabaseInstanceExport(t *testing.T) {
 			},
 		},
 	}, func(ctx context.Context, client *common.DatabricksClient) {
+		client.Config.WorkspaceID = testProviderWorkspaceID
 		tmpDir := fmt.Sprintf("/tmp/tf-%s", qa.RandomName())
 		defer os.RemoveAll(tmpDir)
 

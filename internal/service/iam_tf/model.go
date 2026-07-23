@@ -3417,9 +3417,10 @@ type GetPermissionLevelsRequest struct {
 	RequestObjectId types.String `tfsdk:"-"`
 	// The type of the request object. Can be one of the following: alerts,
 	// alertsv2, authorization, clusters, cluster-policies, dashboards,
-	// dbsql-dashboards, directories, experiments, files, genie, instance-pools,
-	// jobs, notebooks, pipelines, queries, registered-models, repos,
-	// serving-endpoints, or warehouses.
+	// database-projects, dbsql-dashboards, directories, experiments, files,
+	// genie, instance-pools, jobs, knowledge-assistants, notebooks, pipelines,
+	// queries, registered-models, repos, serving-endpoints, supervisor-agents,
+	// vector-search-endpoints, or warehouses.
 	RequestObjectType types.String `tfsdk:"-"`
 }
 
@@ -3564,9 +3565,10 @@ type GetPermissionRequest struct {
 	RequestObjectId types.String `tfsdk:"-"`
 	// The type of the request object. Can be one of the following: alerts,
 	// alertsv2, authorization, clusters, cluster-policies, dashboards,
-	// dbsql-dashboards, directories, experiments, files, genie, instance-pools,
-	// jobs, notebooks, pipelines, queries, registered-models, repos,
-	// serving-endpoints, or warehouses.
+	// database-projects, dbsql-dashboards, directories, experiments, files,
+	// genie, instance-pools, jobs, knowledge-assistants, notebooks, pipelines,
+	// queries, registered-models, repos, serving-endpoints, supervisor-agents,
+	// vector-search-endpoints, or warehouses.
 	RequestObjectType types.String `tfsdk:"-"`
 }
 
@@ -5651,6 +5653,10 @@ func (m ListWorkspaceAssignmentRequest) Type(ctx context.Context) attr.Type {
 }
 
 type MeRequest struct {
+	// Comma-separated list of attributes to return in response.
+	Attributes types.String `tfsdk:"-"`
+	// Comma-separated list of attributes to exclude in response.
+	ExcludedAttributes types.String `tfsdk:"-"`
 }
 
 func (to *MeRequest) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from MeRequest) {
@@ -5660,6 +5666,8 @@ func (to *MeRequest) SyncFieldsDuringRead(ctx context.Context, from MeRequest) {
 }
 
 func (m MeRequest) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["attributes"] = attrs["attributes"].SetOptional()
+	attrs["excluded_attributes"] = attrs["excluded_attributes"].SetOptional()
 
 	return attrs
 }
@@ -5681,13 +5689,19 @@ func (m MeRequest) GetComplexFieldTypes(ctx context.Context) map[string]reflect.
 func (m MeRequest) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
 	return types.ObjectValueMust(
 		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
-		map[string]attr.Value{})
+		map[string]attr.Value{
+			"attributes":          m.Attributes,
+			"excluded_attributes": m.ExcludedAttributes,
+		})
 }
 
 // Type implements basetypes.ObjectValuable.
 func (m MeRequest) Type(ctx context.Context) attr.Type {
 	return types.ObjectType{
-		AttrTypes: map[string]attr.Type{},
+		AttrTypes: map[string]attr.Type{
+			"attributes":          types.StringType,
+			"excluded_attributes": types.StringType,
+		},
 	}
 }
 
@@ -8464,9 +8478,10 @@ type SetObjectPermissions struct {
 	RequestObjectId types.String `tfsdk:"-"`
 	// The type of the request object. Can be one of the following: alerts,
 	// alertsv2, authorization, clusters, cluster-policies, dashboards,
-	// dbsql-dashboards, directories, experiments, files, genie, instance-pools,
-	// jobs, notebooks, pipelines, queries, registered-models, repos,
-	// serving-endpoints, or warehouses.
+	// database-projects, dbsql-dashboards, directories, experiments, files,
+	// genie, instance-pools, jobs, knowledge-assistants, notebooks, pipelines,
+	// queries, registered-models, repos, serving-endpoints, supervisor-agents,
+	// vector-search-endpoints, or warehouses.
 	RequestObjectType types.String `tfsdk:"-"`
 }
 
@@ -9434,9 +9449,10 @@ type UpdateObjectPermissions struct {
 	RequestObjectId types.String `tfsdk:"-"`
 	// The type of the request object. Can be one of the following: alerts,
 	// alertsv2, authorization, clusters, cluster-policies, dashboards,
-	// dbsql-dashboards, directories, experiments, files, genie, instance-pools,
-	// jobs, notebooks, pipelines, queries, registered-models, repos,
-	// serving-endpoints, or warehouses.
+	// database-projects, dbsql-dashboards, directories, experiments, files,
+	// genie, instance-pools, jobs, knowledge-assistants, notebooks, pipelines,
+	// queries, registered-models, repos, serving-endpoints, supervisor-agents,
+	// vector-search-endpoints, or warehouses.
 	RequestObjectType types.String `tfsdk:"-"`
 }
 
