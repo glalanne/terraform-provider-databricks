@@ -3,6 +3,7 @@ package jobs
 import (
 	"cmp"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -821,9 +822,24 @@ func (a JobsAPI) Update(id string, jobSettings JobSettings) error {
 	if err != nil {
 		return err
 	}
-	return wrapMissingJobError(a.client.Post(a.context, "/jobs/reset", UpdateJobRequest{
-		JobID:       jobID,
-		NewSettings: &jobSettings,
+
+	settingsJSON, err := json.Marshal(jobSettings)
+	if err != nil {
+		return err
+	}
+	var settings map[string]any
+	if err := json.Unmarshal(settingsJSON, &settings); err != nil {
+		return err
+	}
+	if jobSettings.Schedule == nil {
+		// The Jobs API treats an omitted schedule as "keep the existing
+		// schedule"; null is required to remove it.
+		settings["schedule"] = nil
+	}
+
+	return wrapMissingJobError(a.client.Post(a.context, "/jobs/reset", map[string]any{
+		"job_id":       jobID,
+		"new_settings": settings,
 	}, nil, a.client.AddWorkspaceIdHeader), id)
 }
 
