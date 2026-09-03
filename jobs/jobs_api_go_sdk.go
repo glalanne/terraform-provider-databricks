@@ -3,6 +3,7 @@ package jobs
 import (
 	"cmp"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"slices"
@@ -289,7 +290,7 @@ func Create(createJob jobs.CreateJob, w *databricks.WorkspaceClient, ctx context
 	return res.JobId, err
 }
 
-func Update(jobID int64, js JobSettingsResource, w *databricks.WorkspaceClient, ctx context.Context) error {
+func Update(jobID int64, js JobSettingsResource, w *databricks.WorkspaceClient, c *common.DatabricksClient, ctx context.Context) error {
 	// With the introduction of Jobs2.2, queue becomes enabled by default.
 	// This could break TF customers, so we disable it by default until we
 	// have more clarity.
@@ -301,6 +302,22 @@ func Update(jobID int64, js JobSettingsResource, w *databricks.WorkspaceClient, 
 		js.Queue = &jobs.QueueSettings{
 			Enabled: false,
 		}
+	}
+	if js.Schedule == nil {
+		settingsJSON, err := json.Marshal(js.JobSettings)
+		if err != nil {
+			return err
+		}
+		var settings map[string]any
+		if err := json.Unmarshal(settingsJSON, &settings); err != nil {
+			return err
+		}
+		settings["schedule"] = nil
+		err = c.Post(context.WithValue(ctx, common.Api, common.API_2_2), "/jobs/reset", map[string]any{
+			"job_id":       jobID,
+			"new_settings": settings,
+		}, nil, c.AddWorkspaceIdHeader)
+		return wrapMissingJobError(err, fmt.Sprintf("%d", jobID))
 	}
 	err := w.Jobs.Reset(ctx, jobs.ResetJob{
 		JobId:       jobID,

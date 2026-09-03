@@ -647,6 +647,7 @@ const (
 	API_1_2 ApiVersion = "1.2"
 	API_2_0 ApiVersion = "2.0"
 	API_2_1 ApiVersion = "2.1"
+	API_2_2 ApiVersion = "2.2"
 )
 
 // accountPathRE matches account-scoped request paths after addApiPrefix has

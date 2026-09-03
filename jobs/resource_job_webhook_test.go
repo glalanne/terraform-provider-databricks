@@ -13,25 +13,20 @@ func TestResourceJobUpdate_WebhookNotifications(t *testing.T) {
 			{
 				Method:   "POST",
 				Resource: "/api/2.2/jobs/reset",
-				ExpectedRequest: UpdateJobRequest{
-					JobID: 789,
-					NewSettings: &JobSettings{
-						Name: "Webhook test",
-						Tasks: []JobTaskSettings{
-							{
-								TaskKey:           "task1",
-								ExistingClusterID: "abc",
-							},
+				ExpectedRequest: map[string]any{
+					"job_id": 789,
+					"new_settings": map[string]any{
+						"name":     "Webhook test",
+						"schedule": nil,
+						"tasks": []any{map[string]any{
+							"task_key":            "task1",
+							"existing_cluster_id": "abc",
+						}},
+						"webhook_notifications": map[string]any{
+							"on_success": []any{map[string]any{"id": "id1"}},
 						},
-						WebhookNotifications: &jobs.WebhookNotifications{
-							OnSuccess: []jobs.Webhook{
-								{Id: "id1"},
-							},
-						},
-						MaxConcurrentRuns: 1,
-						Queue: &jobs.QueueSettings{
-							Enabled: false,
-						},
+						"max_concurrent_runs": 1,
+						"queue":               map[string]any{"enabled": false},
 					},
 				},
 				Response: Job{
@@ -54,6 +49,23 @@ func TestResourceJobUpdate_WebhookNotifications(t *testing.T) {
 							OnSuccess: []jobs.Webhook{
 								{Id: "id1"},
 							},
+						},
+						MaxConcurrentRuns: 1,
+					},
+				},
+			},
+			{
+				Method:   "GET",
+				Resource: "/api/2.2/jobs/get?job_id=789",
+				Response: Job{
+					Settings: &JobSettings{
+						Name: "Webhook test",
+						Tasks: []JobTaskSettings{{
+							TaskKey:           "task1",
+							ExistingClusterID: "abc",
+						}},
+						WebhookNotifications: &jobs.WebhookNotifications{
+							OnSuccess: []jobs.Webhook{{Id: "id1"}},
 						},
 						MaxConcurrentRuns: 1,
 					},

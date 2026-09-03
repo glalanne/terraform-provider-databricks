@@ -1206,7 +1206,7 @@ func ResourceJob() common.Resource {
 				if err != nil {
 					return err
 				}
-				err = Update(jobID, jsr, w, ctx)
+				err = Update(jobID, jsr, w, c, ctx)
 				if err != nil {
 					return err
 				}
