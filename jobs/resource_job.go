@@ -1210,7 +1210,10 @@ func ResourceJob() common.Resource {
 				if err != nil {
 					return err
 				}
-				return getJobLifecycleManagerGoSdk(d, c).OnUpdate(ctx)
+				if err := getJobLifecycleManagerGoSdk(d, c).OnUpdate(ctx); err != nil {
+					return err
+				}
+				return readJobGoSdk(ctx, d, c)
 			} else {
 				// Api 2.0
 				// TODO: Deprecate and remove this code path
@@ -1224,7 +1227,15 @@ func ResourceJob() common.Resource {
 				if err != nil {
 					return err
 				}
-				return getJobLifecycleManager(d, c).OnUpdate(ctx)
+				if err := getJobLifecycleManager(d, c).OnUpdate(ctx); err != nil {
+					return err
+				}
+				job, err := jobsAPI.Read(d.Id())
+				if err != nil {
+					return err
+				}
+				d.Set("url", c.FormatURL("#job/", d.Id()))
+				return common.StructToData(*job.Settings, jobsGoSdkSchema, d)
 			}
 		},
 		Delete: func(ctx context.Context, d *schema.ResourceData, c *common.DatabricksClient) error {
