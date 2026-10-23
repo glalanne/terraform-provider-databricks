@@ -114,6 +114,18 @@ type AlertV2 struct {
 	CustomDescription types.String `tfsdk:"custom_description"`
 	// Custom summary for the alert. support mustache template.
 	CustomSummary types.String `tfsdk:"custom_summary"`
+	// The format used to interpret the `custom_summary` and
+	// `custom_description` templates.
+	//
+	// `HTML` treats both templates as HTML with Mustache `{{VARIABLE_NAME}}`
+	// placeholders. `MARKDOWN` treats them as Markdown with allowlisted
+	// `@VARIABLE_NAME` placeholders and converts them to the format each
+	// notification destination expects, so a single template renders correctly
+	// in email, Slack, and Microsoft Teams.
+	//
+	// When unset, the API applies no default. Responses omit the field unless a
+	// format is stored, and a template with no format is rendered as HTML.
+	CustomTemplateFormat types.String `tfsdk:"custom_template_format"`
 	// The display name of the alert.
 	DisplayName types.String `tfsdk:"display_name"`
 	// The actual identity that will be used to execute the alert. This is an
@@ -122,13 +134,30 @@ type AlertV2 struct {
 	EffectiveRunAs types.Object `tfsdk:"effective_run_as"`
 
 	Evaluation types.Object `tfsdk:"evaluation"`
-	// UUID identifying the alert.
+	// The canonical identifier of the alert to retrieve information about.
 	Id types.String `tfsdk:"id"`
 	// Indicates whether the query is trashed.
 	LifecycleState types.String `tfsdk:"lifecycle_state"`
 	// The owner's username. This field is set to "Unavailable" if the user has
 	// been deleted.
 	OwnerUserName types.String `tfsdk:"owner_user_name"`
+	// A list of parameters to pass into the alert SQL query statement
+	// containing parameter markers. Static values only.
+	//
+	// Reference a parameter in the query text as `:name`. Each parameter must
+	// have a unique, non-empty name. Each parameter consists of a name, a
+	// value, and optionally a type. To represent a NULL value, the `value`
+	// field may be omitted or set to `null` explicitly. If the `type` field is
+	// omitted, the value is interpreted as a string.
+	//
+	// If the type is given, parameters will be checked for type correctness
+	// according to the given type. A value is correct if the provided string
+	// can be converted to the requested type using the `cast` function. The
+	// exact semantics are described in the section [`cast` function] of the SQL
+	// language reference.
+	//
+	// [`cast` function]: https://docs.databricks.com/sql/language-manual/functions/cast.html
+	Parameters types.Set `tfsdk:"parameters"`
 	// The workspace path of the folder containing the alert. Can only be set on
 	// create, and cannot be updated.
 	ParentPath types.String `tfsdk:"parent_path"`
@@ -171,6 +200,7 @@ func (m AlertV2) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Ty
 	return map[string]reflect.Type{
 		"effective_run_as": reflect.TypeOf(sql_tf.AlertV2RunAs{}),
 		"evaluation":       reflect.TypeOf(sql_tf.AlertV2Evaluation{}),
+		"parameters":       reflect.TypeOf(sql_tf.AlertStatementParameter{}),
 		"run_as":           reflect.TypeOf(sql_tf.AlertV2RunAs{}),
 		"schedule":         reflect.TypeOf(sql_tf.CronSchedule{}),
 		"provider_config":  reflect.TypeOf(ProviderConfig{}),
@@ -187,22 +217,24 @@ func (m AlertV2) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
 	return types.ObjectValueMust(
 		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
 		map[string]attr.Value{"create_time": m.CreateTime,
-			"custom_description": m.CustomDescription,
-			"custom_summary":     m.CustomSummary,
-			"display_name":       m.DisplayName,
-			"effective_run_as":   m.EffectiveRunAs,
-			"evaluation":         m.Evaluation,
-			"id":                 m.Id,
-			"lifecycle_state":    m.LifecycleState,
-			"owner_user_name":    m.OwnerUserName,
-			"parent_path":        m.ParentPath,
-			"purge_on_delete":    m.PurgeOnDelete,
-			"query_text":         m.QueryText,
-			"run_as":             m.RunAs,
-			"run_as_user_name":   m.RunAsUserName,
-			"schedule":           m.Schedule,
-			"update_time":        m.UpdateTime,
-			"warehouse_id":       m.WarehouseId,
+			"custom_description":     m.CustomDescription,
+			"custom_summary":         m.CustomSummary,
+			"custom_template_format": m.CustomTemplateFormat,
+			"display_name":           m.DisplayName,
+			"effective_run_as":       m.EffectiveRunAs,
+			"evaluation":             m.Evaluation,
+			"id":                     m.Id,
+			"lifecycle_state":        m.LifecycleState,
+			"owner_user_name":        m.OwnerUserName,
+			"parameters":             m.Parameters,
+			"parent_path":            m.ParentPath,
+			"purge_on_delete":        m.PurgeOnDelete,
+			"query_text":             m.QueryText,
+			"run_as":                 m.RunAs,
+			"run_as_user_name":       m.RunAsUserName,
+			"schedule":               m.Schedule,
+			"update_time":            m.UpdateTime,
+			"warehouse_id":           m.WarehouseId,
 
 			"provider_config": m.ProviderConfig,
 		},
@@ -214,22 +246,26 @@ func (m AlertV2) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
 func (m AlertV2) Type(ctx context.Context) attr.Type {
 	return types.ObjectType{
 		AttrTypes: map[string]attr.Type{"create_time": types.StringType,
-			"custom_description": types.StringType,
-			"custom_summary":     types.StringType,
-			"display_name":       types.StringType,
-			"effective_run_as":   sql_tf.AlertV2RunAs{}.Type(ctx),
-			"evaluation":         sql_tf.AlertV2Evaluation{}.Type(ctx),
-			"id":                 types.StringType,
-			"lifecycle_state":    types.StringType,
-			"owner_user_name":    types.StringType,
-			"parent_path":        types.StringType,
-			"purge_on_delete":    types.BoolType,
-			"query_text":         types.StringType,
-			"run_as":             sql_tf.AlertV2RunAs{}.Type(ctx),
-			"run_as_user_name":   types.StringType,
-			"schedule":           sql_tf.CronSchedule{}.Type(ctx),
-			"update_time":        types.StringType,
-			"warehouse_id":       types.StringType,
+			"custom_description":     types.StringType,
+			"custom_summary":         types.StringType,
+			"custom_template_format": types.StringType,
+			"display_name":           types.StringType,
+			"effective_run_as":       sql_tf.AlertV2RunAs{}.Type(ctx),
+			"evaluation":             sql_tf.AlertV2Evaluation{}.Type(ctx),
+			"id":                     types.StringType,
+			"lifecycle_state":        types.StringType,
+			"owner_user_name":        types.StringType,
+			"parameters": basetypes.SetType{
+				ElemType: sql_tf.AlertStatementParameter{}.Type(ctx),
+			},
+			"parent_path":      types.StringType,
+			"purge_on_delete":  types.BoolType,
+			"query_text":       types.StringType,
+			"run_as":           sql_tf.AlertV2RunAs{}.Type(ctx),
+			"run_as_user_name": types.StringType,
+			"schedule":         sql_tf.CronSchedule{}.Type(ctx),
+			"update_time":      types.StringType,
+			"warehouse_id":     types.StringType,
 
 			"provider_config": ProviderConfig{}.Type(ctx),
 		},
@@ -257,6 +293,12 @@ func (to *AlertV2) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from Aler
 				to.SetEvaluation(ctx, toEvaluation)
 			}
 		}
+	}
+	if !from.Parameters.IsNull() && !from.Parameters.IsUnknown() && to.Parameters.IsNull() && len(from.Parameters.Elements()) == 0 {
+		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
+		// If a user specified a non-Null, empty list for Parameters, and the deserialized field value is Null,
+		// set the resulting resource state to the empty list to match the planned value.
+		to.Parameters = from.Parameters
 	}
 	if !from.PurgeOnDelete.IsUnknown() {
 		to.PurgeOnDelete = from.PurgeOnDelete
@@ -303,6 +345,12 @@ func (to *AlertV2) SyncFieldsDuringRead(ctx context.Context, from AlertV2) {
 			}
 		}
 	}
+	if !from.Parameters.IsNull() && !from.Parameters.IsUnknown() && to.Parameters.IsNull() && len(from.Parameters.Elements()) == 0 {
+		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
+		// If a user specified a non-Null, empty list for Parameters, and the deserialized field value is Null,
+		// set the resulting resource state to the empty list to match the planned value.
+		to.Parameters = from.Parameters
+	}
 	if !from.PurgeOnDelete.IsUnknown() {
 		to.PurgeOnDelete = from.PurgeOnDelete
 	}
@@ -330,12 +378,14 @@ func (m AlertV2) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBu
 	attrs["create_time"] = attrs["create_time"].SetComputed()
 	attrs["custom_description"] = attrs["custom_description"].SetOptional()
 	attrs["custom_summary"] = attrs["custom_summary"].SetOptional()
+	attrs["custom_template_format"] = attrs["custom_template_format"].SetOptional()
 	attrs["display_name"] = attrs["display_name"].SetRequired()
 	attrs["effective_run_as"] = attrs["effective_run_as"].SetComputed()
 	attrs["evaluation"] = attrs["evaluation"].SetRequired()
 	attrs["id"] = attrs["id"].SetComputed()
 	attrs["lifecycle_state"] = attrs["lifecycle_state"].SetComputed()
 	attrs["owner_user_name"] = attrs["owner_user_name"].SetComputed()
+	attrs["parameters"] = attrs["parameters"].SetOptional()
 	attrs["parent_path"] = attrs["parent_path"].SetOptional()
 	attrs["query_text"] = attrs["query_text"].SetRequired()
 	attrs["run_as"] = attrs["run_as"].SetOptional()
@@ -401,6 +451,32 @@ func (m *AlertV2) GetEvaluation(ctx context.Context) (sql_tf.AlertV2Evaluation, 
 func (m *AlertV2) SetEvaluation(ctx context.Context, v sql_tf.AlertV2Evaluation) {
 	vs := v.ToObjectValue(ctx)
 	m.Evaluation = vs
+}
+
+// GetParameters returns the value of the Parameters field in AlertV2 as
+// a slice of sql_tf.AlertStatementParameter values.
+// If the field is unknown or null, the boolean return value is false.
+func (m *AlertV2) GetParameters(ctx context.Context) ([]sql_tf.AlertStatementParameter, bool) {
+	if m.Parameters.IsNull() || m.Parameters.IsUnknown() {
+		return nil, false
+	}
+	var v []sql_tf.AlertStatementParameter
+	d := m.Parameters.ElementsAs(ctx, &v, true)
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetParameters sets the value of the Parameters field in AlertV2.
+func (m *AlertV2) SetParameters(ctx context.Context, v []sql_tf.AlertStatementParameter) {
+	vs := make([]attr.Value, 0, len(v))
+	for _, e := range v {
+		vs = append(vs, e.ToObjectValue(ctx))
+	}
+	t := m.Type(ctx).(basetypes.ObjectType).AttrTypes["parameters"]
+	t = t.(attr.TypeWithElementType).ElementType()
+	m.Parameters = types.SetValueMust(t, vs)
 }
 
 // GetRunAs returns the value of the RunAs field in AlertV2 as
@@ -479,10 +555,6 @@ func (r *AlertV2Resource) ModifyPlan(ctx context.Context, req resource.ModifyPla
 		return
 	}
 	tfschema.WorkspaceDriftDetection(ctx, r.Client, req, resp)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	tfschema.ValidateWorkspaceID(ctx, r.Client, req, resp)
 }
 
 func (r *AlertV2Resource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -607,7 +679,7 @@ func (r *AlertV2Resource) update(ctx context.Context, plan AlertV2, diags *diag.
 	updateRequest := sql.UpdateAlertV2Request{
 		Alert:      alert_v2,
 		Id:         plan.Id.ValueString(),
-		UpdateMask: "custom_description,custom_summary,display_name,evaluation,parent_path,query_text,run_as,run_as_user_name,schedule,warehouse_id",
+		UpdateMask: "custom_description,custom_summary,custom_template_format,display_name,evaluation,parameters,parent_path,query_text,run_as,run_as_user_name,schedule,warehouse_id",
 	}
 
 	var namespace ProviderConfig

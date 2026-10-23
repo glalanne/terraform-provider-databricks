@@ -1573,6 +1573,10 @@ func (m *ComplianceSecurityProfileSetting_SdkV2) SetComplianceSecurityProfileWor
 }
 
 type Config_SdkV2 struct {
+	DatabricksAppSlack types.List `tfsdk:"databricks_app_slack"`
+
+	DatabricksAppTeams types.List `tfsdk:"databricks_app_teams"`
+
 	Email types.List `tfsdk:"email"`
 
 	GenericWebhook types.List `tfsdk:"generic_webhook"`
@@ -1585,6 +1589,24 @@ type Config_SdkV2 struct {
 }
 
 func (to *Config_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from Config_SdkV2) {
+	if !from.DatabricksAppSlack.IsNull() && !from.DatabricksAppSlack.IsUnknown() {
+		if toDatabricksAppSlack, ok := to.GetDatabricksAppSlack(ctx); ok {
+			if fromDatabricksAppSlack, ok := from.GetDatabricksAppSlack(ctx); ok {
+				// Recursively sync the fields of DatabricksAppSlack
+				toDatabricksAppSlack.SyncFieldsDuringCreateOrUpdate(ctx, fromDatabricksAppSlack)
+				to.SetDatabricksAppSlack(ctx, toDatabricksAppSlack)
+			}
+		}
+	}
+	if !from.DatabricksAppTeams.IsNull() && !from.DatabricksAppTeams.IsUnknown() {
+		if toDatabricksAppTeams, ok := to.GetDatabricksAppTeams(ctx); ok {
+			if fromDatabricksAppTeams, ok := from.GetDatabricksAppTeams(ctx); ok {
+				// Recursively sync the fields of DatabricksAppTeams
+				toDatabricksAppTeams.SyncFieldsDuringCreateOrUpdate(ctx, fromDatabricksAppTeams)
+				to.SetDatabricksAppTeams(ctx, toDatabricksAppTeams)
+			}
+		}
+	}
 	if !from.Email.IsNull() && !from.Email.IsUnknown() {
 		if toEmail, ok := to.GetEmail(ctx); ok {
 			if fromEmail, ok := from.GetEmail(ctx); ok {
@@ -1633,6 +1655,22 @@ func (to *Config_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from
 }
 
 func (to *Config_SdkV2) SyncFieldsDuringRead(ctx context.Context, from Config_SdkV2) {
+	if !from.DatabricksAppSlack.IsNull() && !from.DatabricksAppSlack.IsUnknown() {
+		if toDatabricksAppSlack, ok := to.GetDatabricksAppSlack(ctx); ok {
+			if fromDatabricksAppSlack, ok := from.GetDatabricksAppSlack(ctx); ok {
+				toDatabricksAppSlack.SyncFieldsDuringRead(ctx, fromDatabricksAppSlack)
+				to.SetDatabricksAppSlack(ctx, toDatabricksAppSlack)
+			}
+		}
+	}
+	if !from.DatabricksAppTeams.IsNull() && !from.DatabricksAppTeams.IsUnknown() {
+		if toDatabricksAppTeams, ok := to.GetDatabricksAppTeams(ctx); ok {
+			if fromDatabricksAppTeams, ok := from.GetDatabricksAppTeams(ctx); ok {
+				toDatabricksAppTeams.SyncFieldsDuringRead(ctx, fromDatabricksAppTeams)
+				to.SetDatabricksAppTeams(ctx, toDatabricksAppTeams)
+			}
+		}
+	}
 	if !from.Email.IsNull() && !from.Email.IsUnknown() {
 		if toEmail, ok := to.GetEmail(ctx); ok {
 			if fromEmail, ok := from.GetEmail(ctx); ok {
@@ -1676,6 +1714,10 @@ func (to *Config_SdkV2) SyncFieldsDuringRead(ctx context.Context, from Config_Sd
 }
 
 func (m Config_SdkV2) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["databricks_app_slack"] = attrs["databricks_app_slack"].SetOptional()
+	attrs["databricks_app_slack"] = attrs["databricks_app_slack"].(tfschema.ListNestedAttributeBuilder).AddValidator(listvalidator.SizeAtMost(1)).(tfschema.AttributeBuilder)
+	attrs["databricks_app_teams"] = attrs["databricks_app_teams"].SetOptional()
+	attrs["databricks_app_teams"] = attrs["databricks_app_teams"].(tfschema.ListNestedAttributeBuilder).AddValidator(listvalidator.SizeAtMost(1)).(tfschema.AttributeBuilder)
 	attrs["email"] = attrs["email"].SetOptional()
 	attrs["email"] = attrs["email"].(tfschema.ListNestedAttributeBuilder).AddValidator(listvalidator.SizeAtMost(1)).(tfschema.AttributeBuilder)
 	attrs["generic_webhook"] = attrs["generic_webhook"].SetOptional()
@@ -1699,11 +1741,13 @@ func (m Config_SdkV2) ApplySchemaCustomizations(attrs map[string]tfschema.Attrib
 // SDK values.
 func (m Config_SdkV2) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
 	return map[string]reflect.Type{
-		"email":           reflect.TypeOf(EmailConfig_SdkV2{}),
-		"generic_webhook": reflect.TypeOf(GenericWebhookConfig_SdkV2{}),
-		"microsoft_teams": reflect.TypeOf(MicrosoftTeamsConfig_SdkV2{}),
-		"pagerduty":       reflect.TypeOf(PagerdutyConfig_SdkV2{}),
-		"slack":           reflect.TypeOf(SlackConfig_SdkV2{}),
+		"databricks_app_slack": reflect.TypeOf(DatabricksAppSlackConfig_SdkV2{}),
+		"databricks_app_teams": reflect.TypeOf(DatabricksAppTeamsConfig_SdkV2{}),
+		"email":                reflect.TypeOf(EmailConfig_SdkV2{}),
+		"generic_webhook":      reflect.TypeOf(GenericWebhookConfig_SdkV2{}),
+		"microsoft_teams":      reflect.TypeOf(MicrosoftTeamsConfig_SdkV2{}),
+		"pagerduty":            reflect.TypeOf(PagerdutyConfig_SdkV2{}),
+		"slack":                reflect.TypeOf(SlackConfig_SdkV2{}),
 	}
 }
 
@@ -1714,11 +1758,13 @@ func (m Config_SdkV2) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
 	return types.ObjectValueMust(
 		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
 		map[string]attr.Value{
-			"email":           m.Email,
-			"generic_webhook": m.GenericWebhook,
-			"microsoft_teams": m.MicrosoftTeams,
-			"pagerduty":       m.Pagerduty,
-			"slack":           m.Slack,
+			"databricks_app_slack": m.DatabricksAppSlack,
+			"databricks_app_teams": m.DatabricksAppTeams,
+			"email":                m.Email,
+			"generic_webhook":      m.GenericWebhook,
+			"microsoft_teams":      m.MicrosoftTeams,
+			"pagerduty":            m.Pagerduty,
+			"slack":                m.Slack,
 		})
 }
 
@@ -1726,6 +1772,12 @@ func (m Config_SdkV2) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
 func (m Config_SdkV2) Type(ctx context.Context) attr.Type {
 	return types.ObjectType{
 		AttrTypes: map[string]attr.Type{
+			"databricks_app_slack": basetypes.ListType{
+				ElemType: DatabricksAppSlackConfig_SdkV2{}.Type(ctx),
+			},
+			"databricks_app_teams": basetypes.ListType{
+				ElemType: DatabricksAppTeamsConfig_SdkV2{}.Type(ctx),
+			},
 			"email": basetypes.ListType{
 				ElemType: EmailConfig_SdkV2{}.Type(ctx),
 			},
@@ -1743,6 +1795,58 @@ func (m Config_SdkV2) Type(ctx context.Context) attr.Type {
 			},
 		},
 	}
+}
+
+// GetDatabricksAppSlack returns the value of the DatabricksAppSlack field in Config_SdkV2 as
+// a DatabricksAppSlackConfig_SdkV2 value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *Config_SdkV2) GetDatabricksAppSlack(ctx context.Context) (DatabricksAppSlackConfig_SdkV2, bool) {
+	var e DatabricksAppSlackConfig_SdkV2
+	if m.DatabricksAppSlack.IsNull() || m.DatabricksAppSlack.IsUnknown() {
+		return e, false
+	}
+	var v []DatabricksAppSlackConfig_SdkV2
+	d := m.DatabricksAppSlack.ElementsAs(ctx, &v, true)
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	if len(v) == 0 {
+		return e, false
+	}
+	return v[0], true
+}
+
+// SetDatabricksAppSlack sets the value of the DatabricksAppSlack field in Config_SdkV2.
+func (m *Config_SdkV2) SetDatabricksAppSlack(ctx context.Context, v DatabricksAppSlackConfig_SdkV2) {
+	vs := []attr.Value{v.ToObjectValue(ctx)}
+	t := m.Type(ctx).(basetypes.ObjectType).AttrTypes["databricks_app_slack"]
+	m.DatabricksAppSlack = types.ListValueMust(t, vs)
+}
+
+// GetDatabricksAppTeams returns the value of the DatabricksAppTeams field in Config_SdkV2 as
+// a DatabricksAppTeamsConfig_SdkV2 value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *Config_SdkV2) GetDatabricksAppTeams(ctx context.Context) (DatabricksAppTeamsConfig_SdkV2, bool) {
+	var e DatabricksAppTeamsConfig_SdkV2
+	if m.DatabricksAppTeams.IsNull() || m.DatabricksAppTeams.IsUnknown() {
+		return e, false
+	}
+	var v []DatabricksAppTeamsConfig_SdkV2
+	d := m.DatabricksAppTeams.ElementsAs(ctx, &v, true)
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	if len(v) == 0 {
+		return e, false
+	}
+	return v[0], true
+}
+
+// SetDatabricksAppTeams sets the value of the DatabricksAppTeams field in Config_SdkV2.
+func (m *Config_SdkV2) SetDatabricksAppTeams(ctx context.Context, v DatabricksAppTeamsConfig_SdkV2) {
+	vs := []attr.Value{v.ToObjectValue(ctx)}
+	t := m.Type(ctx).(basetypes.ObjectType).AttrTypes["databricks_app_teams"]
+	m.DatabricksAppTeams = types.ListValueMust(t, vs)
 }
 
 // GetEmail returns the value of the Email field in Config_SdkV2 as
@@ -3844,6 +3948,19 @@ func (to *CustomerFacingIngressNetworkPolicyAuthentication_SdkV2) SyncFieldsDuri
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Identities = from.Identities
 	}
+	if !from.Identities.IsNull() && !from.Identities.IsUnknown() {
+		if toIdentities, ok := to.GetIdentities(ctx); ok {
+			if fromIdentities, ok := from.GetIdentities(ctx); ok {
+				// Recursively sync the fields of each Identities element by position.
+				for i := range toIdentities {
+					if i < len(fromIdentities) {
+						toIdentities[i].SyncFieldsDuringCreateOrUpdate(ctx, fromIdentities[i])
+					}
+				}
+				to.SetIdentities(ctx, toIdentities)
+			}
+		}
+	}
 }
 
 func (to *CustomerFacingIngressNetworkPolicyAuthentication_SdkV2) SyncFieldsDuringRead(ctx context.Context, from CustomerFacingIngressNetworkPolicyAuthentication_SdkV2) {
@@ -3852,6 +3969,18 @@ func (to *CustomerFacingIngressNetworkPolicyAuthentication_SdkV2) SyncFieldsDuri
 		// If a user specified a non-Null, empty list for Identities, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Identities = from.Identities
+	}
+	if !from.Identities.IsNull() && !from.Identities.IsUnknown() {
+		if toIdentities, ok := to.GetIdentities(ctx); ok {
+			if fromIdentities, ok := from.GetIdentities(ctx); ok {
+				for i := range toIdentities {
+					if i < len(fromIdentities) {
+						toIdentities[i].SyncFieldsDuringRead(ctx, fromIdentities[i])
+					}
+				}
+				to.SetIdentities(ctx, toIdentities)
+			}
+		}
 	}
 }
 
@@ -3978,10 +4107,15 @@ func (m CustomerFacingIngressNetworkPolicyAuthenticationIdentity_SdkV2) Type(ctx
 }
 
 type CustomerFacingIngressNetworkPolicyCrossWorkspaceAccess_SdkV2 struct {
+	// Allow rules are evaluated after deny rules. A request matching any allow
+	// rule is allowed; a request matching no rule is denied by default. Only
+	// applies when restriction_mode is RESTRICTED_ACCESS.
 	AllowRules types.List `tfsdk:"allow_rules"`
-
+	// Deny rules are evaluated first. A request matching any deny rule is
+	// denied, regardless of allow rules. Only applies when restriction_mode is
+	// RESTRICTED_ACCESS.
 	DenyRules types.List `tfsdk:"deny_rules"`
-
+	// The restriction mode for cross-workspace access.
 	RestrictionMode types.String `tfsdk:"restriction_mode"`
 }
 
@@ -3992,11 +4126,37 @@ func (to *CustomerFacingIngressNetworkPolicyCrossWorkspaceAccess_SdkV2) SyncFiel
 		// set the resulting resource state to the empty list to match the planned value.
 		to.AllowRules = from.AllowRules
 	}
+	if !from.AllowRules.IsNull() && !from.AllowRules.IsUnknown() {
+		if toAllowRules, ok := to.GetAllowRules(ctx); ok {
+			if fromAllowRules, ok := from.GetAllowRules(ctx); ok {
+				// Recursively sync the fields of each AllowRules element by position.
+				for i := range toAllowRules {
+					if i < len(fromAllowRules) {
+						toAllowRules[i].SyncFieldsDuringCreateOrUpdate(ctx, fromAllowRules[i])
+					}
+				}
+				to.SetAllowRules(ctx, toAllowRules)
+			}
+		}
+	}
 	if !from.DenyRules.IsNull() && !from.DenyRules.IsUnknown() && to.DenyRules.IsNull() && len(from.DenyRules.Elements()) == 0 {
 		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
 		// If a user specified a non-Null, empty list for DenyRules, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.DenyRules = from.DenyRules
+	}
+	if !from.DenyRules.IsNull() && !from.DenyRules.IsUnknown() {
+		if toDenyRules, ok := to.GetDenyRules(ctx); ok {
+			if fromDenyRules, ok := from.GetDenyRules(ctx); ok {
+				// Recursively sync the fields of each DenyRules element by position.
+				for i := range toDenyRules {
+					if i < len(fromDenyRules) {
+						toDenyRules[i].SyncFieldsDuringCreateOrUpdate(ctx, fromDenyRules[i])
+					}
+				}
+				to.SetDenyRules(ctx, toDenyRules)
+			}
+		}
 	}
 }
 
@@ -4007,11 +4167,35 @@ func (to *CustomerFacingIngressNetworkPolicyCrossWorkspaceAccess_SdkV2) SyncFiel
 		// set the resulting resource state to the empty list to match the planned value.
 		to.AllowRules = from.AllowRules
 	}
+	if !from.AllowRules.IsNull() && !from.AllowRules.IsUnknown() {
+		if toAllowRules, ok := to.GetAllowRules(ctx); ok {
+			if fromAllowRules, ok := from.GetAllowRules(ctx); ok {
+				for i := range toAllowRules {
+					if i < len(fromAllowRules) {
+						toAllowRules[i].SyncFieldsDuringRead(ctx, fromAllowRules[i])
+					}
+				}
+				to.SetAllowRules(ctx, toAllowRules)
+			}
+		}
+	}
 	if !from.DenyRules.IsNull() && !from.DenyRules.IsUnknown() && to.DenyRules.IsNull() && len(from.DenyRules.Elements()) == 0 {
 		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
 		// If a user specified a non-Null, empty list for DenyRules, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.DenyRules = from.DenyRules
+	}
+	if !from.DenyRules.IsNull() && !from.DenyRules.IsUnknown() {
+		if toDenyRules, ok := to.GetDenyRules(ctx); ok {
+			if fromDenyRules, ok := from.GetDenyRules(ctx); ok {
+				for i := range toDenyRules {
+					if i < len(fromDenyRules) {
+						toDenyRules[i].SyncFieldsDuringRead(ctx, fromDenyRules[i])
+					}
+				}
+				to.SetDenyRules(ctx, toDenyRules)
+			}
+		}
 	}
 }
 
@@ -4117,13 +4301,20 @@ func (m *CustomerFacingIngressNetworkPolicyCrossWorkspaceAccess_SdkV2) SetDenyRu
 	m.DenyRules = types.ListValueMust(t, vs)
 }
 
+// An ingress rule is enforced when a request satisfies all specified attributes
+// — including request origin, destination, and authentication.
 type CustomerFacingIngressNetworkPolicyCrossWorkspaceIngressRule_SdkV2 struct {
+	// The authenticated identity the request must match. When unset, the rule
+	// matches all users and service principals.
 	Authentication types.List `tfsdk:"authentication"`
-
+	// The destination the request must match — the resource being accessed,
+	// for example the workspace UI or workspace APIs. See RequestDestination.
 	Destination types.List `tfsdk:"destination"`
 	// The label for this ingress rule.
 	Label types.String `tfsdk:"label"`
-
+	// The origin the request must match — the source workspace the request
+	// comes from, either specific source workspaces or any source workspace in
+	// any account. See CrossWorkspaceRequestOrigin.
 	Origin types.List `tfsdk:"origin"`
 }
 
@@ -4674,11 +4865,37 @@ func (to *CustomerFacingIngressNetworkPolicyPrivateAccess_SdkV2) SyncFieldsDurin
 		// set the resulting resource state to the empty list to match the planned value.
 		to.AllowRules = from.AllowRules
 	}
+	if !from.AllowRules.IsNull() && !from.AllowRules.IsUnknown() {
+		if toAllowRules, ok := to.GetAllowRules(ctx); ok {
+			if fromAllowRules, ok := from.GetAllowRules(ctx); ok {
+				// Recursively sync the fields of each AllowRules element by position.
+				for i := range toAllowRules {
+					if i < len(fromAllowRules) {
+						toAllowRules[i].SyncFieldsDuringCreateOrUpdate(ctx, fromAllowRules[i])
+					}
+				}
+				to.SetAllowRules(ctx, toAllowRules)
+			}
+		}
+	}
 	if !from.DenyRules.IsNull() && !from.DenyRules.IsUnknown() && to.DenyRules.IsNull() && len(from.DenyRules.Elements()) == 0 {
 		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
 		// If a user specified a non-Null, empty list for DenyRules, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.DenyRules = from.DenyRules
+	}
+	if !from.DenyRules.IsNull() && !from.DenyRules.IsUnknown() {
+		if toDenyRules, ok := to.GetDenyRules(ctx); ok {
+			if fromDenyRules, ok := from.GetDenyRules(ctx); ok {
+				// Recursively sync the fields of each DenyRules element by position.
+				for i := range toDenyRules {
+					if i < len(fromDenyRules) {
+						toDenyRules[i].SyncFieldsDuringCreateOrUpdate(ctx, fromDenyRules[i])
+					}
+				}
+				to.SetDenyRules(ctx, toDenyRules)
+			}
+		}
 	}
 }
 
@@ -4689,11 +4906,35 @@ func (to *CustomerFacingIngressNetworkPolicyPrivateAccess_SdkV2) SyncFieldsDurin
 		// set the resulting resource state to the empty list to match the planned value.
 		to.AllowRules = from.AllowRules
 	}
+	if !from.AllowRules.IsNull() && !from.AllowRules.IsUnknown() {
+		if toAllowRules, ok := to.GetAllowRules(ctx); ok {
+			if fromAllowRules, ok := from.GetAllowRules(ctx); ok {
+				for i := range toAllowRules {
+					if i < len(fromAllowRules) {
+						toAllowRules[i].SyncFieldsDuringRead(ctx, fromAllowRules[i])
+					}
+				}
+				to.SetAllowRules(ctx, toAllowRules)
+			}
+		}
+	}
 	if !from.DenyRules.IsNull() && !from.DenyRules.IsUnknown() && to.DenyRules.IsNull() && len(from.DenyRules.Elements()) == 0 {
 		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
 		// If a user specified a non-Null, empty list for DenyRules, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.DenyRules = from.DenyRules
+	}
+	if !from.DenyRules.IsNull() && !from.DenyRules.IsUnknown() {
+		if toDenyRules, ok := to.GetDenyRules(ctx); ok {
+			if fromDenyRules, ok := from.GetDenyRules(ctx); ok {
+				for i := range toDenyRules {
+					if i < len(fromDenyRules) {
+						toDenyRules[i].SyncFieldsDuringRead(ctx, fromDenyRules[i])
+					}
+				}
+				to.SetDenyRules(ctx, toDenyRules)
+			}
+		}
 	}
 }
 
@@ -5150,11 +5391,37 @@ func (to *CustomerFacingIngressNetworkPolicyPublicAccess_SdkV2) SyncFieldsDuring
 		// set the resulting resource state to the empty list to match the planned value.
 		to.AllowRules = from.AllowRules
 	}
+	if !from.AllowRules.IsNull() && !from.AllowRules.IsUnknown() {
+		if toAllowRules, ok := to.GetAllowRules(ctx); ok {
+			if fromAllowRules, ok := from.GetAllowRules(ctx); ok {
+				// Recursively sync the fields of each AllowRules element by position.
+				for i := range toAllowRules {
+					if i < len(fromAllowRules) {
+						toAllowRules[i].SyncFieldsDuringCreateOrUpdate(ctx, fromAllowRules[i])
+					}
+				}
+				to.SetAllowRules(ctx, toAllowRules)
+			}
+		}
+	}
 	if !from.DenyRules.IsNull() && !from.DenyRules.IsUnknown() && to.DenyRules.IsNull() && len(from.DenyRules.Elements()) == 0 {
 		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
 		// If a user specified a non-Null, empty list for DenyRules, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.DenyRules = from.DenyRules
+	}
+	if !from.DenyRules.IsNull() && !from.DenyRules.IsUnknown() {
+		if toDenyRules, ok := to.GetDenyRules(ctx); ok {
+			if fromDenyRules, ok := from.GetDenyRules(ctx); ok {
+				// Recursively sync the fields of each DenyRules element by position.
+				for i := range toDenyRules {
+					if i < len(fromDenyRules) {
+						toDenyRules[i].SyncFieldsDuringCreateOrUpdate(ctx, fromDenyRules[i])
+					}
+				}
+				to.SetDenyRules(ctx, toDenyRules)
+			}
+		}
 	}
 }
 
@@ -5165,11 +5432,35 @@ func (to *CustomerFacingIngressNetworkPolicyPublicAccess_SdkV2) SyncFieldsDuring
 		// set the resulting resource state to the empty list to match the planned value.
 		to.AllowRules = from.AllowRules
 	}
+	if !from.AllowRules.IsNull() && !from.AllowRules.IsUnknown() {
+		if toAllowRules, ok := to.GetAllowRules(ctx); ok {
+			if fromAllowRules, ok := from.GetAllowRules(ctx); ok {
+				for i := range toAllowRules {
+					if i < len(fromAllowRules) {
+						toAllowRules[i].SyncFieldsDuringRead(ctx, fromAllowRules[i])
+					}
+				}
+				to.SetAllowRules(ctx, toAllowRules)
+			}
+		}
+	}
 	if !from.DenyRules.IsNull() && !from.DenyRules.IsUnknown() && to.DenyRules.IsNull() && len(from.DenyRules.Elements()) == 0 {
 		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
 		// If a user specified a non-Null, empty list for DenyRules, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.DenyRules = from.DenyRules
+	}
+	if !from.DenyRules.IsNull() && !from.DenyRules.IsUnknown() {
+		if toDenyRules, ok := to.GetDenyRules(ctx); ok {
+			if fromDenyRules, ok := from.GetDenyRules(ctx); ok {
+				for i := range toDenyRules {
+					if i < len(fromDenyRules) {
+						toDenyRules[i].SyncFieldsDuringRead(ctx, fromDenyRules[i])
+					}
+				}
+				to.SetDenyRules(ctx, toDenyRules)
+			}
+		}
 	}
 }
 
@@ -6054,6 +6345,10 @@ func (m *CustomerFacingIngressNetworkPolicyRequestDestination_SdkV2) SetWorkspac
 // Matches workspace-level Databricks API endpoints for an ingress network
 // policy rule.
 type CustomerFacingIngressNetworkPolicyWorkspaceApiDestination_SdkV2 struct {
+	// Inverse of `scopes`: matches every API scope EXCEPT those listed here
+	// ("allow all except"). Mutually exclusive with `scopes` — a single
+	// destination may set at most one of the two.
+	ExcludedScopes types.List `tfsdk:"excluded_scopes"`
 	// Qualifies the breadth of API access for the listed scopes. See
 	// ApiScopeQualifier.
 	ScopeQualifier types.String `tfsdk:"scope_qualifier"`
@@ -6062,6 +6357,12 @@ type CustomerFacingIngressNetworkPolicyWorkspaceApiDestination_SdkV2 struct {
 }
 
 func (to *CustomerFacingIngressNetworkPolicyWorkspaceApiDestination_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from CustomerFacingIngressNetworkPolicyWorkspaceApiDestination_SdkV2) {
+	if !from.ExcludedScopes.IsNull() && !from.ExcludedScopes.IsUnknown() && to.ExcludedScopes.IsNull() && len(from.ExcludedScopes.Elements()) == 0 {
+		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
+		// If a user specified a non-Null, empty list for ExcludedScopes, and the deserialized field value is Null,
+		// set the resulting resource state to the empty list to match the planned value.
+		to.ExcludedScopes = from.ExcludedScopes
+	}
 	if !from.Scopes.IsNull() && !from.Scopes.IsUnknown() && to.Scopes.IsNull() && len(from.Scopes.Elements()) == 0 {
 		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
 		// If a user specified a non-Null, empty list for Scopes, and the deserialized field value is Null,
@@ -6071,6 +6372,12 @@ func (to *CustomerFacingIngressNetworkPolicyWorkspaceApiDestination_SdkV2) SyncF
 }
 
 func (to *CustomerFacingIngressNetworkPolicyWorkspaceApiDestination_SdkV2) SyncFieldsDuringRead(ctx context.Context, from CustomerFacingIngressNetworkPolicyWorkspaceApiDestination_SdkV2) {
+	if !from.ExcludedScopes.IsNull() && !from.ExcludedScopes.IsUnknown() && to.ExcludedScopes.IsNull() && len(from.ExcludedScopes.Elements()) == 0 {
+		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
+		// If a user specified a non-Null, empty list for ExcludedScopes, and the deserialized field value is Null,
+		// set the resulting resource state to the empty list to match the planned value.
+		to.ExcludedScopes = from.ExcludedScopes
+	}
 	if !from.Scopes.IsNull() && !from.Scopes.IsUnknown() && to.Scopes.IsNull() && len(from.Scopes.Elements()) == 0 {
 		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
 		// If a user specified a non-Null, empty list for Scopes, and the deserialized field value is Null,
@@ -6080,6 +6387,7 @@ func (to *CustomerFacingIngressNetworkPolicyWorkspaceApiDestination_SdkV2) SyncF
 }
 
 func (m CustomerFacingIngressNetworkPolicyWorkspaceApiDestination_SdkV2) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["excluded_scopes"] = attrs["excluded_scopes"].SetOptional()
 	attrs["scope_qualifier"] = attrs["scope_qualifier"].SetOptional()
 	attrs["scopes"] = attrs["scopes"].SetOptional()
 
@@ -6095,7 +6403,8 @@ func (m CustomerFacingIngressNetworkPolicyWorkspaceApiDestination_SdkV2) ApplySc
 // SDK values.
 func (m CustomerFacingIngressNetworkPolicyWorkspaceApiDestination_SdkV2) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
 	return map[string]reflect.Type{
-		"scopes": reflect.TypeOf(types.String{}),
+		"excluded_scopes": reflect.TypeOf(types.String{}),
+		"scopes":          reflect.TypeOf(types.String{}),
 	}
 }
 
@@ -6106,6 +6415,7 @@ func (m CustomerFacingIngressNetworkPolicyWorkspaceApiDestination_SdkV2) ToObjec
 	return types.ObjectValueMust(
 		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
 		map[string]attr.Value{
+			"excluded_scopes": m.ExcludedScopes,
 			"scope_qualifier": m.ScopeQualifier,
 			"scopes":          m.Scopes,
 		})
@@ -6115,12 +6425,41 @@ func (m CustomerFacingIngressNetworkPolicyWorkspaceApiDestination_SdkV2) ToObjec
 func (m CustomerFacingIngressNetworkPolicyWorkspaceApiDestination_SdkV2) Type(ctx context.Context) attr.Type {
 	return types.ObjectType{
 		AttrTypes: map[string]attr.Type{
+			"excluded_scopes": basetypes.ListType{
+				ElemType: types.StringType,
+			},
 			"scope_qualifier": types.StringType,
 			"scopes": basetypes.ListType{
 				ElemType: types.StringType,
 			},
 		},
 	}
+}
+
+// GetExcludedScopes returns the value of the ExcludedScopes field in CustomerFacingIngressNetworkPolicyWorkspaceApiDestination_SdkV2 as
+// a slice of types.String values.
+// If the field is unknown or null, the boolean return value is false.
+func (m *CustomerFacingIngressNetworkPolicyWorkspaceApiDestination_SdkV2) GetExcludedScopes(ctx context.Context) ([]types.String, bool) {
+	if m.ExcludedScopes.IsNull() || m.ExcludedScopes.IsUnknown() {
+		return nil, false
+	}
+	var v []types.String
+	d := m.ExcludedScopes.ElementsAs(ctx, &v, true)
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetExcludedScopes sets the value of the ExcludedScopes field in CustomerFacingIngressNetworkPolicyWorkspaceApiDestination_SdkV2.
+func (m *CustomerFacingIngressNetworkPolicyWorkspaceApiDestination_SdkV2) SetExcludedScopes(ctx context.Context, v []types.String) {
+	vs := make([]attr.Value, 0, len(v))
+	for _, e := range v {
+		vs = append(vs, e)
+	}
+	t := m.Type(ctx).(basetypes.ObjectType).AttrTypes["excluded_scopes"]
+	t = t.(attr.TypeWithElementType).ElementType()
+	m.ExcludedScopes = types.ListValueMust(t, vs)
 }
 
 // GetScopes returns the value of the Scopes field in CustomerFacingIngressNetworkPolicyWorkspaceApiDestination_SdkV2 as
@@ -6625,6 +6964,149 @@ func (m *DashboardEmailSubscriptions_SdkV2) SetBooleanVal(ctx context.Context, v
 	vs := []attr.Value{v.ToObjectValue(ctx)}
 	t := m.Type(ctx).(basetypes.ObjectType).AttrTypes["boolean_val"]
 	m.BooleanVal = types.ListValueMust(t, vs)
+}
+
+// Slack channel reached through the Databricks app. The app must already be
+// installed in the Slack workspace and connected to this Databricks workspace.
+type DatabricksAppSlackConfig_SdkV2 struct {
+	// [Input-Only] Slack channel ID notifications are posted to.
+	ChannelId types.String `tfsdk:"channel_id"`
+	// [Output-Only] Whether channel ID is set.
+	ChannelIdSet types.Bool `tfsdk:"channel_id_set"`
+	// [Input-Only] Slack workspace (team) ID the Databricks app is installed
+	// in.
+	TeamId types.String `tfsdk:"team_id"`
+	// [Output-Only] Whether team ID is set.
+	TeamIdSet types.Bool `tfsdk:"team_id_set"`
+}
+
+func (to *DatabricksAppSlackConfig_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from DatabricksAppSlackConfig_SdkV2) {
+}
+
+func (to *DatabricksAppSlackConfig_SdkV2) SyncFieldsDuringRead(ctx context.Context, from DatabricksAppSlackConfig_SdkV2) {
+}
+
+func (m DatabricksAppSlackConfig_SdkV2) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["channel_id"] = attrs["channel_id"].SetOptional()
+	attrs["channel_id_set"] = attrs["channel_id_set"].SetOptional()
+	attrs["team_id"] = attrs["team_id"].SetOptional()
+	attrs["team_id_set"] = attrs["team_id_set"].SetOptional()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in DatabricksAppSlackConfig.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m DatabricksAppSlackConfig_SdkV2) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, DatabricksAppSlackConfig_SdkV2
+// only implements ToObjectValue() and Type().
+func (m DatabricksAppSlackConfig_SdkV2) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"channel_id":     m.ChannelId,
+			"channel_id_set": m.ChannelIdSet,
+			"team_id":        m.TeamId,
+			"team_id_set":    m.TeamIdSet,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m DatabricksAppSlackConfig_SdkV2) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"channel_id":     types.StringType,
+			"channel_id_set": types.BoolType,
+			"team_id":        types.StringType,
+			"team_id_set":    types.BoolType,
+		},
+	}
+}
+
+// Microsoft Teams channel reached through the Databricks app. The app must
+// already be installed in the Microsoft 365 tenant and connected to this
+// Databricks workspace.
+type DatabricksAppTeamsConfig_SdkV2 struct {
+	// [Input-Only] Teams channel ID notifications are posted to.
+	ChannelId types.String `tfsdk:"channel_id"`
+	// [Output-Only] Whether channel ID is set.
+	ChannelIdSet types.Bool `tfsdk:"channel_id_set"`
+	// [Input-Only] Microsoft Entra group ID of the team that owns the channel.
+	TeamId types.String `tfsdk:"team_id"`
+	// [Output-Only] Whether team ID is set.
+	TeamIdSet types.Bool `tfsdk:"team_id_set"`
+	// [Input-Only] Microsoft Entra tenant ID of the Microsoft 365 tenant the
+	// app is installed in.
+	TenantId types.String `tfsdk:"tenant_id"`
+	// [Output-Only] Whether tenant ID is set.
+	TenantIdSet types.Bool `tfsdk:"tenant_id_set"`
+}
+
+func (to *DatabricksAppTeamsConfig_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from DatabricksAppTeamsConfig_SdkV2) {
+}
+
+func (to *DatabricksAppTeamsConfig_SdkV2) SyncFieldsDuringRead(ctx context.Context, from DatabricksAppTeamsConfig_SdkV2) {
+}
+
+func (m DatabricksAppTeamsConfig_SdkV2) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["channel_id"] = attrs["channel_id"].SetOptional()
+	attrs["channel_id_set"] = attrs["channel_id_set"].SetOptional()
+	attrs["team_id"] = attrs["team_id"].SetOptional()
+	attrs["team_id_set"] = attrs["team_id_set"].SetOptional()
+	attrs["tenant_id"] = attrs["tenant_id"].SetOptional()
+	attrs["tenant_id_set"] = attrs["tenant_id_set"].SetOptional()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in DatabricksAppTeamsConfig.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m DatabricksAppTeamsConfig_SdkV2) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, DatabricksAppTeamsConfig_SdkV2
+// only implements ToObjectValue() and Type().
+func (m DatabricksAppTeamsConfig_SdkV2) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"channel_id":     m.ChannelId,
+			"channel_id_set": m.ChannelIdSet,
+			"team_id":        m.TeamId,
+			"team_id_set":    m.TeamIdSet,
+			"tenant_id":      m.TenantId,
+			"tenant_id_set":  m.TenantIdSet,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m DatabricksAppTeamsConfig_SdkV2) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"channel_id":     types.StringType,
+			"channel_id_set": types.BoolType,
+			"team_id":        types.StringType,
+			"team_id_set":    types.BoolType,
+			"tenant_id":      types.StringType,
+			"tenant_id_set":  types.BoolType,
+		},
+	}
 }
 
 // This represents the setting configuration for the default namespace in the
@@ -9095,11 +9577,37 @@ func (to *EgressNetworkPolicyInternetAccessPolicy_SdkV2) SyncFieldsDuringCreateO
 		// set the resulting resource state to the empty list to match the planned value.
 		to.AllowedInternetDestinations = from.AllowedInternetDestinations
 	}
+	if !from.AllowedInternetDestinations.IsNull() && !from.AllowedInternetDestinations.IsUnknown() {
+		if toAllowedInternetDestinations, ok := to.GetAllowedInternetDestinations(ctx); ok {
+			if fromAllowedInternetDestinations, ok := from.GetAllowedInternetDestinations(ctx); ok {
+				// Recursively sync the fields of each AllowedInternetDestinations element by position.
+				for i := range toAllowedInternetDestinations {
+					if i < len(fromAllowedInternetDestinations) {
+						toAllowedInternetDestinations[i].SyncFieldsDuringCreateOrUpdate(ctx, fromAllowedInternetDestinations[i])
+					}
+				}
+				to.SetAllowedInternetDestinations(ctx, toAllowedInternetDestinations)
+			}
+		}
+	}
 	if !from.AllowedStorageDestinations.IsNull() && !from.AllowedStorageDestinations.IsUnknown() && to.AllowedStorageDestinations.IsNull() && len(from.AllowedStorageDestinations.Elements()) == 0 {
 		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
 		// If a user specified a non-Null, empty list for AllowedStorageDestinations, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.AllowedStorageDestinations = from.AllowedStorageDestinations
+	}
+	if !from.AllowedStorageDestinations.IsNull() && !from.AllowedStorageDestinations.IsUnknown() {
+		if toAllowedStorageDestinations, ok := to.GetAllowedStorageDestinations(ctx); ok {
+			if fromAllowedStorageDestinations, ok := from.GetAllowedStorageDestinations(ctx); ok {
+				// Recursively sync the fields of each AllowedStorageDestinations element by position.
+				for i := range toAllowedStorageDestinations {
+					if i < len(fromAllowedStorageDestinations) {
+						toAllowedStorageDestinations[i].SyncFieldsDuringCreateOrUpdate(ctx, fromAllowedStorageDestinations[i])
+					}
+				}
+				to.SetAllowedStorageDestinations(ctx, toAllowedStorageDestinations)
+			}
+		}
 	}
 	if !from.LogOnlyMode.IsNull() && !from.LogOnlyMode.IsUnknown() {
 		if toLogOnlyMode, ok := to.GetLogOnlyMode(ctx); ok {
@@ -9119,11 +9627,35 @@ func (to *EgressNetworkPolicyInternetAccessPolicy_SdkV2) SyncFieldsDuringRead(ct
 		// set the resulting resource state to the empty list to match the planned value.
 		to.AllowedInternetDestinations = from.AllowedInternetDestinations
 	}
+	if !from.AllowedInternetDestinations.IsNull() && !from.AllowedInternetDestinations.IsUnknown() {
+		if toAllowedInternetDestinations, ok := to.GetAllowedInternetDestinations(ctx); ok {
+			if fromAllowedInternetDestinations, ok := from.GetAllowedInternetDestinations(ctx); ok {
+				for i := range toAllowedInternetDestinations {
+					if i < len(fromAllowedInternetDestinations) {
+						toAllowedInternetDestinations[i].SyncFieldsDuringRead(ctx, fromAllowedInternetDestinations[i])
+					}
+				}
+				to.SetAllowedInternetDestinations(ctx, toAllowedInternetDestinations)
+			}
+		}
+	}
 	if !from.AllowedStorageDestinations.IsNull() && !from.AllowedStorageDestinations.IsUnknown() && to.AllowedStorageDestinations.IsNull() && len(from.AllowedStorageDestinations.Elements()) == 0 {
 		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
 		// If a user specified a non-Null, empty list for AllowedStorageDestinations, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.AllowedStorageDestinations = from.AllowedStorageDestinations
+	}
+	if !from.AllowedStorageDestinations.IsNull() && !from.AllowedStorageDestinations.IsUnknown() {
+		if toAllowedStorageDestinations, ok := to.GetAllowedStorageDestinations(ctx); ok {
+			if fromAllowedStorageDestinations, ok := from.GetAllowedStorageDestinations(ctx); ok {
+				for i := range toAllowedStorageDestinations {
+					if i < len(fromAllowedStorageDestinations) {
+						toAllowedStorageDestinations[i].SyncFieldsDuringRead(ctx, fromAllowedStorageDestinations[i])
+					}
+				}
+				to.SetAllowedStorageDestinations(ctx, toAllowedStorageDestinations)
+			}
+		}
 	}
 	if !from.LogOnlyMode.IsNull() && !from.LogOnlyMode.IsUnknown() {
 		if toLogOnlyMode, ok := to.GetLogOnlyMode(ctx); ok {
@@ -9579,11 +10111,37 @@ func (to *EgressNetworkPolicyNetworkAccessPolicy_SdkV2) SyncFieldsDuringCreateOr
 		// set the resulting resource state to the empty list to match the planned value.
 		to.AllowedDatabricksDestinations = from.AllowedDatabricksDestinations
 	}
+	if !from.AllowedDatabricksDestinations.IsNull() && !from.AllowedDatabricksDestinations.IsUnknown() {
+		if toAllowedDatabricksDestinations, ok := to.GetAllowedDatabricksDestinations(ctx); ok {
+			if fromAllowedDatabricksDestinations, ok := from.GetAllowedDatabricksDestinations(ctx); ok {
+				// Recursively sync the fields of each AllowedDatabricksDestinations element by position.
+				for i := range toAllowedDatabricksDestinations {
+					if i < len(fromAllowedDatabricksDestinations) {
+						toAllowedDatabricksDestinations[i].SyncFieldsDuringCreateOrUpdate(ctx, fromAllowedDatabricksDestinations[i])
+					}
+				}
+				to.SetAllowedDatabricksDestinations(ctx, toAllowedDatabricksDestinations)
+			}
+		}
+	}
 	if !from.AllowedInternetDestinations.IsNull() && !from.AllowedInternetDestinations.IsUnknown() && to.AllowedInternetDestinations.IsNull() && len(from.AllowedInternetDestinations.Elements()) == 0 {
 		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
 		// If a user specified a non-Null, empty list for AllowedInternetDestinations, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.AllowedInternetDestinations = from.AllowedInternetDestinations
+	}
+	if !from.AllowedInternetDestinations.IsNull() && !from.AllowedInternetDestinations.IsUnknown() {
+		if toAllowedInternetDestinations, ok := to.GetAllowedInternetDestinations(ctx); ok {
+			if fromAllowedInternetDestinations, ok := from.GetAllowedInternetDestinations(ctx); ok {
+				// Recursively sync the fields of each AllowedInternetDestinations element by position.
+				for i := range toAllowedInternetDestinations {
+					if i < len(fromAllowedInternetDestinations) {
+						toAllowedInternetDestinations[i].SyncFieldsDuringCreateOrUpdate(ctx, fromAllowedInternetDestinations[i])
+					}
+				}
+				to.SetAllowedInternetDestinations(ctx, toAllowedInternetDestinations)
+			}
+		}
 	}
 	if !from.AllowedStorageDestinations.IsNull() && !from.AllowedStorageDestinations.IsUnknown() && to.AllowedStorageDestinations.IsNull() && len(from.AllowedStorageDestinations.Elements()) == 0 {
 		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
@@ -9591,11 +10149,37 @@ func (to *EgressNetworkPolicyNetworkAccessPolicy_SdkV2) SyncFieldsDuringCreateOr
 		// set the resulting resource state to the empty list to match the planned value.
 		to.AllowedStorageDestinations = from.AllowedStorageDestinations
 	}
+	if !from.AllowedStorageDestinations.IsNull() && !from.AllowedStorageDestinations.IsUnknown() {
+		if toAllowedStorageDestinations, ok := to.GetAllowedStorageDestinations(ctx); ok {
+			if fromAllowedStorageDestinations, ok := from.GetAllowedStorageDestinations(ctx); ok {
+				// Recursively sync the fields of each AllowedStorageDestinations element by position.
+				for i := range toAllowedStorageDestinations {
+					if i < len(fromAllowedStorageDestinations) {
+						toAllowedStorageDestinations[i].SyncFieldsDuringCreateOrUpdate(ctx, fromAllowedStorageDestinations[i])
+					}
+				}
+				to.SetAllowedStorageDestinations(ctx, toAllowedStorageDestinations)
+			}
+		}
+	}
 	if !from.BlockedInternetDestinations.IsNull() && !from.BlockedInternetDestinations.IsUnknown() && to.BlockedInternetDestinations.IsNull() && len(from.BlockedInternetDestinations.Elements()) == 0 {
 		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
 		// If a user specified a non-Null, empty list for BlockedInternetDestinations, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.BlockedInternetDestinations = from.BlockedInternetDestinations
+	}
+	if !from.BlockedInternetDestinations.IsNull() && !from.BlockedInternetDestinations.IsUnknown() {
+		if toBlockedInternetDestinations, ok := to.GetBlockedInternetDestinations(ctx); ok {
+			if fromBlockedInternetDestinations, ok := from.GetBlockedInternetDestinations(ctx); ok {
+				// Recursively sync the fields of each BlockedInternetDestinations element by position.
+				for i := range toBlockedInternetDestinations {
+					if i < len(fromBlockedInternetDestinations) {
+						toBlockedInternetDestinations[i].SyncFieldsDuringCreateOrUpdate(ctx, fromBlockedInternetDestinations[i])
+					}
+				}
+				to.SetBlockedInternetDestinations(ctx, toBlockedInternetDestinations)
+			}
+		}
 	}
 	if !from.PolicyEnforcement.IsNull() && !from.PolicyEnforcement.IsUnknown() {
 		if toPolicyEnforcement, ok := to.GetPolicyEnforcement(ctx); ok {
@@ -9615,11 +10199,35 @@ func (to *EgressNetworkPolicyNetworkAccessPolicy_SdkV2) SyncFieldsDuringRead(ctx
 		// set the resulting resource state to the empty list to match the planned value.
 		to.AllowedDatabricksDestinations = from.AllowedDatabricksDestinations
 	}
+	if !from.AllowedDatabricksDestinations.IsNull() && !from.AllowedDatabricksDestinations.IsUnknown() {
+		if toAllowedDatabricksDestinations, ok := to.GetAllowedDatabricksDestinations(ctx); ok {
+			if fromAllowedDatabricksDestinations, ok := from.GetAllowedDatabricksDestinations(ctx); ok {
+				for i := range toAllowedDatabricksDestinations {
+					if i < len(fromAllowedDatabricksDestinations) {
+						toAllowedDatabricksDestinations[i].SyncFieldsDuringRead(ctx, fromAllowedDatabricksDestinations[i])
+					}
+				}
+				to.SetAllowedDatabricksDestinations(ctx, toAllowedDatabricksDestinations)
+			}
+		}
+	}
 	if !from.AllowedInternetDestinations.IsNull() && !from.AllowedInternetDestinations.IsUnknown() && to.AllowedInternetDestinations.IsNull() && len(from.AllowedInternetDestinations.Elements()) == 0 {
 		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
 		// If a user specified a non-Null, empty list for AllowedInternetDestinations, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.AllowedInternetDestinations = from.AllowedInternetDestinations
+	}
+	if !from.AllowedInternetDestinations.IsNull() && !from.AllowedInternetDestinations.IsUnknown() {
+		if toAllowedInternetDestinations, ok := to.GetAllowedInternetDestinations(ctx); ok {
+			if fromAllowedInternetDestinations, ok := from.GetAllowedInternetDestinations(ctx); ok {
+				for i := range toAllowedInternetDestinations {
+					if i < len(fromAllowedInternetDestinations) {
+						toAllowedInternetDestinations[i].SyncFieldsDuringRead(ctx, fromAllowedInternetDestinations[i])
+					}
+				}
+				to.SetAllowedInternetDestinations(ctx, toAllowedInternetDestinations)
+			}
+		}
 	}
 	if !from.AllowedStorageDestinations.IsNull() && !from.AllowedStorageDestinations.IsUnknown() && to.AllowedStorageDestinations.IsNull() && len(from.AllowedStorageDestinations.Elements()) == 0 {
 		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
@@ -9627,11 +10235,35 @@ func (to *EgressNetworkPolicyNetworkAccessPolicy_SdkV2) SyncFieldsDuringRead(ctx
 		// set the resulting resource state to the empty list to match the planned value.
 		to.AllowedStorageDestinations = from.AllowedStorageDestinations
 	}
+	if !from.AllowedStorageDestinations.IsNull() && !from.AllowedStorageDestinations.IsUnknown() {
+		if toAllowedStorageDestinations, ok := to.GetAllowedStorageDestinations(ctx); ok {
+			if fromAllowedStorageDestinations, ok := from.GetAllowedStorageDestinations(ctx); ok {
+				for i := range toAllowedStorageDestinations {
+					if i < len(fromAllowedStorageDestinations) {
+						toAllowedStorageDestinations[i].SyncFieldsDuringRead(ctx, fromAllowedStorageDestinations[i])
+					}
+				}
+				to.SetAllowedStorageDestinations(ctx, toAllowedStorageDestinations)
+			}
+		}
+	}
 	if !from.BlockedInternetDestinations.IsNull() && !from.BlockedInternetDestinations.IsUnknown() && to.BlockedInternetDestinations.IsNull() && len(from.BlockedInternetDestinations.Elements()) == 0 {
 		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
 		// If a user specified a non-Null, empty list for BlockedInternetDestinations, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.BlockedInternetDestinations = from.BlockedInternetDestinations
+	}
+	if !from.BlockedInternetDestinations.IsNull() && !from.BlockedInternetDestinations.IsUnknown() {
+		if toBlockedInternetDestinations, ok := to.GetBlockedInternetDestinations(ctx); ok {
+			if fromBlockedInternetDestinations, ok := from.GetBlockedInternetDestinations(ctx); ok {
+				for i := range toBlockedInternetDestinations {
+					if i < len(fromBlockedInternetDestinations) {
+						toBlockedInternetDestinations[i].SyncFieldsDuringRead(ctx, fromBlockedInternetDestinations[i])
+					}
+				}
+				to.SetBlockedInternetDestinations(ctx, toBlockedInternetDestinations)
+			}
+		}
 	}
 	if !from.PolicyEnforcement.IsNull() && !from.PolicyEnforcement.IsUnknown() {
 		if toPolicyEnforcement, ok := to.GetPolicyEnforcement(ctx); ok {
@@ -11217,6 +11849,19 @@ func (to *ExchangeTokenResponse_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx contex
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Values = from.Values
 	}
+	if !from.Values.IsNull() && !from.Values.IsUnknown() {
+		if toValues, ok := to.GetValues(ctx); ok {
+			if fromValues, ok := from.GetValues(ctx); ok {
+				// Recursively sync the fields of each Values element by position.
+				for i := range toValues {
+					if i < len(fromValues) {
+						toValues[i].SyncFieldsDuringCreateOrUpdate(ctx, fromValues[i])
+					}
+				}
+				to.SetValues(ctx, toValues)
+			}
+		}
+	}
 }
 
 func (to *ExchangeTokenResponse_SdkV2) SyncFieldsDuringRead(ctx context.Context, from ExchangeTokenResponse_SdkV2) {
@@ -11225,6 +11870,18 @@ func (to *ExchangeTokenResponse_SdkV2) SyncFieldsDuringRead(ctx context.Context,
 		// If a user specified a non-Null, empty list for Values, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Values = from.Values
+	}
+	if !from.Values.IsNull() && !from.Values.IsUnknown() {
+		if toValues, ok := to.GetValues(ctx); ok {
+			if fromValues, ok := from.GetValues(ctx); ok {
+				for i := range toValues {
+					if i < len(fromValues) {
+						toValues[i].SyncFieldsDuringRead(ctx, fromValues[i])
+					}
+				}
+				to.SetValues(ctx, toValues)
+			}
+		}
 	}
 }
 
@@ -11392,6 +12049,12 @@ func (m *FetchIpAccessListResponse_SdkV2) SetIpAccessList(ctx context.Context, v
 }
 
 type GcpEndpoint_SdkV2 struct {
+	// All Google APIs that support VPC Service Controls (a subset of all Google
+	// APIs).
+	AllVpcScServices types.Bool `tfsdk:"all_vpc_sc_services"`
+	// Selected Google API hostnames, e.g. "storage.googleapis.com",
+	// "bigquery.googleapis.com".
+	GoogleApiEndpoints types.List `tfsdk:"google_api_endpoints"`
 	// Output only. The URI of the created PSC endpoint.
 	PscEndpointUri types.String `tfsdk:"psc_endpoint_uri"`
 	// The full url of the target service attachment. Example:
@@ -11400,12 +12063,32 @@ type GcpEndpoint_SdkV2 struct {
 }
 
 func (to *GcpEndpoint_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from GcpEndpoint_SdkV2) {
+	if !from.GoogleApiEndpoints.IsNull() && !from.GoogleApiEndpoints.IsUnknown() {
+		if toGoogleApiEndpoints, ok := to.GetGoogleApiEndpoints(ctx); ok {
+			if fromGoogleApiEndpoints, ok := from.GetGoogleApiEndpoints(ctx); ok {
+				// Recursively sync the fields of GoogleApiEndpoints
+				toGoogleApiEndpoints.SyncFieldsDuringCreateOrUpdate(ctx, fromGoogleApiEndpoints)
+				to.SetGoogleApiEndpoints(ctx, toGoogleApiEndpoints)
+			}
+		}
+	}
 }
 
 func (to *GcpEndpoint_SdkV2) SyncFieldsDuringRead(ctx context.Context, from GcpEndpoint_SdkV2) {
+	if !from.GoogleApiEndpoints.IsNull() && !from.GoogleApiEndpoints.IsUnknown() {
+		if toGoogleApiEndpoints, ok := to.GetGoogleApiEndpoints(ctx); ok {
+			if fromGoogleApiEndpoints, ok := from.GetGoogleApiEndpoints(ctx); ok {
+				toGoogleApiEndpoints.SyncFieldsDuringRead(ctx, fromGoogleApiEndpoints)
+				to.SetGoogleApiEndpoints(ctx, toGoogleApiEndpoints)
+			}
+		}
+	}
 }
 
 func (m GcpEndpoint_SdkV2) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["all_vpc_sc_services"] = attrs["all_vpc_sc_services"].SetOptional()
+	attrs["google_api_endpoints"] = attrs["google_api_endpoints"].SetOptional()
+	attrs["google_api_endpoints"] = attrs["google_api_endpoints"].(tfschema.ListNestedAttributeBuilder).AddValidator(listvalidator.SizeAtMost(1)).(tfschema.AttributeBuilder)
 	attrs["psc_endpoint_uri"] = attrs["psc_endpoint_uri"].SetComputed()
 	attrs["service_attachment"] = attrs["service_attachment"].SetOptional()
 
@@ -11420,7 +12103,9 @@ func (m GcpEndpoint_SdkV2) ApplySchemaCustomizations(attrs map[string]tfschema.A
 // plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
 // SDK values.
 func (m GcpEndpoint_SdkV2) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
-	return map[string]reflect.Type{}
+	return map[string]reflect.Type{
+		"google_api_endpoints": reflect.TypeOf(GoogleApiEndpoints_SdkV2{}),
+	}
 }
 
 // TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
@@ -11430,8 +12115,10 @@ func (m GcpEndpoint_SdkV2) ToObjectValue(ctx context.Context) basetypes.ObjectVa
 	return types.ObjectValueMust(
 		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
 		map[string]attr.Value{
-			"psc_endpoint_uri":   m.PscEndpointUri,
-			"service_attachment": m.ServiceAttachment,
+			"all_vpc_sc_services":  m.AllVpcScServices,
+			"google_api_endpoints": m.GoogleApiEndpoints,
+			"psc_endpoint_uri":     m.PscEndpointUri,
+			"service_attachment":   m.ServiceAttachment,
 		})
 }
 
@@ -11439,10 +12126,40 @@ func (m GcpEndpoint_SdkV2) ToObjectValue(ctx context.Context) basetypes.ObjectVa
 func (m GcpEndpoint_SdkV2) Type(ctx context.Context) attr.Type {
 	return types.ObjectType{
 		AttrTypes: map[string]attr.Type{
+			"all_vpc_sc_services": types.BoolType,
+			"google_api_endpoints": basetypes.ListType{
+				ElemType: GoogleApiEndpoints_SdkV2{}.Type(ctx),
+			},
 			"psc_endpoint_uri":   types.StringType,
 			"service_attachment": types.StringType,
 		},
 	}
+}
+
+// GetGoogleApiEndpoints returns the value of the GoogleApiEndpoints field in GcpEndpoint_SdkV2 as
+// a GoogleApiEndpoints_SdkV2 value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *GcpEndpoint_SdkV2) GetGoogleApiEndpoints(ctx context.Context) (GoogleApiEndpoints_SdkV2, bool) {
+	var e GoogleApiEndpoints_SdkV2
+	if m.GoogleApiEndpoints.IsNull() || m.GoogleApiEndpoints.IsUnknown() {
+		return e, false
+	}
+	var v []GoogleApiEndpoints_SdkV2
+	d := m.GoogleApiEndpoints.ElementsAs(ctx, &v, true)
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	if len(v) == 0 {
+		return e, false
+	}
+	return v[0], true
+}
+
+// SetGoogleApiEndpoints sets the value of the GoogleApiEndpoints field in GcpEndpoint_SdkV2.
+func (m *GcpEndpoint_SdkV2) SetGoogleApiEndpoints(ctx context.Context, v GoogleApiEndpoints_SdkV2) {
+	vs := []attr.Value{v.ToObjectValue(ctx)}
+	t := m.Type(ctx).(basetypes.ObjectType).AttrTypes["google_api_endpoints"]
+	m.GoogleApiEndpoints = types.ListValueMust(t, vs)
 }
 
 type GenericWebhookConfig_SdkV2 struct {
@@ -12605,6 +13322,19 @@ func (to *GetIpAccessListsResponse_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx con
 		// set the resulting resource state to the empty list to match the planned value.
 		to.IpAccessLists = from.IpAccessLists
 	}
+	if !from.IpAccessLists.IsNull() && !from.IpAccessLists.IsUnknown() {
+		if toIpAccessLists, ok := to.GetIpAccessLists(ctx); ok {
+			if fromIpAccessLists, ok := from.GetIpAccessLists(ctx); ok {
+				// Recursively sync the fields of each IpAccessLists element by position.
+				for i := range toIpAccessLists {
+					if i < len(fromIpAccessLists) {
+						toIpAccessLists[i].SyncFieldsDuringCreateOrUpdate(ctx, fromIpAccessLists[i])
+					}
+				}
+				to.SetIpAccessLists(ctx, toIpAccessLists)
+			}
+		}
+	}
 }
 
 func (to *GetIpAccessListsResponse_SdkV2) SyncFieldsDuringRead(ctx context.Context, from GetIpAccessListsResponse_SdkV2) {
@@ -12613,6 +13343,18 @@ func (to *GetIpAccessListsResponse_SdkV2) SyncFieldsDuringRead(ctx context.Conte
 		// If a user specified a non-Null, empty list for IpAccessLists, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.IpAccessLists = from.IpAccessLists
+	}
+	if !from.IpAccessLists.IsNull() && !from.IpAccessLists.IsUnknown() {
+		if toIpAccessLists, ok := to.GetIpAccessLists(ctx); ok {
+			if fromIpAccessLists, ok := from.GetIpAccessLists(ctx); ok {
+				for i := range toIpAccessLists {
+					if i < len(fromIpAccessLists) {
+						toIpAccessLists[i].SyncFieldsDuringRead(ctx, fromIpAccessLists[i])
+					}
+				}
+				to.SetIpAccessLists(ctx, toIpAccessLists)
+			}
+		}
 	}
 }
 
@@ -13357,6 +14099,19 @@ func (to *GetTokenPermissionLevelsResponse_SdkV2) SyncFieldsDuringCreateOrUpdate
 		// set the resulting resource state to the empty list to match the planned value.
 		to.PermissionLevels = from.PermissionLevels
 	}
+	if !from.PermissionLevels.IsNull() && !from.PermissionLevels.IsUnknown() {
+		if toPermissionLevels, ok := to.GetPermissionLevels(ctx); ok {
+			if fromPermissionLevels, ok := from.GetPermissionLevels(ctx); ok {
+				// Recursively sync the fields of each PermissionLevels element by position.
+				for i := range toPermissionLevels {
+					if i < len(fromPermissionLevels) {
+						toPermissionLevels[i].SyncFieldsDuringCreateOrUpdate(ctx, fromPermissionLevels[i])
+					}
+				}
+				to.SetPermissionLevels(ctx, toPermissionLevels)
+			}
+		}
+	}
 }
 
 func (to *GetTokenPermissionLevelsResponse_SdkV2) SyncFieldsDuringRead(ctx context.Context, from GetTokenPermissionLevelsResponse_SdkV2) {
@@ -13365,6 +14120,18 @@ func (to *GetTokenPermissionLevelsResponse_SdkV2) SyncFieldsDuringRead(ctx conte
 		// If a user specified a non-Null, empty list for PermissionLevels, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.PermissionLevels = from.PermissionLevels
+	}
+	if !from.PermissionLevels.IsNull() && !from.PermissionLevels.IsUnknown() {
+		if toPermissionLevels, ok := to.GetPermissionLevels(ctx); ok {
+			if fromPermissionLevels, ok := from.GetPermissionLevels(ctx); ok {
+				for i := range toPermissionLevels {
+					if i < len(fromPermissionLevels) {
+						toPermissionLevels[i].SyncFieldsDuringRead(ctx, fromPermissionLevels[i])
+					}
+				}
+				to.SetPermissionLevels(ctx, toPermissionLevels)
+			}
+		}
 	}
 }
 
@@ -13621,6 +14388,99 @@ func (m GetWorkspaceNetworkOptionRequest_SdkV2) Type(ctx context.Context) attr.T
 	}
 }
 
+// Wrapper for a list of Google API hostnames. Wrapped in a message because
+// proto3 oneof does not support repeated fields directly.
+type GoogleApiEndpoints_SdkV2 struct {
+	// Google API hostnames, e.g. "storage.googleapis.com",
+	// "bigquery.googleapis.com". Use "googleapis.com" to cover all Google APIs.
+	Endpoints types.List `tfsdk:"endpoints"`
+}
+
+func (to *GoogleApiEndpoints_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from GoogleApiEndpoints_SdkV2) {
+	if !from.Endpoints.IsNull() && !from.Endpoints.IsUnknown() && to.Endpoints.IsNull() && len(from.Endpoints.Elements()) == 0 {
+		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
+		// If a user specified a non-Null, empty list for Endpoints, and the deserialized field value is Null,
+		// set the resulting resource state to the empty list to match the planned value.
+		to.Endpoints = from.Endpoints
+	}
+}
+
+func (to *GoogleApiEndpoints_SdkV2) SyncFieldsDuringRead(ctx context.Context, from GoogleApiEndpoints_SdkV2) {
+	if !from.Endpoints.IsNull() && !from.Endpoints.IsUnknown() && to.Endpoints.IsNull() && len(from.Endpoints.Elements()) == 0 {
+		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
+		// If a user specified a non-Null, empty list for Endpoints, and the deserialized field value is Null,
+		// set the resulting resource state to the empty list to match the planned value.
+		to.Endpoints = from.Endpoints
+	}
+}
+
+func (m GoogleApiEndpoints_SdkV2) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["endpoints"] = attrs["endpoints"].SetOptional()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in GoogleApiEndpoints.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m GoogleApiEndpoints_SdkV2) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{
+		"endpoints": reflect.TypeOf(types.String{}),
+	}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, GoogleApiEndpoints_SdkV2
+// only implements ToObjectValue() and Type().
+func (m GoogleApiEndpoints_SdkV2) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"endpoints": m.Endpoints,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m GoogleApiEndpoints_SdkV2) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"endpoints": basetypes.ListType{
+				ElemType: types.StringType,
+			},
+		},
+	}
+}
+
+// GetEndpoints returns the value of the Endpoints field in GoogleApiEndpoints_SdkV2 as
+// a slice of types.String values.
+// If the field is unknown or null, the boolean return value is false.
+func (m *GoogleApiEndpoints_SdkV2) GetEndpoints(ctx context.Context) ([]types.String, bool) {
+	if m.Endpoints.IsNull() || m.Endpoints.IsUnknown() {
+		return nil, false
+	}
+	var v []types.String
+	d := m.Endpoints.ElementsAs(ctx, &v, true)
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetEndpoints sets the value of the Endpoints field in GoogleApiEndpoints_SdkV2.
+func (m *GoogleApiEndpoints_SdkV2) SetEndpoints(ctx context.Context, v []types.String) {
+	vs := make([]attr.Value, 0, len(v))
+	for _, e := range v {
+		vs = append(vs, e)
+	}
+	t := m.Type(ctx).(basetypes.ObjectType).AttrTypes["endpoints"]
+	t = t.(attr.TypeWithElementType).ElementType()
+	m.Endpoints = types.ListValueMust(t, vs)
+}
+
 // Definition of an IP Access list
 type IpAccessListInfo_SdkV2 struct {
 	// Total number of IP or CIDR values.
@@ -13769,6 +14629,19 @@ func (to *ListIpAccessListResponse_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx con
 		// set the resulting resource state to the empty list to match the planned value.
 		to.IpAccessLists = from.IpAccessLists
 	}
+	if !from.IpAccessLists.IsNull() && !from.IpAccessLists.IsUnknown() {
+		if toIpAccessLists, ok := to.GetIpAccessLists(ctx); ok {
+			if fromIpAccessLists, ok := from.GetIpAccessLists(ctx); ok {
+				// Recursively sync the fields of each IpAccessLists element by position.
+				for i := range toIpAccessLists {
+					if i < len(fromIpAccessLists) {
+						toIpAccessLists[i].SyncFieldsDuringCreateOrUpdate(ctx, fromIpAccessLists[i])
+					}
+				}
+				to.SetIpAccessLists(ctx, toIpAccessLists)
+			}
+		}
+	}
 }
 
 func (to *ListIpAccessListResponse_SdkV2) SyncFieldsDuringRead(ctx context.Context, from ListIpAccessListResponse_SdkV2) {
@@ -13777,6 +14650,18 @@ func (to *ListIpAccessListResponse_SdkV2) SyncFieldsDuringRead(ctx context.Conte
 		// If a user specified a non-Null, empty list for IpAccessLists, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.IpAccessLists = from.IpAccessLists
+	}
+	if !from.IpAccessLists.IsNull() && !from.IpAccessLists.IsUnknown() {
+		if toIpAccessLists, ok := to.GetIpAccessLists(ctx); ok {
+			if fromIpAccessLists, ok := from.GetIpAccessLists(ctx); ok {
+				for i := range toIpAccessLists {
+					if i < len(fromIpAccessLists) {
+						toIpAccessLists[i].SyncFieldsDuringRead(ctx, fromIpAccessLists[i])
+					}
+				}
+				to.SetIpAccessLists(ctx, toIpAccessLists)
+			}
+		}
 	}
 }
 
@@ -13953,6 +14838,19 @@ func (to *ListNetworkConnectivityConfigurationsResponse_SdkV2) SyncFieldsDuringC
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Items = from.Items
 	}
+	if !from.Items.IsNull() && !from.Items.IsUnknown() {
+		if toItems, ok := to.GetItems(ctx); ok {
+			if fromItems, ok := from.GetItems(ctx); ok {
+				// Recursively sync the fields of each Items element by position.
+				for i := range toItems {
+					if i < len(fromItems) {
+						toItems[i].SyncFieldsDuringCreateOrUpdate(ctx, fromItems[i])
+					}
+				}
+				to.SetItems(ctx, toItems)
+			}
+		}
+	}
 }
 
 func (to *ListNetworkConnectivityConfigurationsResponse_SdkV2) SyncFieldsDuringRead(ctx context.Context, from ListNetworkConnectivityConfigurationsResponse_SdkV2) {
@@ -13961,6 +14859,18 @@ func (to *ListNetworkConnectivityConfigurationsResponse_SdkV2) SyncFieldsDuringR
 		// If a user specified a non-Null, empty list for Items, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Items = from.Items
+	}
+	if !from.Items.IsNull() && !from.Items.IsUnknown() {
+		if toItems, ok := to.GetItems(ctx); ok {
+			if fromItems, ok := from.GetItems(ctx); ok {
+				for i := range toItems {
+					if i < len(fromItems) {
+						toItems[i].SyncFieldsDuringRead(ctx, fromItems[i])
+					}
+				}
+				to.SetItems(ctx, toItems)
+			}
+		}
 	}
 }
 
@@ -14098,6 +15008,19 @@ func (to *ListNetworkPoliciesResponse_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx 
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Items = from.Items
 	}
+	if !from.Items.IsNull() && !from.Items.IsUnknown() {
+		if toItems, ok := to.GetItems(ctx); ok {
+			if fromItems, ok := from.GetItems(ctx); ok {
+				// Recursively sync the fields of each Items element by position.
+				for i := range toItems {
+					if i < len(fromItems) {
+						toItems[i].SyncFieldsDuringCreateOrUpdate(ctx, fromItems[i])
+					}
+				}
+				to.SetItems(ctx, toItems)
+			}
+		}
+	}
 }
 
 func (to *ListNetworkPoliciesResponse_SdkV2) SyncFieldsDuringRead(ctx context.Context, from ListNetworkPoliciesResponse_SdkV2) {
@@ -14106,6 +15029,18 @@ func (to *ListNetworkPoliciesResponse_SdkV2) SyncFieldsDuringRead(ctx context.Co
 		// If a user specified a non-Null, empty list for Items, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Items = from.Items
+	}
+	if !from.Items.IsNull() && !from.Items.IsUnknown() {
+		if toItems, ok := to.GetItems(ctx); ok {
+			if fromItems, ok := from.GetItems(ctx); ok {
+				for i := range toItems {
+					if i < len(fromItems) {
+						toItems[i].SyncFieldsDuringRead(ctx, fromItems[i])
+					}
+				}
+				to.SetItems(ctx, toItems)
+			}
+		}
 	}
 }
 
@@ -14245,6 +15180,19 @@ func (to *ListNotificationDestinationsResponse_SdkV2) SyncFieldsDuringCreateOrUp
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Results = from.Results
 	}
+	if !from.Results.IsNull() && !from.Results.IsUnknown() {
+		if toResults, ok := to.GetResults(ctx); ok {
+			if fromResults, ok := from.GetResults(ctx); ok {
+				// Recursively sync the fields of each Results element by position.
+				for i := range toResults {
+					if i < len(fromResults) {
+						toResults[i].SyncFieldsDuringCreateOrUpdate(ctx, fromResults[i])
+					}
+				}
+				to.SetResults(ctx, toResults)
+			}
+		}
+	}
 }
 
 func (to *ListNotificationDestinationsResponse_SdkV2) SyncFieldsDuringRead(ctx context.Context, from ListNotificationDestinationsResponse_SdkV2) {
@@ -14253,6 +15201,18 @@ func (to *ListNotificationDestinationsResponse_SdkV2) SyncFieldsDuringRead(ctx c
 		// If a user specified a non-Null, empty list for Results, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Results = from.Results
+	}
+	if !from.Results.IsNull() && !from.Results.IsUnknown() {
+		if toResults, ok := to.GetResults(ctx); ok {
+			if fromResults, ok := from.GetResults(ctx); ok {
+				for i := range toResults {
+					if i < len(fromResults) {
+						toResults[i].SyncFieldsDuringRead(ctx, fromResults[i])
+					}
+				}
+				to.SetResults(ctx, toResults)
+			}
+		}
 	}
 }
 
@@ -14454,6 +15414,19 @@ func (to *ListPrivateEndpointRulesResponse_SdkV2) SyncFieldsDuringCreateOrUpdate
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Items = from.Items
 	}
+	if !from.Items.IsNull() && !from.Items.IsUnknown() {
+		if toItems, ok := to.GetItems(ctx); ok {
+			if fromItems, ok := from.GetItems(ctx); ok {
+				// Recursively sync the fields of each Items element by position.
+				for i := range toItems {
+					if i < len(fromItems) {
+						toItems[i].SyncFieldsDuringCreateOrUpdate(ctx, fromItems[i])
+					}
+				}
+				to.SetItems(ctx, toItems)
+			}
+		}
+	}
 }
 
 func (to *ListPrivateEndpointRulesResponse_SdkV2) SyncFieldsDuringRead(ctx context.Context, from ListPrivateEndpointRulesResponse_SdkV2) {
@@ -14462,6 +15435,18 @@ func (to *ListPrivateEndpointRulesResponse_SdkV2) SyncFieldsDuringRead(ctx conte
 		// If a user specified a non-Null, empty list for Items, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Items = from.Items
+	}
+	if !from.Items.IsNull() && !from.Items.IsUnknown() {
+		if toItems, ok := to.GetItems(ctx); ok {
+			if fromItems, ok := from.GetItems(ctx); ok {
+				for i := range toItems {
+					if i < len(fromItems) {
+						toItems[i].SyncFieldsDuringRead(ctx, fromItems[i])
+					}
+				}
+				to.SetItems(ctx, toItems)
+			}
+		}
 	}
 }
 
@@ -14547,6 +15532,19 @@ func (to *ListPublicTokensResponse_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx con
 		// set the resulting resource state to the empty list to match the planned value.
 		to.TokenInfos = from.TokenInfos
 	}
+	if !from.TokenInfos.IsNull() && !from.TokenInfos.IsUnknown() {
+		if toTokenInfos, ok := to.GetTokenInfos(ctx); ok {
+			if fromTokenInfos, ok := from.GetTokenInfos(ctx); ok {
+				// Recursively sync the fields of each TokenInfos element by position.
+				for i := range toTokenInfos {
+					if i < len(fromTokenInfos) {
+						toTokenInfos[i].SyncFieldsDuringCreateOrUpdate(ctx, fromTokenInfos[i])
+					}
+				}
+				to.SetTokenInfos(ctx, toTokenInfos)
+			}
+		}
+	}
 }
 
 func (to *ListPublicTokensResponse_SdkV2) SyncFieldsDuringRead(ctx context.Context, from ListPublicTokensResponse_SdkV2) {
@@ -14555,6 +15553,18 @@ func (to *ListPublicTokensResponse_SdkV2) SyncFieldsDuringRead(ctx context.Conte
 		// If a user specified a non-Null, empty list for TokenInfos, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.TokenInfos = from.TokenInfos
+	}
+	if !from.TokenInfos.IsNull() && !from.TokenInfos.IsUnknown() {
+		if toTokenInfos, ok := to.GetTokenInfos(ctx); ok {
+			if fromTokenInfos, ok := from.GetTokenInfos(ctx); ok {
+				for i := range toTokenInfos {
+					if i < len(fromTokenInfos) {
+						toTokenInfos[i].SyncFieldsDuringRead(ctx, fromTokenInfos[i])
+					}
+				}
+				to.SetTokenInfos(ctx, toTokenInfos)
+			}
+		}
 	}
 }
 
@@ -14732,6 +15742,19 @@ func (to *ListTokensResponse_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx context.C
 		// set the resulting resource state to the empty list to match the planned value.
 		to.TokenInfos = from.TokenInfos
 	}
+	if !from.TokenInfos.IsNull() && !from.TokenInfos.IsUnknown() {
+		if toTokenInfos, ok := to.GetTokenInfos(ctx); ok {
+			if fromTokenInfos, ok := from.GetTokenInfos(ctx); ok {
+				// Recursively sync the fields of each TokenInfos element by position.
+				for i := range toTokenInfos {
+					if i < len(fromTokenInfos) {
+						toTokenInfos[i].SyncFieldsDuringCreateOrUpdate(ctx, fromTokenInfos[i])
+					}
+				}
+				to.SetTokenInfos(ctx, toTokenInfos)
+			}
+		}
+	}
 }
 
 func (to *ListTokensResponse_SdkV2) SyncFieldsDuringRead(ctx context.Context, from ListTokensResponse_SdkV2) {
@@ -14740,6 +15763,18 @@ func (to *ListTokensResponse_SdkV2) SyncFieldsDuringRead(ctx context.Context, fr
 		// If a user specified a non-Null, empty list for TokenInfos, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.TokenInfos = from.TokenInfos
+	}
+	if !from.TokenInfos.IsNull() && !from.TokenInfos.IsUnknown() {
+		if toTokenInfos, ok := to.GetTokenInfos(ctx); ok {
+			if fromTokenInfos, ok := from.GetTokenInfos(ctx); ok {
+				for i := range toTokenInfos {
+					if i < len(fromTokenInfos) {
+						toTokenInfos[i].SyncFieldsDuringRead(ctx, fromTokenInfos[i])
+					}
+				}
+				to.SetTokenInfos(ctx, toTokenInfos)
+			}
+		}
 	}
 }
 
@@ -15968,11 +17003,37 @@ func (to *NccEgressTargetRules_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx context
 		// set the resulting resource state to the empty list to match the planned value.
 		to.AwsPrivateEndpointRules = from.AwsPrivateEndpointRules
 	}
+	if !from.AwsPrivateEndpointRules.IsNull() && !from.AwsPrivateEndpointRules.IsUnknown() {
+		if toAwsPrivateEndpointRules, ok := to.GetAwsPrivateEndpointRules(ctx); ok {
+			if fromAwsPrivateEndpointRules, ok := from.GetAwsPrivateEndpointRules(ctx); ok {
+				// Recursively sync the fields of each AwsPrivateEndpointRules element by position.
+				for i := range toAwsPrivateEndpointRules {
+					if i < len(fromAwsPrivateEndpointRules) {
+						toAwsPrivateEndpointRules[i].SyncFieldsDuringCreateOrUpdate(ctx, fromAwsPrivateEndpointRules[i])
+					}
+				}
+				to.SetAwsPrivateEndpointRules(ctx, toAwsPrivateEndpointRules)
+			}
+		}
+	}
 	if !from.AzurePrivateEndpointRules.IsNull() && !from.AzurePrivateEndpointRules.IsUnknown() && to.AzurePrivateEndpointRules.IsNull() && len(from.AzurePrivateEndpointRules.Elements()) == 0 {
 		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
 		// If a user specified a non-Null, empty list for AzurePrivateEndpointRules, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.AzurePrivateEndpointRules = from.AzurePrivateEndpointRules
+	}
+	if !from.AzurePrivateEndpointRules.IsNull() && !from.AzurePrivateEndpointRules.IsUnknown() {
+		if toAzurePrivateEndpointRules, ok := to.GetAzurePrivateEndpointRules(ctx); ok {
+			if fromAzurePrivateEndpointRules, ok := from.GetAzurePrivateEndpointRules(ctx); ok {
+				// Recursively sync the fields of each AzurePrivateEndpointRules element by position.
+				for i := range toAzurePrivateEndpointRules {
+					if i < len(fromAzurePrivateEndpointRules) {
+						toAzurePrivateEndpointRules[i].SyncFieldsDuringCreateOrUpdate(ctx, fromAzurePrivateEndpointRules[i])
+					}
+				}
+				to.SetAzurePrivateEndpointRules(ctx, toAzurePrivateEndpointRules)
+			}
+		}
 	}
 }
 
@@ -15983,11 +17044,35 @@ func (to *NccEgressTargetRules_SdkV2) SyncFieldsDuringRead(ctx context.Context, 
 		// set the resulting resource state to the empty list to match the planned value.
 		to.AwsPrivateEndpointRules = from.AwsPrivateEndpointRules
 	}
+	if !from.AwsPrivateEndpointRules.IsNull() && !from.AwsPrivateEndpointRules.IsUnknown() {
+		if toAwsPrivateEndpointRules, ok := to.GetAwsPrivateEndpointRules(ctx); ok {
+			if fromAwsPrivateEndpointRules, ok := from.GetAwsPrivateEndpointRules(ctx); ok {
+				for i := range toAwsPrivateEndpointRules {
+					if i < len(fromAwsPrivateEndpointRules) {
+						toAwsPrivateEndpointRules[i].SyncFieldsDuringRead(ctx, fromAwsPrivateEndpointRules[i])
+					}
+				}
+				to.SetAwsPrivateEndpointRules(ctx, toAwsPrivateEndpointRules)
+			}
+		}
+	}
 	if !from.AzurePrivateEndpointRules.IsNull() && !from.AzurePrivateEndpointRules.IsUnknown() && to.AzurePrivateEndpointRules.IsNull() && len(from.AzurePrivateEndpointRules.Elements()) == 0 {
 		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
 		// If a user specified a non-Null, empty list for AzurePrivateEndpointRules, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.AzurePrivateEndpointRules = from.AzurePrivateEndpointRules
+	}
+	if !from.AzurePrivateEndpointRules.IsNull() && !from.AzurePrivateEndpointRules.IsUnknown() {
+		if toAzurePrivateEndpointRules, ok := to.GetAzurePrivateEndpointRules(ctx); ok {
+			if fromAzurePrivateEndpointRules, ok := from.GetAzurePrivateEndpointRules(ctx); ok {
+				for i := range toAzurePrivateEndpointRules {
+					if i < len(fromAzurePrivateEndpointRules) {
+						toAzurePrivateEndpointRules[i].SyncFieldsDuringRead(ctx, fromAzurePrivateEndpointRules[i])
+					}
+				}
+				to.SetAzurePrivateEndpointRules(ctx, toAzurePrivateEndpointRules)
+			}
+		}
 	}
 }
 
@@ -17896,6 +18981,19 @@ func (to *TokenAccessControlResponse_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx c
 		// set the resulting resource state to the empty list to match the planned value.
 		to.AllPermissions = from.AllPermissions
 	}
+	if !from.AllPermissions.IsNull() && !from.AllPermissions.IsUnknown() {
+		if toAllPermissions, ok := to.GetAllPermissions(ctx); ok {
+			if fromAllPermissions, ok := from.GetAllPermissions(ctx); ok {
+				// Recursively sync the fields of each AllPermissions element by position.
+				for i := range toAllPermissions {
+					if i < len(fromAllPermissions) {
+						toAllPermissions[i].SyncFieldsDuringCreateOrUpdate(ctx, fromAllPermissions[i])
+					}
+				}
+				to.SetAllPermissions(ctx, toAllPermissions)
+			}
+		}
+	}
 }
 
 func (to *TokenAccessControlResponse_SdkV2) SyncFieldsDuringRead(ctx context.Context, from TokenAccessControlResponse_SdkV2) {
@@ -17904,6 +19002,18 @@ func (to *TokenAccessControlResponse_SdkV2) SyncFieldsDuringRead(ctx context.Con
 		// If a user specified a non-Null, empty list for AllPermissions, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.AllPermissions = from.AllPermissions
+	}
+	if !from.AllPermissions.IsNull() && !from.AllPermissions.IsUnknown() {
+		if toAllPermissions, ok := to.GetAllPermissions(ctx); ok {
+			if fromAllPermissions, ok := from.GetAllPermissions(ctx); ok {
+				for i := range toAllPermissions {
+					if i < len(fromAllPermissions) {
+						toAllPermissions[i].SyncFieldsDuringRead(ctx, fromAllPermissions[i])
+					}
+				}
+				to.SetAllPermissions(ctx, toAllPermissions)
+			}
+		}
 	}
 }
 
@@ -18335,6 +19445,19 @@ func (to *TokenPermissions_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx context.Con
 		// set the resulting resource state to the empty list to match the planned value.
 		to.AccessControlList = from.AccessControlList
 	}
+	if !from.AccessControlList.IsNull() && !from.AccessControlList.IsUnknown() {
+		if toAccessControlList, ok := to.GetAccessControlList(ctx); ok {
+			if fromAccessControlList, ok := from.GetAccessControlList(ctx); ok {
+				// Recursively sync the fields of each AccessControlList element by position.
+				for i := range toAccessControlList {
+					if i < len(fromAccessControlList) {
+						toAccessControlList[i].SyncFieldsDuringCreateOrUpdate(ctx, fromAccessControlList[i])
+					}
+				}
+				to.SetAccessControlList(ctx, toAccessControlList)
+			}
+		}
+	}
 }
 
 func (to *TokenPermissions_SdkV2) SyncFieldsDuringRead(ctx context.Context, from TokenPermissions_SdkV2) {
@@ -18343,6 +19466,18 @@ func (to *TokenPermissions_SdkV2) SyncFieldsDuringRead(ctx context.Context, from
 		// If a user specified a non-Null, empty list for AccessControlList, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.AccessControlList = from.AccessControlList
+	}
+	if !from.AccessControlList.IsNull() && !from.AccessControlList.IsUnknown() {
+		if toAccessControlList, ok := to.GetAccessControlList(ctx); ok {
+			if fromAccessControlList, ok := from.GetAccessControlList(ctx); ok {
+				for i := range toAccessControlList {
+					if i < len(fromAccessControlList) {
+						toAccessControlList[i].SyncFieldsDuringRead(ctx, fromAccessControlList[i])
+					}
+				}
+				to.SetAccessControlList(ctx, toAccessControlList)
+			}
+		}
 	}
 }
 
@@ -18482,6 +19617,19 @@ func (to *TokenPermissionsRequest_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx cont
 		// set the resulting resource state to the empty list to match the planned value.
 		to.AccessControlList = from.AccessControlList
 	}
+	if !from.AccessControlList.IsNull() && !from.AccessControlList.IsUnknown() {
+		if toAccessControlList, ok := to.GetAccessControlList(ctx); ok {
+			if fromAccessControlList, ok := from.GetAccessControlList(ctx); ok {
+				// Recursively sync the fields of each AccessControlList element by position.
+				for i := range toAccessControlList {
+					if i < len(fromAccessControlList) {
+						toAccessControlList[i].SyncFieldsDuringCreateOrUpdate(ctx, fromAccessControlList[i])
+					}
+				}
+				to.SetAccessControlList(ctx, toAccessControlList)
+			}
+		}
+	}
 }
 
 func (to *TokenPermissionsRequest_SdkV2) SyncFieldsDuringRead(ctx context.Context, from TokenPermissionsRequest_SdkV2) {
@@ -18490,6 +19638,18 @@ func (to *TokenPermissionsRequest_SdkV2) SyncFieldsDuringRead(ctx context.Contex
 		// If a user specified a non-Null, empty list for AccessControlList, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.AccessControlList = from.AccessControlList
+	}
+	if !from.AccessControlList.IsNull() && !from.AccessControlList.IsUnknown() {
+		if toAccessControlList, ok := to.GetAccessControlList(ctx); ok {
+			if fromAccessControlList, ok := from.GetAccessControlList(ctx); ok {
+				for i := range toAccessControlList {
+					if i < len(fromAccessControlList) {
+						toAccessControlList[i].SyncFieldsDuringRead(ctx, fromAccessControlList[i])
+					}
+				}
+				to.SetAccessControlList(ctx, toAccessControlList)
+			}
+		}
 	}
 }
 

@@ -192,6 +192,19 @@ func (to *QualityMonitor) SyncFieldsDuringCreateOrUpdate(ctx context.Context, fr
 		// set the resulting resource state to the empty list to match the planned value.
 		to.ValidityCheckConfigurations = from.ValidityCheckConfigurations
 	}
+	if !from.ValidityCheckConfigurations.IsNull() && !from.ValidityCheckConfigurations.IsUnknown() {
+		if toValidityCheckConfigurations, ok := to.GetValidityCheckConfigurations(ctx); ok {
+			if fromValidityCheckConfigurations, ok := from.GetValidityCheckConfigurations(ctx); ok {
+				// Recursively sync the fields of each ValidityCheckConfigurations element by position.
+				for i := range toValidityCheckConfigurations {
+					if i < len(fromValidityCheckConfigurations) {
+						toValidityCheckConfigurations[i].SyncFieldsDuringCreateOrUpdate(ctx, fromValidityCheckConfigurations[i])
+					}
+				}
+				to.SetValidityCheckConfigurations(ctx, toValidityCheckConfigurations)
+			}
+		}
+	}
 	to.ProviderConfig = from.ProviderConfig
 
 }
@@ -217,6 +230,18 @@ func (to *QualityMonitor) SyncFieldsDuringRead(ctx context.Context, from Quality
 		// If a user specified a non-Null, empty list for ValidityCheckConfigurations, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.ValidityCheckConfigurations = from.ValidityCheckConfigurations
+	}
+	if !from.ValidityCheckConfigurations.IsNull() && !from.ValidityCheckConfigurations.IsUnknown() {
+		if toValidityCheckConfigurations, ok := to.GetValidityCheckConfigurations(ctx); ok {
+			if fromValidityCheckConfigurations, ok := from.GetValidityCheckConfigurations(ctx); ok {
+				for i := range toValidityCheckConfigurations {
+					if i < len(fromValidityCheckConfigurations) {
+						toValidityCheckConfigurations[i].SyncFieldsDuringRead(ctx, fromValidityCheckConfigurations[i])
+					}
+				}
+				to.SetValidityCheckConfigurations(ctx, toValidityCheckConfigurations)
+			}
+		}
 	}
 	to.ProviderConfig = from.ProviderConfig
 
@@ -316,10 +341,6 @@ func (r *QualityMonitorResource) ModifyPlan(ctx context.Context, req resource.Mo
 		return
 	}
 	tfschema.WorkspaceDriftDetection(ctx, r.Client, req, resp)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	tfschema.ValidateWorkspaceID(ctx, r.Client, req, resp)
 }
 
 func (r *QualityMonitorResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

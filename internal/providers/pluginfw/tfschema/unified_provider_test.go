@@ -10,6 +10,7 @@ import (
 	"github.com/databricks/databricks-sdk-go/config"
 	"github.com/databricks/terraform-provider-databricks/common"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	resourceschema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -324,12 +325,10 @@ func TestGetWorkspaceIDDataSource(t *testing.T) {
 	}
 }
 
-// TestValidateWorkspaceID_ReadsFromRespPlan simulates the full ModifyPlan flow:
-// state has workspace_id "111", provider default changes to "999".
-// WorkspaceDriftDetection detects the drift and updates resp.Plan to "999".
-// ValidateWorkspaceID must read from resp.Plan (not req.Plan) to validate "999".
-// With old code (req.Plan), it would validate stale "111" and get a mismatch error.
-func TestValidateWorkspaceID_ReadsFromRespPlan(t *testing.T) {
+// TestWorkspaceDriftDetection_ProviderDefaultChanged simulates a ModifyPlan
+// where state has workspace_id "111" and the provider default changes to "999".
+// WorkspaceDriftDetection must force replacement and set "999" in resp.Plan.
+func TestWorkspaceDriftDetection_ProviderDefaultChanged(t *testing.T) {
 	ctx := context.Background()
 
 	// Server simulates a workspace with ID 999.
@@ -423,10 +422,15 @@ func TestValidateWorkspaceID_ReadsFromRespPlan(t *testing.T) {
 	require.False(t, resp.Diagnostics.HasError(),
 		"WorkspaceDriftDetection failed: %v", resp.Diagnostics.Errors())
 
-	// ValidateWorkspaceID should read "999" from resp.Plan (updated above),
-	// not "111" from req.Plan. With old code (req.Plan) this would fail with
-	// "workspace_id mismatch: provider is configured for workspace 999 but got 111".
-	ValidateWorkspaceID(ctx, databricksClient, modifyReq, resp)
-	assert.False(t, resp.Diagnostics.HasError(),
-		"expected no error, got: %v", resp.Diagnostics.Errors())
+	wsIDPath := path.Root("provider_config").AtName("workspace_id")
+	if !resp.RequiresReplace.Contains(wsIDPath) {
+		t.Errorf("RequiresReplace = %v, want it to contain %v", resp.RequiresReplace, wsIDPath)
+	}
+	var gotWsID types.String
+	if diags := resp.Plan.GetAttribute(ctx, wsIDPath, &gotWsID); diags.HasError() {
+		t.Fatalf("reading planned workspace_id: %v", diags.Errors())
+	}
+	if gotWsID.ValueString() != "999" {
+		t.Errorf("planned workspace_id = %q, want %q", gotWsID.ValueString(), "999")
+	}
 }

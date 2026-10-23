@@ -256,8 +256,7 @@ func (m BranchOperationMetadata) Type(ctx context.Context) attr.Type {
 
 type BranchSpec struct {
 	// Absolute expiration timestamp. When set, the branch will expire at this
-	// time. Mutually exclusive with `ttl` and `no_expiry`. When updating, use
-	// `spec.expiration` in the update_mask.
+	// time. Mutually exclusive with `ttl` and `no_expiry`.
 	ExpireTime timetypes.RFC3339 `tfsdk:"expire_time"`
 	// When set to true, protects the branch from deletion and reset. Associated
 	// compute endpoints and the project cannot be deleted while the branch is
@@ -266,7 +265,6 @@ type BranchSpec struct {
 	// Explicitly disable expiration. When set to true, the branch will not
 	// expire. If set to false, the request is invalid; provide either ttl or
 	// expire_time instead. Mutually exclusive with `expire_time` and `ttl`.
-	// When updating, use `spec.expiration` in the update_mask.
 	NoExpiry types.Bool `tfsdk:"no_expiry"`
 	// The name of the source branch from which this branch was created (data
 	// lineage for point-in-time recovery). If not specified, defaults to the
@@ -279,9 +277,15 @@ type BranchSpec struct {
 	// The point in time on the source branch from which this branch was
 	// created.
 	SourceBranchTime timetypes.RFC3339 `tfsdk:"source_branch_time"`
+	// The snapshot this branch was created from. When set, the branch's data
+	// comes from the snapshot rather than a source branch, so source_branch,
+	// source_branch_lsn, and source_branch_time must be empty. The snapshot
+	// must be AVAILABLE and belong to this branch's project. Format:
+	// projects/{project_id}/snapshots/{snapshot_id}
+	SourceSnapshot types.String `tfsdk:"source_snapshot"`
 	// Relative time-to-live duration. When set, the branch will expire at
 	// creation_time + ttl. Mutually exclusive with `expire_time` and
-	// `no_expiry`. When updating, use `spec.expiration` in the update_mask.
+	// `no_expiry`.
 	Ttl timetypes.GoDuration `tfsdk:"ttl"`
 }
 
@@ -301,6 +305,8 @@ func (m BranchSpec) ApplySchemaCustomizations(attrs map[string]tfschema.Attribut
 	attrs["source_branch_lsn"] = attrs["source_branch_lsn"].(tfschema.StringAttributeBuilder).AddPlanModifier(stringplanmodifier.RequiresReplace()).(tfschema.AttributeBuilder)
 	attrs["source_branch_time"] = attrs["source_branch_time"].SetOptional()
 	attrs["source_branch_time"] = attrs["source_branch_time"].(tfschema.StringAttributeBuilder).AddPlanModifier(stringplanmodifier.RequiresReplace()).(tfschema.AttributeBuilder)
+	attrs["source_snapshot"] = attrs["source_snapshot"].SetOptional()
+	attrs["source_snapshot"] = attrs["source_snapshot"].(tfschema.StringAttributeBuilder).AddPlanModifier(stringplanmodifier.RequiresReplace()).(tfschema.AttributeBuilder)
 	attrs["ttl"] = attrs["ttl"].SetOptional()
 
 	return attrs
@@ -330,6 +336,7 @@ func (m BranchSpec) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
 			"source_branch":      m.SourceBranch,
 			"source_branch_lsn":  m.SourceBranchLsn,
 			"source_branch_time": m.SourceBranchTime,
+			"source_snapshot":    m.SourceSnapshot,
 			"ttl":                m.Ttl,
 		})
 }
@@ -344,6 +351,7 @@ func (m BranchSpec) Type(ctx context.Context) attr.Type {
 			"source_branch":      types.StringType,
 			"source_branch_lsn":  types.StringType,
 			"source_branch_time": timetypes.RFC3339{}.Type(ctx),
+			"source_snapshot":    types.StringType,
 			"ttl":                timetypes.GoDuration{}.Type(ctx),
 		},
 	}
@@ -380,6 +388,10 @@ type BranchStatus struct {
 	// The point in time on the source branch from which this branch was
 	// created.
 	SourceBranchTime timetypes.RFC3339 `tfsdk:"source_branch_time"`
+	// The snapshot this branch was restored from. Set only for branches created
+	// by restoring a snapshot; unset for all other branches. Format:
+	// projects/{project_id}/snapshots/{snapshot_id}
+	SourceSnapshot types.String `tfsdk:"source_snapshot"`
 	// A timestamp indicating when the `current_state` began.
 	StateChangeTime timetypes.RFC3339 `tfsdk:"state_change_time"`
 }
@@ -403,6 +415,7 @@ func (m BranchStatus) ApplySchemaCustomizations(attrs map[string]tfschema.Attrib
 	attrs["source_branch"] = attrs["source_branch"].SetComputed()
 	attrs["source_branch_lsn"] = attrs["source_branch_lsn"].SetComputed()
 	attrs["source_branch_time"] = attrs["source_branch_time"].SetComputed()
+	attrs["source_snapshot"] = attrs["source_snapshot"].SetComputed()
 	attrs["state_change_time"] = attrs["state_change_time"].SetComputed()
 
 	return attrs
@@ -438,6 +451,7 @@ func (m BranchStatus) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
 			"source_branch":      m.SourceBranch,
 			"source_branch_lsn":  m.SourceBranchLsn,
 			"source_branch_time": m.SourceBranchTime,
+			"source_snapshot":    m.SourceSnapshot,
 			"state_change_time":  m.StateChangeTime,
 		})
 }
@@ -458,6 +472,7 @@ func (m BranchStatus) Type(ctx context.Context) attr.Type {
 			"source_branch":      types.StringType,
 			"source_branch_lsn":  types.StringType,
 			"source_branch_time": timetypes.RFC3339{}.Type(ctx),
+			"source_snapshot":    types.StringType,
 			"state_change_time":  timetypes.RFC3339{}.Type(ctx),
 		},
 	}
@@ -1268,7 +1283,8 @@ func (m *CreateCatalogRequest) SetCatalog(ctx context.Context, v Catalog) {
 
 type CreateCdfConfigRequest struct {
 	// The CdfConfig to create. The catalog, schema, and postgres_schema fields
-	// are required; all other fields are output only and ignored on input.
+	// are required; service_principal is optional. All other fields are output
+	// only and ignored on input.
 	CdfConfig types.Object `tfsdk:"cdf_config"`
 	// The user-specified id for the CdfConfig, forming the final segment of its
 	// resource name. Must match the pattern `[a-z][a-z0-9_]{0,62}`. Defaults to
@@ -1952,6 +1968,110 @@ func (m *CreateRoleRequest) SetRole(ctx context.Context, v Role) {
 	m.Role = vs
 }
 
+type CreateSnapshotRequest struct {
+	// The project in which to create the snapshot. Format:
+	// projects/{project_id}
+	Parent types.String `tfsdk:"-"`
+	// The snapshot to create.
+	Snapshot types.Object `tfsdk:"snapshot"`
+	// Client-chosen ID for the snapshot. It becomes the final segment of the
+	// snapshot resource name and cannot be changed after creation.
+	SnapshotId types.String `tfsdk:"-"`
+}
+
+func (to *CreateSnapshotRequest) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from CreateSnapshotRequest) {
+	if !from.Snapshot.IsNull() && !from.Snapshot.IsUnknown() {
+		if toSnapshot, ok := to.GetSnapshot(ctx); ok {
+			if fromSnapshot, ok := from.GetSnapshot(ctx); ok {
+				// Recursively sync the fields of Snapshot
+				toSnapshot.SyncFieldsDuringCreateOrUpdate(ctx, fromSnapshot)
+				to.SetSnapshot(ctx, toSnapshot)
+			}
+		}
+	}
+}
+
+func (to *CreateSnapshotRequest) SyncFieldsDuringRead(ctx context.Context, from CreateSnapshotRequest) {
+	if !from.Snapshot.IsNull() && !from.Snapshot.IsUnknown() {
+		if toSnapshot, ok := to.GetSnapshot(ctx); ok {
+			if fromSnapshot, ok := from.GetSnapshot(ctx); ok {
+				toSnapshot.SyncFieldsDuringRead(ctx, fromSnapshot)
+				to.SetSnapshot(ctx, toSnapshot)
+			}
+		}
+	}
+}
+
+func (m CreateSnapshotRequest) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["snapshot"] = attrs["snapshot"].SetRequired()
+	attrs["parent"] = attrs["parent"].SetRequired()
+	attrs["snapshot_id"] = attrs["snapshot_id"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in CreateSnapshotRequest.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m CreateSnapshotRequest) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{
+		"snapshot": reflect.TypeOf(Snapshot{}),
+	}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, CreateSnapshotRequest
+// only implements ToObjectValue() and Type().
+func (m CreateSnapshotRequest) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"parent":      m.Parent,
+			"snapshot":    m.Snapshot,
+			"snapshot_id": m.SnapshotId,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m CreateSnapshotRequest) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"parent":      types.StringType,
+			"snapshot":    Snapshot{}.Type(ctx),
+			"snapshot_id": types.StringType,
+		},
+	}
+}
+
+// GetSnapshot returns the value of the Snapshot field in CreateSnapshotRequest as
+// a Snapshot value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *CreateSnapshotRequest) GetSnapshot(ctx context.Context) (Snapshot, bool) {
+	var e Snapshot
+	if m.Snapshot.IsNull() || m.Snapshot.IsUnknown() {
+		return e, false
+	}
+	var v Snapshot
+	d := m.Snapshot.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetSnapshot sets the value of the Snapshot field in CreateSnapshotRequest.
+func (m *CreateSnapshotRequest) SetSnapshot(ctx context.Context, v Snapshot) {
+	vs := v.ToObjectValue(ctx)
+	m.Snapshot = vs
+}
+
 type CreateSyncedTableRequest struct {
 	SyncedTable types.Object `tfsdk:"synced_table"`
 	// The ID to use for the Synced Table. This becomes the final component of
@@ -2057,6 +2177,55 @@ func (m *CreateSyncedTableRequest) GetSyncedTable(ctx context.Context) (SyncedTa
 func (m *CreateSyncedTableRequest) SetSyncedTable(ctx context.Context, v SyncedTable) {
 	vs := v.ToObjectValue(ctx)
 	m.SyncedTable = vs
+}
+
+// Take a snapshot once per day, at the configured hour.
+type DailySchedule struct {
+	// The hour of the day, in UTC, at which to take the snapshot, in [0, 23].
+	Hour types.Int64 `tfsdk:"hour"`
+}
+
+func (to *DailySchedule) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from DailySchedule) {
+}
+
+func (to *DailySchedule) SyncFieldsDuringRead(ctx context.Context, from DailySchedule) {
+}
+
+func (m DailySchedule) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["hour"] = attrs["hour"].SetOptional()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in DailySchedule.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m DailySchedule) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, DailySchedule
+// only implements ToObjectValue() and Type().
+func (m DailySchedule) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"hour": m.Hour,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m DailySchedule) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"hour": types.Int64Type,
+		},
+	}
 }
 
 // DataApi represents the Data API (PostgREST) configuration for a Database. At
@@ -3681,6 +3850,55 @@ func (m DeleteRoleRequest) Type(ctx context.Context) attr.Type {
 	}
 }
 
+type DeleteSnapshotRequest struct {
+	// The resource name of the snapshot to delete. Format:
+	// projects/{project_id}/snapshots/{snapshot_id}
+	Name types.String `tfsdk:"-"`
+}
+
+func (to *DeleteSnapshotRequest) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from DeleteSnapshotRequest) {
+}
+
+func (to *DeleteSnapshotRequest) SyncFieldsDuringRead(ctx context.Context, from DeleteSnapshotRequest) {
+}
+
+func (m DeleteSnapshotRequest) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["name"] = attrs["name"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in DeleteSnapshotRequest.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m DeleteSnapshotRequest) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, DeleteSnapshotRequest
+// only implements ToObjectValue() and Type().
+func (m DeleteSnapshotRequest) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"name": m.Name,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m DeleteSnapshotRequest) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"name": types.StringType,
+		},
+	}
+}
+
 type DeleteSyncedTableRequest struct {
 	// The Full resource name of the synced table, of the format
 	// "synced_tables/{catalog}.{schema}.{table}", where (catalog, schema,
@@ -4309,15 +4527,13 @@ type EndpointSpec struct {
 	Group types.Object `tfsdk:"group"`
 	// When set to true, explicitly disables automatic suspension (never
 	// suspend). Should be set to true when provided. Mutually exclusive with
-	// `suspend_timeout_duration`. When updating, use `spec.suspension` in the
-	// update_mask.
+	// `suspend_timeout_duration`.
 	NoSuspension types.Bool `tfsdk:"no_suspension"`
 
 	Settings types.Object `tfsdk:"settings"`
 	// Duration of inactivity after which the compute endpoint is automatically
 	// suspended. If specified should be between 60s and 604800s (1 minute to 1
-	// week). Mutually exclusive with `no_suspension`. When updating, use
-	// `spec.suspension` in the update_mask.
+	// week). Mutually exclusive with `no_suspension`.
 	SuspendTimeoutDuration timetypes.GoDuration `tfsdk:"suspend_timeout_duration"`
 }
 
@@ -4734,6 +4950,19 @@ func (to *GenerateDatabaseCredentialRequest) SyncFieldsDuringCreateOrUpdate(ctx 
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Claims = from.Claims
 	}
+	if !from.Claims.IsNull() && !from.Claims.IsUnknown() {
+		if toClaims, ok := to.GetClaims(ctx); ok {
+			if fromClaims, ok := from.GetClaims(ctx); ok {
+				// Recursively sync the fields of each Claims element by position.
+				for i := range toClaims {
+					if i < len(fromClaims) {
+						toClaims[i].SyncFieldsDuringCreateOrUpdate(ctx, fromClaims[i])
+					}
+				}
+				to.SetClaims(ctx, toClaims)
+			}
+		}
+	}
 }
 
 func (to *GenerateDatabaseCredentialRequest) SyncFieldsDuringRead(ctx context.Context, from GenerateDatabaseCredentialRequest) {
@@ -4742,6 +4971,18 @@ func (to *GenerateDatabaseCredentialRequest) SyncFieldsDuringRead(ctx context.Co
 		// If a user specified a non-Null, empty list for Claims, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Claims = from.Claims
+	}
+	if !from.Claims.IsNull() && !from.Claims.IsUnknown() {
+		if toClaims, ok := to.GetClaims(ctx); ok {
+			if fromClaims, ok := from.GetClaims(ctx); ok {
+				for i := range toClaims {
+					if i < len(fromClaims) {
+						toClaims[i].SyncFieldsDuringRead(ctx, fromClaims[i])
+					}
+				}
+				to.SetClaims(ctx, toClaims)
+			}
+		}
 	}
 }
 
@@ -5311,6 +5552,104 @@ func (m GetRoleRequest) Type(ctx context.Context) attr.Type {
 	}
 }
 
+type GetSnapshotRequest struct {
+	// The resource name of the snapshot to retrieve. Format:
+	// projects/{project_id}/snapshots/{snapshot_id}
+	Name types.String `tfsdk:"-"`
+}
+
+func (to *GetSnapshotRequest) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from GetSnapshotRequest) {
+}
+
+func (to *GetSnapshotRequest) SyncFieldsDuringRead(ctx context.Context, from GetSnapshotRequest) {
+}
+
+func (m GetSnapshotRequest) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["name"] = attrs["name"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in GetSnapshotRequest.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m GetSnapshotRequest) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, GetSnapshotRequest
+// only implements ToObjectValue() and Type().
+func (m GetSnapshotRequest) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"name": m.Name,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m GetSnapshotRequest) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"name": types.StringType,
+		},
+	}
+}
+
+type GetSnapshotScheduleRequest struct {
+	// The resource name of the branch's snapshot schedule. Format:
+	// projects/{project_id}/branches/{branch_id}/snapshot-schedule
+	Name types.String `tfsdk:"-"`
+}
+
+func (to *GetSnapshotScheduleRequest) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from GetSnapshotScheduleRequest) {
+}
+
+func (to *GetSnapshotScheduleRequest) SyncFieldsDuringRead(ctx context.Context, from GetSnapshotScheduleRequest) {
+}
+
+func (m GetSnapshotScheduleRequest) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["name"] = attrs["name"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in GetSnapshotScheduleRequest.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m GetSnapshotScheduleRequest) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, GetSnapshotScheduleRequest
+// only implements ToObjectValue() and Type().
+func (m GetSnapshotScheduleRequest) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"name": m.Name,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m GetSnapshotScheduleRequest) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"name": types.StringType,
+		},
+	}
+}
+
 type GetSyncedTableRequest struct {
 	// The Full resource name of the synced table. Format:
 	// "synced_tables/{catalog}.{schema}.{table}", where (catalog, schema,
@@ -5609,6 +5948,19 @@ func (to *ListBranchesResponse) SyncFieldsDuringCreateOrUpdate(ctx context.Conte
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Branches = from.Branches
 	}
+	if !from.Branches.IsNull() && !from.Branches.IsUnknown() {
+		if toBranches, ok := to.GetBranches(ctx); ok {
+			if fromBranches, ok := from.GetBranches(ctx); ok {
+				// Recursively sync the fields of each Branches element by position.
+				for i := range toBranches {
+					if i < len(fromBranches) {
+						toBranches[i].SyncFieldsDuringCreateOrUpdate(ctx, fromBranches[i])
+					}
+				}
+				to.SetBranches(ctx, toBranches)
+			}
+		}
+	}
 }
 
 func (to *ListBranchesResponse) SyncFieldsDuringRead(ctx context.Context, from ListBranchesResponse) {
@@ -5617,6 +5969,18 @@ func (to *ListBranchesResponse) SyncFieldsDuringRead(ctx context.Context, from L
 		// If a user specified a non-Null, empty list for Branches, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Branches = from.Branches
+	}
+	if !from.Branches.IsNull() && !from.Branches.IsUnknown() {
+		if toBranches, ok := to.GetBranches(ctx); ok {
+			if fromBranches, ok := from.GetBranches(ctx); ok {
+				for i := range toBranches {
+					if i < len(fromBranches) {
+						toBranches[i].SyncFieldsDuringRead(ctx, fromBranches[i])
+					}
+				}
+				to.SetBranches(ctx, toBranches)
+			}
+		}
 	}
 }
 
@@ -5766,6 +6130,19 @@ func (to *ListCdfConfigsResponse) SyncFieldsDuringCreateOrUpdate(ctx context.Con
 		// set the resulting resource state to the empty list to match the planned value.
 		to.CdfConfigs = from.CdfConfigs
 	}
+	if !from.CdfConfigs.IsNull() && !from.CdfConfigs.IsUnknown() {
+		if toCdfConfigs, ok := to.GetCdfConfigs(ctx); ok {
+			if fromCdfConfigs, ok := from.GetCdfConfigs(ctx); ok {
+				// Recursively sync the fields of each CdfConfigs element by position.
+				for i := range toCdfConfigs {
+					if i < len(fromCdfConfigs) {
+						toCdfConfigs[i].SyncFieldsDuringCreateOrUpdate(ctx, fromCdfConfigs[i])
+					}
+				}
+				to.SetCdfConfigs(ctx, toCdfConfigs)
+			}
+		}
+	}
 }
 
 func (to *ListCdfConfigsResponse) SyncFieldsDuringRead(ctx context.Context, from ListCdfConfigsResponse) {
@@ -5774,6 +6151,18 @@ func (to *ListCdfConfigsResponse) SyncFieldsDuringRead(ctx context.Context, from
 		// If a user specified a non-Null, empty list for CdfConfigs, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.CdfConfigs = from.CdfConfigs
+	}
+	if !from.CdfConfigs.IsNull() && !from.CdfConfigs.IsUnknown() {
+		if toCdfConfigs, ok := to.GetCdfConfigs(ctx); ok {
+			if fromCdfConfigs, ok := from.GetCdfConfigs(ctx); ok {
+				for i := range toCdfConfigs {
+					if i < len(fromCdfConfigs) {
+						toCdfConfigs[i].SyncFieldsDuringRead(ctx, fromCdfConfigs[i])
+					}
+				}
+				to.SetCdfConfigs(ctx, toCdfConfigs)
+			}
+		}
 	}
 }
 
@@ -5923,6 +6312,19 @@ func (to *ListCdfStatusesResponse) SyncFieldsDuringCreateOrUpdate(ctx context.Co
 		// set the resulting resource state to the empty list to match the planned value.
 		to.CdfStatuses = from.CdfStatuses
 	}
+	if !from.CdfStatuses.IsNull() && !from.CdfStatuses.IsUnknown() {
+		if toCdfStatuses, ok := to.GetCdfStatuses(ctx); ok {
+			if fromCdfStatuses, ok := from.GetCdfStatuses(ctx); ok {
+				// Recursively sync the fields of each CdfStatuses element by position.
+				for i := range toCdfStatuses {
+					if i < len(fromCdfStatuses) {
+						toCdfStatuses[i].SyncFieldsDuringCreateOrUpdate(ctx, fromCdfStatuses[i])
+					}
+				}
+				to.SetCdfStatuses(ctx, toCdfStatuses)
+			}
+		}
+	}
 }
 
 func (to *ListCdfStatusesResponse) SyncFieldsDuringRead(ctx context.Context, from ListCdfStatusesResponse) {
@@ -5931,6 +6333,18 @@ func (to *ListCdfStatusesResponse) SyncFieldsDuringRead(ctx context.Context, fro
 		// If a user specified a non-Null, empty list for CdfStatuses, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.CdfStatuses = from.CdfStatuses
+	}
+	if !from.CdfStatuses.IsNull() && !from.CdfStatuses.IsUnknown() {
+		if toCdfStatuses, ok := to.GetCdfStatuses(ctx); ok {
+			if fromCdfStatuses, ok := from.GetCdfStatuses(ctx); ok {
+				for i := range toCdfStatuses {
+					if i < len(fromCdfStatuses) {
+						toCdfStatuses[i].SyncFieldsDuringRead(ctx, fromCdfStatuses[i])
+					}
+				}
+				to.SetCdfStatuses(ctx, toCdfStatuses)
+			}
+		}
 	}
 }
 
@@ -6078,6 +6492,19 @@ func (to *ListDatabasesResponse) SyncFieldsDuringCreateOrUpdate(ctx context.Cont
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Databases = from.Databases
 	}
+	if !from.Databases.IsNull() && !from.Databases.IsUnknown() {
+		if toDatabases, ok := to.GetDatabases(ctx); ok {
+			if fromDatabases, ok := from.GetDatabases(ctx); ok {
+				// Recursively sync the fields of each Databases element by position.
+				for i := range toDatabases {
+					if i < len(fromDatabases) {
+						toDatabases[i].SyncFieldsDuringCreateOrUpdate(ctx, fromDatabases[i])
+					}
+				}
+				to.SetDatabases(ctx, toDatabases)
+			}
+		}
+	}
 }
 
 func (to *ListDatabasesResponse) SyncFieldsDuringRead(ctx context.Context, from ListDatabasesResponse) {
@@ -6086,6 +6513,18 @@ func (to *ListDatabasesResponse) SyncFieldsDuringRead(ctx context.Context, from 
 		// If a user specified a non-Null, empty list for Databases, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Databases = from.Databases
+	}
+	if !from.Databases.IsNull() && !from.Databases.IsUnknown() {
+		if toDatabases, ok := to.GetDatabases(ctx); ok {
+			if fromDatabases, ok := from.GetDatabases(ctx); ok {
+				for i := range toDatabases {
+					if i < len(fromDatabases) {
+						toDatabases[i].SyncFieldsDuringRead(ctx, fromDatabases[i])
+					}
+				}
+				to.SetDatabases(ctx, toDatabases)
+			}
+		}
 	}
 }
 
@@ -6233,6 +6672,19 @@ func (to *ListEndpointsResponse) SyncFieldsDuringCreateOrUpdate(ctx context.Cont
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Endpoints = from.Endpoints
 	}
+	if !from.Endpoints.IsNull() && !from.Endpoints.IsUnknown() {
+		if toEndpoints, ok := to.GetEndpoints(ctx); ok {
+			if fromEndpoints, ok := from.GetEndpoints(ctx); ok {
+				// Recursively sync the fields of each Endpoints element by position.
+				for i := range toEndpoints {
+					if i < len(fromEndpoints) {
+						toEndpoints[i].SyncFieldsDuringCreateOrUpdate(ctx, fromEndpoints[i])
+					}
+				}
+				to.SetEndpoints(ctx, toEndpoints)
+			}
+		}
+	}
 }
 
 func (to *ListEndpointsResponse) SyncFieldsDuringRead(ctx context.Context, from ListEndpointsResponse) {
@@ -6241,6 +6693,18 @@ func (to *ListEndpointsResponse) SyncFieldsDuringRead(ctx context.Context, from 
 		// If a user specified a non-Null, empty list for Endpoints, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Endpoints = from.Endpoints
+	}
+	if !from.Endpoints.IsNull() && !from.Endpoints.IsUnknown() {
+		if toEndpoints, ok := to.GetEndpoints(ctx); ok {
+			if fromEndpoints, ok := from.GetEndpoints(ctx); ok {
+				for i := range toEndpoints {
+					if i < len(fromEndpoints) {
+						toEndpoints[i].SyncFieldsDuringRead(ctx, fromEndpoints[i])
+					}
+				}
+				to.SetEndpoints(ctx, toEndpoints)
+			}
+		}
 	}
 }
 
@@ -6391,6 +6855,19 @@ func (to *ListProjectsResponse) SyncFieldsDuringCreateOrUpdate(ctx context.Conte
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Projects = from.Projects
 	}
+	if !from.Projects.IsNull() && !from.Projects.IsUnknown() {
+		if toProjects, ok := to.GetProjects(ctx); ok {
+			if fromProjects, ok := from.GetProjects(ctx); ok {
+				// Recursively sync the fields of each Projects element by position.
+				for i := range toProjects {
+					if i < len(fromProjects) {
+						toProjects[i].SyncFieldsDuringCreateOrUpdate(ctx, fromProjects[i])
+					}
+				}
+				to.SetProjects(ctx, toProjects)
+			}
+		}
+	}
 }
 
 func (to *ListProjectsResponse) SyncFieldsDuringRead(ctx context.Context, from ListProjectsResponse) {
@@ -6399,6 +6876,18 @@ func (to *ListProjectsResponse) SyncFieldsDuringRead(ctx context.Context, from L
 		// If a user specified a non-Null, empty list for Projects, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Projects = from.Projects
+	}
+	if !from.Projects.IsNull() && !from.Projects.IsUnknown() {
+		if toProjects, ok := to.GetProjects(ctx); ok {
+			if fromProjects, ok := from.GetProjects(ctx); ok {
+				for i := range toProjects {
+					if i < len(fromProjects) {
+						toProjects[i].SyncFieldsDuringRead(ctx, fromProjects[i])
+					}
+				}
+				to.SetProjects(ctx, toProjects)
+			}
+		}
 	}
 }
 
@@ -6546,6 +7035,19 @@ func (to *ListRolesResponse) SyncFieldsDuringCreateOrUpdate(ctx context.Context,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Roles = from.Roles
 	}
+	if !from.Roles.IsNull() && !from.Roles.IsUnknown() {
+		if toRoles, ok := to.GetRoles(ctx); ok {
+			if fromRoles, ok := from.GetRoles(ctx); ok {
+				// Recursively sync the fields of each Roles element by position.
+				for i := range toRoles {
+					if i < len(fromRoles) {
+						toRoles[i].SyncFieldsDuringCreateOrUpdate(ctx, fromRoles[i])
+					}
+				}
+				to.SetRoles(ctx, toRoles)
+			}
+		}
+	}
 }
 
 func (to *ListRolesResponse) SyncFieldsDuringRead(ctx context.Context, from ListRolesResponse) {
@@ -6554,6 +7056,18 @@ func (to *ListRolesResponse) SyncFieldsDuringRead(ctx context.Context, from List
 		// If a user specified a non-Null, empty list for Roles, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Roles = from.Roles
+	}
+	if !from.Roles.IsNull() && !from.Roles.IsUnknown() {
+		if toRoles, ok := to.GetRoles(ctx); ok {
+			if fromRoles, ok := from.GetRoles(ctx); ok {
+				for i := range toRoles {
+					if i < len(fromRoles) {
+						toRoles[i].SyncFieldsDuringRead(ctx, fromRoles[i])
+					}
+				}
+				to.SetRoles(ctx, toRoles)
+			}
+		}
 	}
 }
 
@@ -6627,9 +7141,248 @@ func (m *ListRolesResponse) SetRoles(ctx context.Context, v []Role) {
 	m.Roles = types.ListValueMust(t, vs)
 }
 
+type ListSnapshotsRequest struct {
+	// Maximum number of snapshots to return per page.
+	PageSize types.Int64 `tfsdk:"-"`
+	// Page token from a previous response; omit for the first page.
+	PageToken types.String `tfsdk:"-"`
+	// The project that owns the snapshots. Format: projects/{project_id}
+	Parent types.String `tfsdk:"-"`
+}
+
+func (to *ListSnapshotsRequest) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from ListSnapshotsRequest) {
+}
+
+func (to *ListSnapshotsRequest) SyncFieldsDuringRead(ctx context.Context, from ListSnapshotsRequest) {
+}
+
+func (m ListSnapshotsRequest) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["parent"] = attrs["parent"].SetRequired()
+	attrs["page_token"] = attrs["page_token"].SetOptional()
+	attrs["page_size"] = attrs["page_size"].SetOptional()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in ListSnapshotsRequest.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m ListSnapshotsRequest) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, ListSnapshotsRequest
+// only implements ToObjectValue() and Type().
+func (m ListSnapshotsRequest) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"page_size":  m.PageSize,
+			"page_token": m.PageToken,
+			"parent":     m.Parent,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m ListSnapshotsRequest) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"page_size":  types.Int64Type,
+			"page_token": types.StringType,
+			"parent":     types.StringType,
+		},
+	}
+}
+
+type ListSnapshotsResponse struct {
+	// Token to retrieve the next page; empty if there are no more pages.
+	NextPageToken types.String `tfsdk:"next_page_token"`
+	// The snapshots in the project.
+	Snapshots types.List `tfsdk:"snapshots"`
+}
+
+func (to *ListSnapshotsResponse) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from ListSnapshotsResponse) {
+	if !from.Snapshots.IsNull() && !from.Snapshots.IsUnknown() && to.Snapshots.IsNull() && len(from.Snapshots.Elements()) == 0 {
+		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
+		// If a user specified a non-Null, empty list for Snapshots, and the deserialized field value is Null,
+		// set the resulting resource state to the empty list to match the planned value.
+		to.Snapshots = from.Snapshots
+	}
+	if !from.Snapshots.IsNull() && !from.Snapshots.IsUnknown() {
+		if toSnapshots, ok := to.GetSnapshots(ctx); ok {
+			if fromSnapshots, ok := from.GetSnapshots(ctx); ok {
+				// Recursively sync the fields of each Snapshots element by position.
+				for i := range toSnapshots {
+					if i < len(fromSnapshots) {
+						toSnapshots[i].SyncFieldsDuringCreateOrUpdate(ctx, fromSnapshots[i])
+					}
+				}
+				to.SetSnapshots(ctx, toSnapshots)
+			}
+		}
+	}
+}
+
+func (to *ListSnapshotsResponse) SyncFieldsDuringRead(ctx context.Context, from ListSnapshotsResponse) {
+	if !from.Snapshots.IsNull() && !from.Snapshots.IsUnknown() && to.Snapshots.IsNull() && len(from.Snapshots.Elements()) == 0 {
+		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
+		// If a user specified a non-Null, empty list for Snapshots, and the deserialized field value is Null,
+		// set the resulting resource state to the empty list to match the planned value.
+		to.Snapshots = from.Snapshots
+	}
+	if !from.Snapshots.IsNull() && !from.Snapshots.IsUnknown() {
+		if toSnapshots, ok := to.GetSnapshots(ctx); ok {
+			if fromSnapshots, ok := from.GetSnapshots(ctx); ok {
+				for i := range toSnapshots {
+					if i < len(fromSnapshots) {
+						toSnapshots[i].SyncFieldsDuringRead(ctx, fromSnapshots[i])
+					}
+				}
+				to.SetSnapshots(ctx, toSnapshots)
+			}
+		}
+	}
+}
+
+func (m ListSnapshotsResponse) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["next_page_token"] = attrs["next_page_token"].SetOptional()
+	attrs["snapshots"] = attrs["snapshots"].SetOptional()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in ListSnapshotsResponse.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m ListSnapshotsResponse) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{
+		"snapshots": reflect.TypeOf(Snapshot{}),
+	}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, ListSnapshotsResponse
+// only implements ToObjectValue() and Type().
+func (m ListSnapshotsResponse) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"next_page_token": m.NextPageToken,
+			"snapshots":       m.Snapshots,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m ListSnapshotsResponse) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"next_page_token": types.StringType,
+			"snapshots": basetypes.ListType{
+				ElemType: Snapshot{}.Type(ctx),
+			},
+		},
+	}
+}
+
+// GetSnapshots returns the value of the Snapshots field in ListSnapshotsResponse as
+// a slice of Snapshot values.
+// If the field is unknown or null, the boolean return value is false.
+func (m *ListSnapshotsResponse) GetSnapshots(ctx context.Context) ([]Snapshot, bool) {
+	if m.Snapshots.IsNull() || m.Snapshots.IsUnknown() {
+		return nil, false
+	}
+	var v []Snapshot
+	d := m.Snapshots.ElementsAs(ctx, &v, true)
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetSnapshots sets the value of the Snapshots field in ListSnapshotsResponse.
+func (m *ListSnapshotsResponse) SetSnapshots(ctx context.Context, v []Snapshot) {
+	vs := make([]attr.Value, 0, len(v))
+	for _, e := range v {
+		vs = append(vs, e.ToObjectValue(ctx))
+	}
+	t := m.Type(ctx).(basetypes.ObjectType).AttrTypes["snapshots"]
+	t = t.(attr.TypeWithElementType).ElementType()
+	m.Snapshots = types.ListValueMust(t, vs)
+}
+
+// Take a snapshot once per month, on the configured day at the configured hour.
+type MonthlySchedule struct {
+	// The day of the month on which to take the snapshot, in [1, 31]. In
+	// shorter months the snapshot is taken on the last day instead (day 31 runs
+	// on Feb 28 or 29, and on Apr 30), so every month gets exactly one
+	// snapshot.
+	Day types.Int64 `tfsdk:"day"`
+	// The hour of the day, in UTC, at which to take the snapshot, in [0, 23].
+	Hour types.Int64 `tfsdk:"hour"`
+}
+
+func (to *MonthlySchedule) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from MonthlySchedule) {
+}
+
+func (to *MonthlySchedule) SyncFieldsDuringRead(ctx context.Context, from MonthlySchedule) {
+}
+
+func (m MonthlySchedule) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["day"] = attrs["day"].SetRequired()
+	attrs["hour"] = attrs["hour"].SetOptional()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in MonthlySchedule.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m MonthlySchedule) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, MonthlySchedule
+// only implements ToObjectValue() and Type().
+func (m MonthlySchedule) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"day":  m.Day,
+			"hour": m.Hour,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m MonthlySchedule) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"day":  types.Int64Type,
+			"hour": types.Int64Type,
+		},
+	}
+}
+
 type NewPipelineSpec struct {
 	// Budget policy to set on the newly created pipeline.
 	BudgetPolicyId types.String `tfsdk:"budget_policy_id"`
+	// Release channel of the underlying pipeline's runtime. Some source table
+	// configurations (e.g., read-time CDF) require PREVIEW. Defaults to CURRENT
+	// if not specified.
+	PipelineChannel types.String `tfsdk:"pipeline_channel"`
 	// UC catalog for the pipeline to store intermediate files (checkpoints,
 	// event logs etc). This needs to be a standard catalog where the user has
 	// permissions to create Delta tables.
@@ -6648,6 +7401,7 @@ func (to *NewPipelineSpec) SyncFieldsDuringRead(ctx context.Context, from NewPip
 
 func (m NewPipelineSpec) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
 	attrs["budget_policy_id"] = attrs["budget_policy_id"].SetOptional()
+	attrs["pipeline_channel"] = attrs["pipeline_channel"].SetOptional()
 	attrs["storage_catalog"] = attrs["storage_catalog"].SetOptional()
 	attrs["storage_schema"] = attrs["storage_schema"].SetOptional()
 
@@ -6673,6 +7427,7 @@ func (m NewPipelineSpec) ToObjectValue(ctx context.Context) basetypes.ObjectValu
 		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
 		map[string]attr.Value{
 			"budget_policy_id": m.BudgetPolicyId,
+			"pipeline_channel": m.PipelineChannel,
 			"storage_catalog":  m.StorageCatalog,
 			"storage_schema":   m.StorageSchema,
 		})
@@ -6683,6 +7438,7 @@ func (m NewPipelineSpec) Type(ctx context.Context) attr.Type {
 	return types.ObjectType{
 		AttrTypes: map[string]attr.Type{
 			"budget_policy_id": types.StringType,
+			"pipeline_channel": types.StringType,
 			"storage_catalog":  types.StringType,
 			"storage_schema":   types.StringType,
 		},
@@ -7185,15 +7941,13 @@ type ProjectDefaultEndpointSettings struct {
 	AutoscalingLimitMinCu types.Float64 `tfsdk:"autoscaling_limit_min_cu"`
 	// When set to true, explicitly disables automatic suspension (never
 	// suspend). Should be set to true when provided. Mutually exclusive with
-	// `suspend_timeout_duration`. When updating, use
-	// `spec.project_default_settings.suspension` in the update_mask.
+	// `suspend_timeout_duration`.
 	NoSuspension types.Bool `tfsdk:"no_suspension"`
 	// A raw representation of Postgres settings.
 	PgSettings types.Map `tfsdk:"pg_settings"`
 	// Duration of inactivity after which the compute endpoint is automatically
 	// suspended. If specified should be between 60s and 604800s (1 minute to 1
-	// week). Mutually exclusive with `no_suspension`. When updating, use
-	// `spec.project_default_settings.suspension` in the update_mask.
+	// week). Mutually exclusive with `no_suspension`.
 	SuspendTimeoutDuration timetypes.GoDuration `tfsdk:"suspend_timeout_duration"`
 }
 
@@ -7362,6 +8116,19 @@ func (to *ProjectSpec) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from 
 		// set the resulting resource state to the empty list to match the planned value.
 		to.CustomTags = from.CustomTags
 	}
+	if !from.CustomTags.IsNull() && !from.CustomTags.IsUnknown() {
+		if toCustomTags, ok := to.GetCustomTags(ctx); ok {
+			if fromCustomTags, ok := from.GetCustomTags(ctx); ok {
+				// Recursively sync the fields of each CustomTags element by position.
+				for i := range toCustomTags {
+					if i < len(fromCustomTags) {
+						toCustomTags[i].SyncFieldsDuringCreateOrUpdate(ctx, fromCustomTags[i])
+					}
+				}
+				to.SetCustomTags(ctx, toCustomTags)
+			}
+		}
+	}
 	if !from.DefaultEndpointSettings.IsNull() && !from.DefaultEndpointSettings.IsUnknown() {
 		if toDefaultEndpointSettings, ok := to.GetDefaultEndpointSettings(ctx); ok {
 			if fromDefaultEndpointSettings, ok := from.GetDefaultEndpointSettings(ctx); ok {
@@ -7379,6 +8146,18 @@ func (to *ProjectSpec) SyncFieldsDuringRead(ctx context.Context, from ProjectSpe
 		// If a user specified a non-Null, empty list for CustomTags, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.CustomTags = from.CustomTags
+	}
+	if !from.CustomTags.IsNull() && !from.CustomTags.IsUnknown() {
+		if toCustomTags, ok := to.GetCustomTags(ctx); ok {
+			if fromCustomTags, ok := from.GetCustomTags(ctx); ok {
+				for i := range toCustomTags {
+					if i < len(fromCustomTags) {
+						toCustomTags[i].SyncFieldsDuringRead(ctx, fromCustomTags[i])
+					}
+				}
+				to.SetCustomTags(ctx, toCustomTags)
+			}
+		}
 	}
 	if !from.DefaultEndpointSettings.IsNull() && !from.DefaultEndpointSettings.IsUnknown() {
 		if toDefaultEndpointSettings, ok := to.GetDefaultEndpointSettings(ctx); ok {
@@ -7543,6 +8322,19 @@ func (to *ProjectStatus) SyncFieldsDuringCreateOrUpdate(ctx context.Context, fro
 		// set the resulting resource state to the empty list to match the planned value.
 		to.CustomTags = from.CustomTags
 	}
+	if !from.CustomTags.IsNull() && !from.CustomTags.IsUnknown() {
+		if toCustomTags, ok := to.GetCustomTags(ctx); ok {
+			if fromCustomTags, ok := from.GetCustomTags(ctx); ok {
+				// Recursively sync the fields of each CustomTags element by position.
+				for i := range toCustomTags {
+					if i < len(fromCustomTags) {
+						toCustomTags[i].SyncFieldsDuringCreateOrUpdate(ctx, fromCustomTags[i])
+					}
+				}
+				to.SetCustomTags(ctx, toCustomTags)
+			}
+		}
+	}
 	if !from.DefaultEndpointSettings.IsNull() && !from.DefaultEndpointSettings.IsUnknown() {
 		if toDefaultEndpointSettings, ok := to.GetDefaultEndpointSettings(ctx); ok {
 			if fromDefaultEndpointSettings, ok := from.GetDefaultEndpointSettings(ctx); ok {
@@ -7560,6 +8352,18 @@ func (to *ProjectStatus) SyncFieldsDuringRead(ctx context.Context, from ProjectS
 		// If a user specified a non-Null, empty list for CustomTags, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.CustomTags = from.CustomTags
+	}
+	if !from.CustomTags.IsNull() && !from.CustomTags.IsUnknown() {
+		if toCustomTags, ok := to.GetCustomTags(ctx); ok {
+			if fromCustomTags, ok := from.GetCustomTags(ctx); ok {
+				for i := range toCustomTags {
+					if i < len(fromCustomTags) {
+						toCustomTags[i].SyncFieldsDuringRead(ctx, fromCustomTags[i])
+					}
+				}
+				to.SetCustomTags(ctx, toCustomTags)
+			}
+		}
 	}
 	if !from.DefaultEndpointSettings.IsNull() && !from.DefaultEndpointSettings.IsUnknown() {
 		if toDefaultEndpointSettings, ok := to.GetDefaultEndpointSettings(ctx); ok {
@@ -7713,6 +8517,19 @@ func (to *RequestedClaims) SyncFieldsDuringCreateOrUpdate(ctx context.Context, f
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Resources = from.Resources
 	}
+	if !from.Resources.IsNull() && !from.Resources.IsUnknown() {
+		if toResources, ok := to.GetResources(ctx); ok {
+			if fromResources, ok := from.GetResources(ctx); ok {
+				// Recursively sync the fields of each Resources element by position.
+				for i := range toResources {
+					if i < len(fromResources) {
+						toResources[i].SyncFieldsDuringCreateOrUpdate(ctx, fromResources[i])
+					}
+				}
+				to.SetResources(ctx, toResources)
+			}
+		}
+	}
 }
 
 func (to *RequestedClaims) SyncFieldsDuringRead(ctx context.Context, from RequestedClaims) {
@@ -7721,6 +8538,18 @@ func (to *RequestedClaims) SyncFieldsDuringRead(ctx context.Context, from Reques
 		// If a user specified a non-Null, empty list for Resources, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Resources = from.Resources
+	}
+	if !from.Resources.IsNull() && !from.Resources.IsUnknown() {
+		if toResources, ok := to.GetResources(ctx); ok {
+			if fromResources, ok := from.GetResources(ctx); ok {
+				for i := range toResources {
+					if i < len(fromResources) {
+						toResources[i].SyncFieldsDuringRead(ctx, fromResources[i])
+					}
+				}
+				to.SetResources(ctx, toResources)
+			}
+		}
 	}
 }
 
@@ -7838,6 +8667,106 @@ func (m RequestedResource) Type(ctx context.Context) attr.Type {
 	return types.ObjectType{
 		AttrTypes: map[string]attr.Type{
 			"table_name": types.StringType,
+		},
+	}
+}
+
+// Request to reveal the current password for a password-authenticated Postgres
+// role.
+type RevealRolePasswordRequest struct {
+	// The full resource path of the role whose password should be revealed.
+	// Format: projects/{project_id}/branches/{branch_id}/roles/{role_id}
+	Name types.String `tfsdk:"-"`
+}
+
+func (to *RevealRolePasswordRequest) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from RevealRolePasswordRequest) {
+}
+
+func (to *RevealRolePasswordRequest) SyncFieldsDuringRead(ctx context.Context, from RevealRolePasswordRequest) {
+}
+
+func (m RevealRolePasswordRequest) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["name"] = attrs["name"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in RevealRolePasswordRequest.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m RevealRolePasswordRequest) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, RevealRolePasswordRequest
+// only implements ToObjectValue() and Type().
+func (m RevealRolePasswordRequest) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"name": m.Name,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m RevealRolePasswordRequest) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"name": types.StringType,
+		},
+	}
+}
+
+// Response containing the password for a password-authenticated Postgres role.
+type RevealRolePasswordResponse struct {
+	// The current password for the Postgres role.
+	Password types.String `tfsdk:"password"`
+}
+
+func (to *RevealRolePasswordResponse) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from RevealRolePasswordResponse) {
+}
+
+func (to *RevealRolePasswordResponse) SyncFieldsDuringRead(ctx context.Context, from RevealRolePasswordResponse) {
+}
+
+func (m RevealRolePasswordResponse) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["password"] = attrs["password"].SetComputed()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in RevealRolePasswordResponse.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m RevealRolePasswordResponse) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, RevealRolePasswordResponse
+// only implements ToObjectValue() and Type().
+func (m RevealRolePasswordResponse) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"password": m.Password,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m RevealRolePasswordResponse) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"password": types.StringType,
 		},
 	}
 }
@@ -8471,6 +9400,719 @@ func (m *RoleRoleStatus) SetMembershipRoles(ctx context.Context, v []types.Strin
 	m.MembershipRoles = types.ListValueMust(t, vs)
 }
 
+// One cadence at which automatic snapshots are taken.
+type ScheduleCadence struct {
+	// Take a snapshot once per day.
+	DailySchedule types.Object `tfsdk:"daily_schedule"`
+	// Take a snapshot once per month.
+	MonthlySchedule types.Object `tfsdk:"monthly_schedule"`
+	// How long snapshots from this cadence are kept before automatic deletion.
+	// Must be at least 1 hour. Applied when a snapshot is taken; not
+	// retroactive, so changing it affects only later snapshots.
+	Retention timetypes.GoDuration `tfsdk:"retention"`
+	// Take a snapshot once per week.
+	WeeklySchedule types.Object `tfsdk:"weekly_schedule"`
+}
+
+func (to *ScheduleCadence) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from ScheduleCadence) {
+	if !from.DailySchedule.IsNull() && !from.DailySchedule.IsUnknown() {
+		if toDailySchedule, ok := to.GetDailySchedule(ctx); ok {
+			if fromDailySchedule, ok := from.GetDailySchedule(ctx); ok {
+				// Recursively sync the fields of DailySchedule
+				toDailySchedule.SyncFieldsDuringCreateOrUpdate(ctx, fromDailySchedule)
+				to.SetDailySchedule(ctx, toDailySchedule)
+			}
+		}
+	}
+	if !from.MonthlySchedule.IsNull() && !from.MonthlySchedule.IsUnknown() {
+		if toMonthlySchedule, ok := to.GetMonthlySchedule(ctx); ok {
+			if fromMonthlySchedule, ok := from.GetMonthlySchedule(ctx); ok {
+				// Recursively sync the fields of MonthlySchedule
+				toMonthlySchedule.SyncFieldsDuringCreateOrUpdate(ctx, fromMonthlySchedule)
+				to.SetMonthlySchedule(ctx, toMonthlySchedule)
+			}
+		}
+	}
+	if !from.WeeklySchedule.IsNull() && !from.WeeklySchedule.IsUnknown() {
+		if toWeeklySchedule, ok := to.GetWeeklySchedule(ctx); ok {
+			if fromWeeklySchedule, ok := from.GetWeeklySchedule(ctx); ok {
+				// Recursively sync the fields of WeeklySchedule
+				toWeeklySchedule.SyncFieldsDuringCreateOrUpdate(ctx, fromWeeklySchedule)
+				to.SetWeeklySchedule(ctx, toWeeklySchedule)
+			}
+		}
+	}
+}
+
+func (to *ScheduleCadence) SyncFieldsDuringRead(ctx context.Context, from ScheduleCadence) {
+	if !from.DailySchedule.IsNull() && !from.DailySchedule.IsUnknown() {
+		if toDailySchedule, ok := to.GetDailySchedule(ctx); ok {
+			if fromDailySchedule, ok := from.GetDailySchedule(ctx); ok {
+				toDailySchedule.SyncFieldsDuringRead(ctx, fromDailySchedule)
+				to.SetDailySchedule(ctx, toDailySchedule)
+			}
+		}
+	}
+	if !from.MonthlySchedule.IsNull() && !from.MonthlySchedule.IsUnknown() {
+		if toMonthlySchedule, ok := to.GetMonthlySchedule(ctx); ok {
+			if fromMonthlySchedule, ok := from.GetMonthlySchedule(ctx); ok {
+				toMonthlySchedule.SyncFieldsDuringRead(ctx, fromMonthlySchedule)
+				to.SetMonthlySchedule(ctx, toMonthlySchedule)
+			}
+		}
+	}
+	if !from.WeeklySchedule.IsNull() && !from.WeeklySchedule.IsUnknown() {
+		if toWeeklySchedule, ok := to.GetWeeklySchedule(ctx); ok {
+			if fromWeeklySchedule, ok := from.GetWeeklySchedule(ctx); ok {
+				toWeeklySchedule.SyncFieldsDuringRead(ctx, fromWeeklySchedule)
+				to.SetWeeklySchedule(ctx, toWeeklySchedule)
+			}
+		}
+	}
+}
+
+func (m ScheduleCadence) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["daily_schedule"] = attrs["daily_schedule"].SetOptional()
+	attrs["monthly_schedule"] = attrs["monthly_schedule"].SetOptional()
+	attrs["retention"] = attrs["retention"].SetRequired()
+	attrs["weekly_schedule"] = attrs["weekly_schedule"].SetOptional()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in ScheduleCadence.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m ScheduleCadence) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{
+		"daily_schedule":   reflect.TypeOf(DailySchedule{}),
+		"monthly_schedule": reflect.TypeOf(MonthlySchedule{}),
+		"weekly_schedule":  reflect.TypeOf(WeeklySchedule{}),
+	}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, ScheduleCadence
+// only implements ToObjectValue() and Type().
+func (m ScheduleCadence) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"daily_schedule":   m.DailySchedule,
+			"monthly_schedule": m.MonthlySchedule,
+			"retention":        m.Retention,
+			"weekly_schedule":  m.WeeklySchedule,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m ScheduleCadence) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"daily_schedule":   DailySchedule{}.Type(ctx),
+			"monthly_schedule": MonthlySchedule{}.Type(ctx),
+			"retention":        timetypes.GoDuration{}.Type(ctx),
+			"weekly_schedule":  WeeklySchedule{}.Type(ctx),
+		},
+	}
+}
+
+// GetDailySchedule returns the value of the DailySchedule field in ScheduleCadence as
+// a DailySchedule value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *ScheduleCadence) GetDailySchedule(ctx context.Context) (DailySchedule, bool) {
+	var e DailySchedule
+	if m.DailySchedule.IsNull() || m.DailySchedule.IsUnknown() {
+		return e, false
+	}
+	var v DailySchedule
+	d := m.DailySchedule.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetDailySchedule sets the value of the DailySchedule field in ScheduleCadence.
+func (m *ScheduleCadence) SetDailySchedule(ctx context.Context, v DailySchedule) {
+	vs := v.ToObjectValue(ctx)
+	m.DailySchedule = vs
+}
+
+// GetMonthlySchedule returns the value of the MonthlySchedule field in ScheduleCadence as
+// a MonthlySchedule value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *ScheduleCadence) GetMonthlySchedule(ctx context.Context) (MonthlySchedule, bool) {
+	var e MonthlySchedule
+	if m.MonthlySchedule.IsNull() || m.MonthlySchedule.IsUnknown() {
+		return e, false
+	}
+	var v MonthlySchedule
+	d := m.MonthlySchedule.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetMonthlySchedule sets the value of the MonthlySchedule field in ScheduleCadence.
+func (m *ScheduleCadence) SetMonthlySchedule(ctx context.Context, v MonthlySchedule) {
+	vs := v.ToObjectValue(ctx)
+	m.MonthlySchedule = vs
+}
+
+// GetWeeklySchedule returns the value of the WeeklySchedule field in ScheduleCadence as
+// a WeeklySchedule value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *ScheduleCadence) GetWeeklySchedule(ctx context.Context) (WeeklySchedule, bool) {
+	var e WeeklySchedule
+	if m.WeeklySchedule.IsNull() || m.WeeklySchedule.IsUnknown() {
+		return e, false
+	}
+	var v WeeklySchedule
+	d := m.WeeklySchedule.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetWeeklySchedule sets the value of the WeeklySchedule field in ScheduleCadence.
+func (m *ScheduleCadence) SetWeeklySchedule(ctx context.Context, v WeeklySchedule) {
+	vs := v.ToObjectValue(ctx)
+	m.WeeklySchedule = vs
+}
+
+// An immutable, point-in-time copy of a branch's data within a project. It
+// remains available after the source branch is deleted.
+type Snapshot struct {
+	// When the snapshot was created.
+	CreateTime timetypes.RFC3339 `tfsdk:"create_time"`
+	// The resource name of the snapshot. Format:
+	// projects/{project_id}/snapshots/{snapshot_id}
+	Name types.String `tfsdk:"name"`
+	// The user-chosen ID; the final segment of `name`.
+	SnapshotId types.String `tfsdk:"snapshot_id"`
+	// Client-provided configuration of the snapshot.
+	Spec types.Object `tfsdk:"spec"`
+	// Server-observed state of the snapshot.
+	Status types.Object `tfsdk:"status"`
+	// Unique system-generated ID for the snapshot.
+	Uid types.String `tfsdk:"uid"`
+}
+
+func (to *Snapshot) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from Snapshot) {
+	if !from.Spec.IsNull() && !from.Spec.IsUnknown() {
+		if toSpec, ok := to.GetSpec(ctx); ok {
+			if fromSpec, ok := from.GetSpec(ctx); ok {
+				// Recursively sync the fields of Spec
+				toSpec.SyncFieldsDuringCreateOrUpdate(ctx, fromSpec)
+				to.SetSpec(ctx, toSpec)
+			}
+		}
+	}
+	if !from.Status.IsNull() && !from.Status.IsUnknown() {
+		if toStatus, ok := to.GetStatus(ctx); ok {
+			if fromStatus, ok := from.GetStatus(ctx); ok {
+				// Recursively sync the fields of Status
+				toStatus.SyncFieldsDuringCreateOrUpdate(ctx, fromStatus)
+				to.SetStatus(ctx, toStatus)
+			}
+		}
+	}
+}
+
+func (to *Snapshot) SyncFieldsDuringRead(ctx context.Context, from Snapshot) {
+	if !from.Spec.IsNull() && !from.Spec.IsUnknown() {
+		if toSpec, ok := to.GetSpec(ctx); ok {
+			if fromSpec, ok := from.GetSpec(ctx); ok {
+				toSpec.SyncFieldsDuringRead(ctx, fromSpec)
+				to.SetSpec(ctx, toSpec)
+			}
+		}
+	}
+	if !from.Status.IsNull() && !from.Status.IsUnknown() {
+		if toStatus, ok := to.GetStatus(ctx); ok {
+			if fromStatus, ok := from.GetStatus(ctx); ok {
+				toStatus.SyncFieldsDuringRead(ctx, fromStatus)
+				to.SetStatus(ctx, toStatus)
+			}
+		}
+	}
+}
+
+func (m Snapshot) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["create_time"] = attrs["create_time"].SetComputed()
+	attrs["name"] = attrs["name"].SetOptional()
+	attrs["snapshot_id"] = attrs["snapshot_id"].SetComputed()
+	attrs["spec"] = attrs["spec"].SetOptional()
+	attrs["status"] = attrs["status"].SetComputed()
+	attrs["uid"] = attrs["uid"].SetComputed()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in Snapshot.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m Snapshot) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{
+		"spec":   reflect.TypeOf(SnapshotSpec{}),
+		"status": reflect.TypeOf(SnapshotStatus{}),
+	}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, Snapshot
+// only implements ToObjectValue() and Type().
+func (m Snapshot) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"create_time": m.CreateTime,
+			"name":        m.Name,
+			"snapshot_id": m.SnapshotId,
+			"spec":        m.Spec,
+			"status":      m.Status,
+			"uid":         m.Uid,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m Snapshot) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"create_time": timetypes.RFC3339{}.Type(ctx),
+			"name":        types.StringType,
+			"snapshot_id": types.StringType,
+			"spec":        SnapshotSpec{}.Type(ctx),
+			"status":      SnapshotStatus{}.Type(ctx),
+			"uid":         types.StringType,
+		},
+	}
+}
+
+// GetSpec returns the value of the Spec field in Snapshot as
+// a SnapshotSpec value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *Snapshot) GetSpec(ctx context.Context) (SnapshotSpec, bool) {
+	var e SnapshotSpec
+	if m.Spec.IsNull() || m.Spec.IsUnknown() {
+		return e, false
+	}
+	var v SnapshotSpec
+	d := m.Spec.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetSpec sets the value of the Spec field in Snapshot.
+func (m *Snapshot) SetSpec(ctx context.Context, v SnapshotSpec) {
+	vs := v.ToObjectValue(ctx)
+	m.Spec = vs
+}
+
+// GetStatus returns the value of the Status field in Snapshot as
+// a SnapshotStatus value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *Snapshot) GetStatus(ctx context.Context) (SnapshotStatus, bool) {
+	var e SnapshotStatus
+	if m.Status.IsNull() || m.Status.IsUnknown() {
+		return e, false
+	}
+	var v SnapshotStatus
+	d := m.Status.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetStatus sets the value of the Status field in Snapshot.
+func (m *Snapshot) SetStatus(ctx context.Context, v SnapshotStatus) {
+	vs := v.ToObjectValue(ctx)
+	m.Status = vs
+}
+
+// Metadata for the long-running snapshot Create and Delete operations.
+type SnapshotOperationMetadata struct {
+}
+
+func (to *SnapshotOperationMetadata) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from SnapshotOperationMetadata) {
+}
+
+func (to *SnapshotOperationMetadata) SyncFieldsDuringRead(ctx context.Context, from SnapshotOperationMetadata) {
+}
+
+func (m SnapshotOperationMetadata) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in SnapshotOperationMetadata.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m SnapshotOperationMetadata) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, SnapshotOperationMetadata
+// only implements ToObjectValue() and Type().
+func (m SnapshotOperationMetadata) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m SnapshotOperationMetadata) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{},
+	}
+}
+
+// The automatic snapshot cadences for a branch. There is exactly one schedule
+// per branch (singleton); it is configured in place, not created or deleted.
+//
+// Name: projects/{project_id}/branches/{branch_id}/snapshot-schedule
+type SnapshotSchedule struct {
+	// The resource name of the branch's snapshot schedule. Format:
+	// projects/{project_id}/branches/{branch_id}/snapshot-schedule
+	Name types.String `tfsdk:"name"`
+	// The cadences at which automatic snapshots are taken. Update replaces the
+	// whole set; an empty set disables automatic snapshots. Order is not
+	// significant. When several cadences fire together, one snapshot is taken,
+	// retained for the longest of their retentions.
+	Schedule types.Set `tfsdk:"schedule"`
+}
+
+func (to *SnapshotSchedule) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from SnapshotSchedule) {
+	if !from.Schedule.IsNull() && !from.Schedule.IsUnknown() && to.Schedule.IsNull() && len(from.Schedule.Elements()) == 0 {
+		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
+		// If a user specified a non-Null, empty list for Schedule, and the deserialized field value is Null,
+		// set the resulting resource state to the empty list to match the planned value.
+		to.Schedule = from.Schedule
+	}
+}
+
+func (to *SnapshotSchedule) SyncFieldsDuringRead(ctx context.Context, from SnapshotSchedule) {
+	if !from.Schedule.IsNull() && !from.Schedule.IsUnknown() && to.Schedule.IsNull() && len(from.Schedule.Elements()) == 0 {
+		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
+		// If a user specified a non-Null, empty list for Schedule, and the deserialized field value is Null,
+		// set the resulting resource state to the empty list to match the planned value.
+		to.Schedule = from.Schedule
+	}
+}
+
+func (m SnapshotSchedule) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["name"] = attrs["name"].SetOptional()
+	attrs["schedule"] = attrs["schedule"].SetOptional()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in SnapshotSchedule.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m SnapshotSchedule) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{
+		"schedule": reflect.TypeOf(ScheduleCadence{}),
+	}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, SnapshotSchedule
+// only implements ToObjectValue() and Type().
+func (m SnapshotSchedule) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"name":     m.Name,
+			"schedule": m.Schedule,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m SnapshotSchedule) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"name": types.StringType,
+			"schedule": basetypes.SetType{
+				ElemType: ScheduleCadence{}.Type(ctx),
+			},
+		},
+	}
+}
+
+// GetSchedule returns the value of the Schedule field in SnapshotSchedule as
+// a slice of ScheduleCadence values.
+// If the field is unknown or null, the boolean return value is false.
+func (m *SnapshotSchedule) GetSchedule(ctx context.Context) ([]ScheduleCadence, bool) {
+	if m.Schedule.IsNull() || m.Schedule.IsUnknown() {
+		return nil, false
+	}
+	var v []ScheduleCadence
+	d := m.Schedule.ElementsAs(ctx, &v, true)
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetSchedule sets the value of the Schedule field in SnapshotSchedule.
+func (m *SnapshotSchedule) SetSchedule(ctx context.Context, v []ScheduleCadence) {
+	vs := make([]attr.Value, 0, len(v))
+	for _, e := range v {
+		vs = append(vs, e.ToObjectValue(ctx))
+	}
+	t := m.Type(ctx).(basetypes.ObjectType).AttrTypes["schedule"]
+	t = t.(attr.TypeWithElementType).ElementType()
+	m.Schedule = types.SetValueMust(t, vs)
+}
+
+// Metadata for the long-running snapshot schedule Update operation.
+type SnapshotScheduleOperationMetadata struct {
+}
+
+func (to *SnapshotScheduleOperationMetadata) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from SnapshotScheduleOperationMetadata) {
+}
+
+func (to *SnapshotScheduleOperationMetadata) SyncFieldsDuringRead(ctx context.Context, from SnapshotScheduleOperationMetadata) {
+}
+
+func (m SnapshotScheduleOperationMetadata) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in SnapshotScheduleOperationMetadata.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m SnapshotScheduleOperationMetadata) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, SnapshotScheduleOperationMetadata
+// only implements ToObjectValue() and Type().
+func (m SnapshotScheduleOperationMetadata) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m SnapshotScheduleOperationMetadata) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{},
+	}
+}
+
+// Client-provided configuration of the snapshot.
+type SnapshotSpec struct {
+	// Absolute time at which the snapshot is deleted. Mutually exclusive with
+	// `ttl` and `no_expiry`.
+	ExpireTime timetypes.RFC3339 `tfsdk:"expire_time"`
+	// If true, the snapshot never expires. Mutually exclusive with `ttl` and
+	// `expire_time`.
+	NoExpiry types.Bool `tfsdk:"no_expiry"`
+	// The source branch to snapshot. Format:
+	// projects/{project_id}/branches/{branch_id}
+	SourceBranch types.String `tfsdk:"source_branch"`
+	// LSN to snapshot from, e.g. `16/B374D848`. Mutually exclusive with
+	// `source_branch_time`.
+	SourceBranchLsn types.String `tfsdk:"source_branch_lsn"`
+	// Timestamp to snapshot from. Mutually exclusive with `source_branch_lsn`.
+	SourceBranchTime timetypes.RFC3339 `tfsdk:"source_branch_time"`
+	// Time-to-live. The snapshot expires this long after it is created.
+	// Mutually exclusive with `expire_time` and `no_expiry`. Reads report the
+	// resolved absolute `expire_time` instead.
+	Ttl timetypes.GoDuration `tfsdk:"ttl"`
+}
+
+func (to *SnapshotSpec) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from SnapshotSpec) {
+	if !from.Ttl.IsUnknown() && !from.Ttl.IsNull() {
+		// Ttl is an input only field and not returned by the service, so we keep the value from the prior state.
+		to.Ttl = from.Ttl
+	}
+}
+
+func (to *SnapshotSpec) SyncFieldsDuringRead(ctx context.Context, from SnapshotSpec) {
+	if !from.Ttl.IsUnknown() && !from.Ttl.IsNull() {
+		// Ttl is an input only field and not returned by the service, so we keep the value from the prior state.
+		to.Ttl = from.Ttl
+	}
+}
+
+func (m SnapshotSpec) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["expire_time"] = attrs["expire_time"].SetOptional()
+	attrs["expire_time"] = attrs["expire_time"].(tfschema.StringAttributeBuilder).AddPlanModifier(stringplanmodifier.RequiresReplace()).(tfschema.AttributeBuilder)
+	attrs["no_expiry"] = attrs["no_expiry"].SetOptional()
+	attrs["no_expiry"] = attrs["no_expiry"].(tfschema.BoolAttributeBuilder).AddPlanModifier(boolplanmodifier.RequiresReplace()).(tfschema.AttributeBuilder)
+	attrs["source_branch"] = attrs["source_branch"].SetRequired()
+	attrs["source_branch"] = attrs["source_branch"].(tfschema.StringAttributeBuilder).AddPlanModifier(stringplanmodifier.RequiresReplace()).(tfschema.AttributeBuilder)
+	attrs["source_branch_lsn"] = attrs["source_branch_lsn"].SetOptional()
+	attrs["source_branch_lsn"] = attrs["source_branch_lsn"].(tfschema.StringAttributeBuilder).AddPlanModifier(stringplanmodifier.RequiresReplace()).(tfschema.AttributeBuilder)
+	attrs["source_branch_time"] = attrs["source_branch_time"].SetOptional()
+	attrs["source_branch_time"] = attrs["source_branch_time"].(tfschema.StringAttributeBuilder).AddPlanModifier(stringplanmodifier.RequiresReplace()).(tfschema.AttributeBuilder)
+	attrs["ttl"] = attrs["ttl"].SetOptional()
+	attrs["ttl"] = attrs["ttl"].(tfschema.StringAttributeBuilder).AddPlanModifier(stringplanmodifier.RequiresReplace()).(tfschema.AttributeBuilder)
+	attrs["ttl"] = attrs["ttl"].SetComputed()
+	attrs["ttl"] = attrs["ttl"].(tfschema.StringAttributeBuilder).AddPlanModifier(stringplanmodifier.UseStateForUnknown()).(tfschema.AttributeBuilder)
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in SnapshotSpec.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m SnapshotSpec) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, SnapshotSpec
+// only implements ToObjectValue() and Type().
+func (m SnapshotSpec) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"expire_time":        m.ExpireTime,
+			"no_expiry":          m.NoExpiry,
+			"source_branch":      m.SourceBranch,
+			"source_branch_lsn":  m.SourceBranchLsn,
+			"source_branch_time": m.SourceBranchTime,
+			"ttl":                m.Ttl,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m SnapshotSpec) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"expire_time":        timetypes.RFC3339{}.Type(ctx),
+			"no_expiry":          types.BoolType,
+			"source_branch":      types.StringType,
+			"source_branch_lsn":  types.StringType,
+			"source_branch_time": timetypes.RFC3339{}.Type(ctx),
+			"ttl":                timetypes.GoDuration{}.Type(ctx),
+		},
+	}
+}
+
+// Server-observed state of a snapshot.
+type SnapshotStatus struct {
+	// Incremental storage size in bytes since the previous snapshot. Unset when
+	// the snapshot is not billed on incremental usage.
+	DiffSizeBytes types.Int64 `tfsdk:"diff_size_bytes"`
+	// Absolute time at which the snapshot is deleted.
+	ExpireTime timetypes.RFC3339 `tfsdk:"expire_time"`
+	// Full logical size of the snapshot, in bytes.
+	FullSizeBytes types.Int64 `tfsdk:"full_size_bytes"`
+	// True if the snapshot never expires.
+	NoExpiry types.Bool `tfsdk:"no_expiry"`
+	// The source branch the snapshot was taken from. Format:
+	// projects/{project_id}/branches/{branch_id}
+	SourceBranch types.String `tfsdk:"source_branch"`
+}
+
+func (to *SnapshotStatus) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from SnapshotStatus) {
+}
+
+func (to *SnapshotStatus) SyncFieldsDuringRead(ctx context.Context, from SnapshotStatus) {
+}
+
+func (m SnapshotStatus) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["diff_size_bytes"] = attrs["diff_size_bytes"].SetComputed()
+	attrs["expire_time"] = attrs["expire_time"].SetComputed()
+	attrs["full_size_bytes"] = attrs["full_size_bytes"].SetComputed()
+	attrs["no_expiry"] = attrs["no_expiry"].SetComputed()
+	attrs["source_branch"] = attrs["source_branch"].SetComputed()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in SnapshotStatus.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m SnapshotStatus) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, SnapshotStatus
+// only implements ToObjectValue() and Type().
+func (m SnapshotStatus) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"diff_size_bytes": m.DiffSizeBytes,
+			"expire_time":     m.ExpireTime,
+			"full_size_bytes": m.FullSizeBytes,
+			"no_expiry":       m.NoExpiry,
+			"source_branch":   m.SourceBranch,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m SnapshotStatus) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"diff_size_bytes": types.Int64Type,
+			"expire_time":     timetypes.RFC3339{}.Type(ctx),
+			"full_size_bytes": types.Int64Type,
+			"no_expiry":       types.BoolType,
+			"source_branch":   types.StringType,
+		},
+	}
+}
+
 type SyncedTable struct {
 	CreateTime timetypes.RFC3339 `tfsdk:"create_time"`
 	// Output only. The Full resource name of the synced table in Postgres where
@@ -8887,6 +10529,8 @@ type SyncedTableSyncedTableSpec struct {
 	// The pipeline used for the synced table is returned via the top level
 	// pipeline_id attribute.
 	ExistingPipelineId types.String `tfsdk:"existing_pipeline_id"`
+	// Extra PostgreSQL-only columns to add to the synced table.
+	ExtraColumns types.List `tfsdk:"extra_columns"`
 	// Specification for creating a new pipeline. At most one of
 	// existing_pipeline_id and new_pipeline_spec should be defined.
 	//
@@ -8925,6 +10569,25 @@ type SyncedTableSyncedTableSpec struct {
 }
 
 func (to *SyncedTableSyncedTableSpec) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from SyncedTableSyncedTableSpec) {
+	if !from.ExtraColumns.IsNull() && !from.ExtraColumns.IsUnknown() && to.ExtraColumns.IsNull() && len(from.ExtraColumns.Elements()) == 0 {
+		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
+		// If a user specified a non-Null, empty list for ExtraColumns, and the deserialized field value is Null,
+		// set the resulting resource state to the empty list to match the planned value.
+		to.ExtraColumns = from.ExtraColumns
+	}
+	if !from.ExtraColumns.IsNull() && !from.ExtraColumns.IsUnknown() {
+		if toExtraColumns, ok := to.GetExtraColumns(ctx); ok {
+			if fromExtraColumns, ok := from.GetExtraColumns(ctx); ok {
+				// Recursively sync the fields of each ExtraColumns element by position.
+				for i := range toExtraColumns {
+					if i < len(fromExtraColumns) {
+						toExtraColumns[i].SyncFieldsDuringCreateOrUpdate(ctx, fromExtraColumns[i])
+					}
+				}
+				to.SetExtraColumns(ctx, toExtraColumns)
+			}
+		}
+	}
 	if !from.NewPipelineSpec.IsNull() && !from.NewPipelineSpec.IsUnknown() {
 		if toNewPipelineSpec, ok := to.GetNewPipelineSpec(ctx); ok {
 			if fromNewPipelineSpec, ok := from.GetNewPipelineSpec(ctx); ok {
@@ -8946,9 +10609,40 @@ func (to *SyncedTableSyncedTableSpec) SyncFieldsDuringCreateOrUpdate(ctx context
 		// set the resulting resource state to the empty list to match the planned value.
 		to.TypeOverrides = from.TypeOverrides
 	}
+	if !from.TypeOverrides.IsNull() && !from.TypeOverrides.IsUnknown() {
+		if toTypeOverrides, ok := to.GetTypeOverrides(ctx); ok {
+			if fromTypeOverrides, ok := from.GetTypeOverrides(ctx); ok {
+				// Recursively sync the fields of each TypeOverrides element by position.
+				for i := range toTypeOverrides {
+					if i < len(fromTypeOverrides) {
+						toTypeOverrides[i].SyncFieldsDuringCreateOrUpdate(ctx, fromTypeOverrides[i])
+					}
+				}
+				to.SetTypeOverrides(ctx, toTypeOverrides)
+			}
+		}
+	}
 }
 
 func (to *SyncedTableSyncedTableSpec) SyncFieldsDuringRead(ctx context.Context, from SyncedTableSyncedTableSpec) {
+	if !from.ExtraColumns.IsNull() && !from.ExtraColumns.IsUnknown() && to.ExtraColumns.IsNull() && len(from.ExtraColumns.Elements()) == 0 {
+		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
+		// If a user specified a non-Null, empty list for ExtraColumns, and the deserialized field value is Null,
+		// set the resulting resource state to the empty list to match the planned value.
+		to.ExtraColumns = from.ExtraColumns
+	}
+	if !from.ExtraColumns.IsNull() && !from.ExtraColumns.IsUnknown() {
+		if toExtraColumns, ok := to.GetExtraColumns(ctx); ok {
+			if fromExtraColumns, ok := from.GetExtraColumns(ctx); ok {
+				for i := range toExtraColumns {
+					if i < len(fromExtraColumns) {
+						toExtraColumns[i].SyncFieldsDuringRead(ctx, fromExtraColumns[i])
+					}
+				}
+				to.SetExtraColumns(ctx, toExtraColumns)
+			}
+		}
+	}
 	if !from.NewPipelineSpec.IsNull() && !from.NewPipelineSpec.IsUnknown() {
 		if toNewPipelineSpec, ok := to.GetNewPipelineSpec(ctx); ok {
 			if fromNewPipelineSpec, ok := from.GetNewPipelineSpec(ctx); ok {
@@ -8969,6 +10663,18 @@ func (to *SyncedTableSyncedTableSpec) SyncFieldsDuringRead(ctx context.Context, 
 		// set the resulting resource state to the empty list to match the planned value.
 		to.TypeOverrides = from.TypeOverrides
 	}
+	if !from.TypeOverrides.IsNull() && !from.TypeOverrides.IsUnknown() {
+		if toTypeOverrides, ok := to.GetTypeOverrides(ctx); ok {
+			if fromTypeOverrides, ok := from.GetTypeOverrides(ctx); ok {
+				for i := range toTypeOverrides {
+					if i < len(fromTypeOverrides) {
+						toTypeOverrides[i].SyncFieldsDuringRead(ctx, fromTypeOverrides[i])
+					}
+				}
+				to.SetTypeOverrides(ctx, toTypeOverrides)
+			}
+		}
+	}
 }
 
 func (m SyncedTableSyncedTableSpec) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
@@ -8976,6 +10682,7 @@ func (m SyncedTableSyncedTableSpec) ApplySchemaCustomizations(attrs map[string]t
 	attrs["branch"] = attrs["branch"].SetOptional()
 	attrs["create_database_objects_if_missing"] = attrs["create_database_objects_if_missing"].SetOptional()
 	attrs["existing_pipeline_id"] = attrs["existing_pipeline_id"].SetOptional()
+	attrs["extra_columns"] = attrs["extra_columns"].SetOptional()
 	attrs["new_pipeline_spec"] = attrs["new_pipeline_spec"].SetOptional()
 	attrs["postgres_database"] = attrs["postgres_database"].SetOptional()
 	attrs["primary_key_columns"] = attrs["primary_key_columns"].SetOptional()
@@ -8996,6 +10703,7 @@ func (m SyncedTableSyncedTableSpec) ApplySchemaCustomizations(attrs map[string]t
 // SDK values.
 func (m SyncedTableSyncedTableSpec) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
 	return map[string]reflect.Type{
+		"extra_columns":       reflect.TypeOf(SyncedTableSyncedTableSpecExtraColumn{}),
 		"new_pipeline_spec":   reflect.TypeOf(NewPipelineSpec{}),
 		"primary_key_columns": reflect.TypeOf(types.String{}),
 		"type_overrides":      reflect.TypeOf(SyncedTableSyncedTableSpecTypeOverride{}),
@@ -9013,6 +10721,7 @@ func (m SyncedTableSyncedTableSpec) ToObjectValue(ctx context.Context) basetypes
 			"branch":                             m.Branch,
 			"create_database_objects_if_missing": m.CreateDatabaseObjectsIfMissing,
 			"existing_pipeline_id":               m.ExistingPipelineId,
+			"extra_columns":                      m.ExtraColumns,
 			"new_pipeline_spec":                  m.NewPipelineSpec,
 			"postgres_database":                  m.PostgresDatabase,
 			"primary_key_columns":                m.PrimaryKeyColumns,
@@ -9031,8 +10740,11 @@ func (m SyncedTableSyncedTableSpec) Type(ctx context.Context) attr.Type {
 			"branch":                             types.StringType,
 			"create_database_objects_if_missing": types.BoolType,
 			"existing_pipeline_id":               types.StringType,
-			"new_pipeline_spec":                  NewPipelineSpec{}.Type(ctx),
-			"postgres_database":                  types.StringType,
+			"extra_columns": basetypes.ListType{
+				ElemType: SyncedTableSyncedTableSpecExtraColumn{}.Type(ctx),
+			},
+			"new_pipeline_spec": NewPipelineSpec{}.Type(ctx),
+			"postgres_database": types.StringType,
 			"primary_key_columns": basetypes.ListType{
 				ElemType: types.StringType,
 			},
@@ -9044,6 +10756,32 @@ func (m SyncedTableSyncedTableSpec) Type(ctx context.Context) attr.Type {
 			},
 		},
 	}
+}
+
+// GetExtraColumns returns the value of the ExtraColumns field in SyncedTableSyncedTableSpec as
+// a slice of SyncedTableSyncedTableSpecExtraColumn values.
+// If the field is unknown or null, the boolean return value is false.
+func (m *SyncedTableSyncedTableSpec) GetExtraColumns(ctx context.Context) ([]SyncedTableSyncedTableSpecExtraColumn, bool) {
+	if m.ExtraColumns.IsNull() || m.ExtraColumns.IsUnknown() {
+		return nil, false
+	}
+	var v []SyncedTableSyncedTableSpecExtraColumn
+	d := m.ExtraColumns.ElementsAs(ctx, &v, true)
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetExtraColumns sets the value of the ExtraColumns field in SyncedTableSyncedTableSpec.
+func (m *SyncedTableSyncedTableSpec) SetExtraColumns(ctx context.Context, v []SyncedTableSyncedTableSpecExtraColumn) {
+	vs := make([]attr.Value, 0, len(v))
+	for _, e := range v {
+		vs = append(vs, e.ToObjectValue(ctx))
+	}
+	t := m.Type(ctx).(basetypes.ObjectType).AttrTypes["extra_columns"]
+	t = t.(attr.TypeWithElementType).ElementType()
+	m.ExtraColumns = types.ListValueMust(t, vs)
 }
 
 // GetNewPipelineSpec returns the value of the NewPipelineSpec field in SyncedTableSyncedTableSpec as
@@ -9123,6 +10861,71 @@ func (m *SyncedTableSyncedTableSpec) SetTypeOverrides(ctx context.Context, v []S
 	m.TypeOverrides = types.ListValueMust(t, vs)
 }
 
+// An extra PostgreSQL column to add to the synced table.
+type SyncedTableSyncedTableSpecExtraColumn struct {
+	// Name of the column.
+	ColumnName types.String `tfsdk:"column_name"`
+	// PostgreSQL type of the column, for example "tsvector" or "vector(1024)".
+	ColumnType types.String `tfsdk:"column_type"`
+	// SQL expression used to compute the column's value, for example
+	// "to_tsvector('english', content)".
+	Compute types.String `tfsdk:"compute"`
+
+	Maintenance types.String `tfsdk:"maintenance"`
+}
+
+func (to *SyncedTableSyncedTableSpecExtraColumn) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from SyncedTableSyncedTableSpecExtraColumn) {
+}
+
+func (to *SyncedTableSyncedTableSpecExtraColumn) SyncFieldsDuringRead(ctx context.Context, from SyncedTableSyncedTableSpecExtraColumn) {
+}
+
+func (m SyncedTableSyncedTableSpecExtraColumn) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["column_name"] = attrs["column_name"].SetRequired()
+	attrs["column_type"] = attrs["column_type"].SetRequired()
+	attrs["compute"] = attrs["compute"].SetOptional()
+	attrs["maintenance"] = attrs["maintenance"].SetOptional()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in SyncedTableSyncedTableSpecExtraColumn.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m SyncedTableSyncedTableSpecExtraColumn) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, SyncedTableSyncedTableSpecExtraColumn
+// only implements ToObjectValue() and Type().
+func (m SyncedTableSyncedTableSpecExtraColumn) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"column_name": m.ColumnName,
+			"column_type": m.ColumnType,
+			"compute":     m.Compute,
+			"maintenance": m.Maintenance,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m SyncedTableSyncedTableSpecExtraColumn) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"column_name": types.StringType,
+			"column_type": types.StringType,
+			"compute":     types.StringType,
+			"maintenance": types.StringType,
+		},
+	}
+}
+
 // Overrides the default Delta-to-PostgreSQL type mapping for a single column.
 type SyncedTableSyncedTableSpecTypeOverride struct {
 	// Name of the source column whose target PostgreSQL type should be
@@ -9130,9 +10933,9 @@ type SyncedTableSyncedTableSpecTypeOverride struct {
 	ColumnName types.String `tfsdk:"column_name"`
 	// PostgreSQL-specific target type to use for the column.
 	PgType types.String `tfsdk:"pg_type"`
-	// Size parameter for the target type. Required when pg_type is
-	// PG_SPECIFIC_TYPE_VECTOR or PG_SPECIFIC_TYPE_HALFVEC (specifies the vector
-	// dimension, e.g., 1024).
+	// Size parameter for the target type, for types that take one (e.g. vector
+	// dimension, varchar length). Required when the chosen pg_type needs a
+	// size.
 	Size types.Int64 `tfsdk:"size"`
 }
 
@@ -9479,8 +11282,7 @@ type UpdateBranchRequest struct {
 	// Output only. The full resource path of the branch. Format:
 	// projects/{project_id}/branches/{branch_id}
 	Name types.String `tfsdk:"-"`
-	// The list of fields to update. If unspecified, all fields will be updated
-	// when possible.
+	// The list of fields to update.
 	UpdateMask types.String `tfsdk:"-"`
 }
 
@@ -9584,8 +11386,7 @@ type UpdateDataApiRequest struct {
 	// Resource name:
 	// projects/{project_id}/branches/{branch_id}/databases/{database_id}/data-api
 	Name types.String `tfsdk:"-"`
-	// The list of fields to update. If unspecified, all fields will be updated
-	// when possible.
+	// The list of fields to update.
 	UpdateMask types.String `tfsdk:"-"`
 }
 
@@ -9692,8 +11493,7 @@ type UpdateDatabaseRequest struct {
 	// The resource name of the database. Format:
 	// projects/{project_id}/branches/{branch_id}/databases/{database_id}
 	Name types.String `tfsdk:"-"`
-	// The list of fields to update. If unspecified, all fields will be updated
-	// when possible.
+	// The list of fields to update.
 	UpdateMask types.String `tfsdk:"-"`
 }
 
@@ -9800,8 +11600,7 @@ type UpdateEndpointRequest struct {
 	// Output only. The full resource path of the endpoint. Format:
 	// projects/{project_id}/branches/{branch_id}/endpoints/{endpoint_id}
 	Name types.String `tfsdk:"-"`
-	// The list of fields to update. If unspecified, all fields will be updated
-	// when possible.
+	// The list of fields to update.
 	UpdateMask types.String `tfsdk:"-"`
 }
 
@@ -9907,8 +11706,7 @@ type UpdateProjectRequest struct {
 	// The project's `name` field is used to identify the project to update.
 	// Format: projects/{project_id}
 	Project types.Object `tfsdk:"project"`
-	// The list of fields to update. If unspecified, all fields will be updated
-	// when possible.
+	// The list of fields to update.
 	UpdateMask types.String `tfsdk:"-"`
 }
 
@@ -10014,8 +11812,7 @@ type UpdateRoleRequest struct {
 	// The role's `name` field is used to identify the role to update. Format:
 	// projects/{project_id}/branches/{branch_id}/roles/{role_id}
 	Role types.Object `tfsdk:"role"`
-	// The list of fields to update in Postgres Role. If unspecified, all fields
-	// will be updated when possible.
+	// The list of fields to update.
 	UpdateMask types.String `tfsdk:"-"`
 }
 
@@ -10110,4 +11907,163 @@ func (m *UpdateRoleRequest) GetRole(ctx context.Context) (Role, bool) {
 func (m *UpdateRoleRequest) SetRole(ctx context.Context, v Role) {
 	vs := v.ToObjectValue(ctx)
 	m.Role = vs
+}
+
+type UpdateSnapshotScheduleRequest struct {
+	// The resource name of the branch's snapshot schedule. Format:
+	// projects/{project_id}/branches/{branch_id}/snapshot-schedule
+	Name types.String `tfsdk:"-"`
+	// The snapshot schedule to set. Its `name` identifies the branch. Format:
+	// projects/{project_id}/branches/{branch_id}/snapshot-schedule
+	SnapshotSchedule types.Object `tfsdk:"snapshot_schedule"`
+	// Fields to update. The only updatable path is `schedule`, which replaces
+	// the entire set of cadences.
+	UpdateMask types.String `tfsdk:"-"`
+}
+
+func (to *UpdateSnapshotScheduleRequest) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from UpdateSnapshotScheduleRequest) {
+	if !from.SnapshotSchedule.IsNull() && !from.SnapshotSchedule.IsUnknown() {
+		if toSnapshotSchedule, ok := to.GetSnapshotSchedule(ctx); ok {
+			if fromSnapshotSchedule, ok := from.GetSnapshotSchedule(ctx); ok {
+				// Recursively sync the fields of SnapshotSchedule
+				toSnapshotSchedule.SyncFieldsDuringCreateOrUpdate(ctx, fromSnapshotSchedule)
+				to.SetSnapshotSchedule(ctx, toSnapshotSchedule)
+			}
+		}
+	}
+}
+
+func (to *UpdateSnapshotScheduleRequest) SyncFieldsDuringRead(ctx context.Context, from UpdateSnapshotScheduleRequest) {
+	if !from.SnapshotSchedule.IsNull() && !from.SnapshotSchedule.IsUnknown() {
+		if toSnapshotSchedule, ok := to.GetSnapshotSchedule(ctx); ok {
+			if fromSnapshotSchedule, ok := from.GetSnapshotSchedule(ctx); ok {
+				toSnapshotSchedule.SyncFieldsDuringRead(ctx, fromSnapshotSchedule)
+				to.SetSnapshotSchedule(ctx, toSnapshotSchedule)
+			}
+		}
+	}
+}
+
+func (m UpdateSnapshotScheduleRequest) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["snapshot_schedule"] = attrs["snapshot_schedule"].SetRequired()
+	attrs["name"] = attrs["name"].SetRequired()
+	attrs["update_mask"] = attrs["update_mask"].SetRequired()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in UpdateSnapshotScheduleRequest.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m UpdateSnapshotScheduleRequest) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{
+		"snapshot_schedule": reflect.TypeOf(SnapshotSchedule{}),
+	}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, UpdateSnapshotScheduleRequest
+// only implements ToObjectValue() and Type().
+func (m UpdateSnapshotScheduleRequest) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"name":              m.Name,
+			"snapshot_schedule": m.SnapshotSchedule,
+			"update_mask":       m.UpdateMask,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m UpdateSnapshotScheduleRequest) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"name":              types.StringType,
+			"snapshot_schedule": SnapshotSchedule{}.Type(ctx),
+			"update_mask":       types.StringType,
+		},
+	}
+}
+
+// GetSnapshotSchedule returns the value of the SnapshotSchedule field in UpdateSnapshotScheduleRequest as
+// a SnapshotSchedule value.
+// If the field is unknown or null, the boolean return value is false.
+func (m *UpdateSnapshotScheduleRequest) GetSnapshotSchedule(ctx context.Context) (SnapshotSchedule, bool) {
+	var e SnapshotSchedule
+	if m.SnapshotSchedule.IsNull() || m.SnapshotSchedule.IsUnknown() {
+		return e, false
+	}
+	var v SnapshotSchedule
+	d := m.SnapshotSchedule.As(ctx, &v, basetypes.ObjectAsOptions{
+		UnhandledNullAsEmpty:    true,
+		UnhandledUnknownAsEmpty: true,
+	})
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetSnapshotSchedule sets the value of the SnapshotSchedule field in UpdateSnapshotScheduleRequest.
+func (m *UpdateSnapshotScheduleRequest) SetSnapshotSchedule(ctx context.Context, v SnapshotSchedule) {
+	vs := v.ToObjectValue(ctx)
+	m.SnapshotSchedule = vs
+}
+
+// Take a snapshot once per week, on the configured day at the configured hour.
+type WeeklySchedule struct {
+	// The day of the week on which to take the snapshot.
+	DayOfWeek types.String `tfsdk:"day_of_week"`
+	// The hour of the day, in UTC, at which to take the snapshot, in [0, 23].
+	Hour types.Int64 `tfsdk:"hour"`
+}
+
+func (to *WeeklySchedule) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from WeeklySchedule) {
+}
+
+func (to *WeeklySchedule) SyncFieldsDuringRead(ctx context.Context, from WeeklySchedule) {
+}
+
+func (m WeeklySchedule) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["day_of_week"] = attrs["day_of_week"].SetRequired()
+	attrs["hour"] = attrs["hour"].SetOptional()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in WeeklySchedule.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m WeeklySchedule) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, WeeklySchedule
+// only implements ToObjectValue() and Type().
+func (m WeeklySchedule) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"day_of_week": m.DayOfWeek,
+			"hour":        m.Hour,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m WeeklySchedule) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"day_of_week": types.StringType,
+			"hour":        types.Int64Type,
+		},
+	}
 }

@@ -1013,6 +1013,72 @@ func (m *AlertQuery_SdkV2) SetTags(ctx context.Context, v []types.String) {
 	m.Tags = types.ListValueMust(t, vs)
 }
 
+// A named parameter bound to the alert query. Only flat, named scalar
+// parameters are supported; complex types such as ARRAY, MAP, and STRUCT are
+// not.
+type AlertStatementParameter_SdkV2 struct {
+	// The name of the parameter. Reference it in the query text as `:name`.
+	// Required, must be non-empty, and must be unique across the alert's
+	// parameters.
+	Name types.String `tfsdk:"name"`
+	// The SQL data type of the parameter, for example `STRING`, `INT`, or
+	// `DECIMAL(10, 2)`. If no type is given the type is assumed to be `STRING`.
+	// Complex types such as `ARRAY`, `MAP`, and `STRUCT` are not supported.
+	Type_ types.String `tfsdk:"type"`
+	// The value bound to the parameter, represented as a string. If omitted,
+	// the value is interpreted as NULL.
+	Value types.String `tfsdk:"value"`
+}
+
+func (to *AlertStatementParameter_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from AlertStatementParameter_SdkV2) {
+}
+
+func (to *AlertStatementParameter_SdkV2) SyncFieldsDuringRead(ctx context.Context, from AlertStatementParameter_SdkV2) {
+}
+
+func (m AlertStatementParameter_SdkV2) ApplySchemaCustomizations(attrs map[string]tfschema.AttributeBuilder) map[string]tfschema.AttributeBuilder {
+	attrs["name"] = attrs["name"].SetRequired()
+	attrs["type"] = attrs["type"].SetOptional()
+	attrs["value"] = attrs["value"].SetOptional()
+
+	return attrs
+}
+
+// GetComplexFieldTypes returns a map of the types of elements in complex fields in AlertStatementParameter.
+// Container types (types.Map, types.List, types.Set) and object types (types.Object) do not carry
+// the type information of their elements in the Go type system. This function provides a way to
+// retrieve the type information of the elements in complex fields at runtime. The values of the map
+// are the reflected types of the contained elements. They must be either primitive values from the
+// plugin framework type system (types.String{}, types.Bool{}, types.Int64{}, types.Float64{}) or TF
+// SDK values.
+func (m AlertStatementParameter_SdkV2) GetComplexFieldTypes(ctx context.Context) map[string]reflect.Type {
+	return map[string]reflect.Type{}
+}
+
+// TFSDK types cannot implement the ObjectValuable interface directly, as it would otherwise
+// interfere with how the plugin framework retrieves and sets values in state. Thus, AlertStatementParameter_SdkV2
+// only implements ToObjectValue() and Type().
+func (m AlertStatementParameter_SdkV2) ToObjectValue(ctx context.Context) basetypes.ObjectValue {
+	return types.ObjectValueMust(
+		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
+		map[string]attr.Value{
+			"name":  m.Name,
+			"type":  m.Type_,
+			"value": m.Value,
+		})
+}
+
+// Type implements basetypes.ObjectValuable.
+func (m AlertStatementParameter_SdkV2) Type(ctx context.Context) attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"name":  types.StringType,
+			"type":  types.StringType,
+			"value": types.StringType,
+		},
+	}
+}
+
 type AlertV2_SdkV2 struct {
 	// The timestamp indicating when the alert was created.
 	CreateTime types.String `tfsdk:"create_time"`
@@ -1020,6 +1086,18 @@ type AlertV2_SdkV2 struct {
 	CustomDescription types.String `tfsdk:"custom_description"`
 	// Custom summary for the alert. support mustache template.
 	CustomSummary types.String `tfsdk:"custom_summary"`
+	// The format used to interpret the `custom_summary` and
+	// `custom_description` templates.
+	//
+	// `HTML` treats both templates as HTML with Mustache `{{VARIABLE_NAME}}`
+	// placeholders. `MARKDOWN` treats them as Markdown with allowlisted
+	// `@VARIABLE_NAME` placeholders and converts them to the format each
+	// notification destination expects, so a single template renders correctly
+	// in email, Slack, and Microsoft Teams.
+	//
+	// When unset, the API applies no default. Responses omit the field unless a
+	// format is stored, and a template with no format is rendered as HTML.
+	CustomTemplateFormat types.String `tfsdk:"custom_template_format"`
 	// The display name of the alert.
 	DisplayName types.String `tfsdk:"display_name"`
 	// The actual identity that will be used to execute the alert. This is an
@@ -1028,13 +1106,30 @@ type AlertV2_SdkV2 struct {
 	EffectiveRunAs types.List `tfsdk:"effective_run_as"`
 
 	Evaluation types.List `tfsdk:"evaluation"`
-	// UUID identifying the alert.
+	// The canonical identifier of the alert to retrieve information about.
 	Id types.String `tfsdk:"id"`
 	// Indicates whether the query is trashed.
 	LifecycleState types.String `tfsdk:"lifecycle_state"`
 	// The owner's username. This field is set to "Unavailable" if the user has
 	// been deleted.
 	OwnerUserName types.String `tfsdk:"owner_user_name"`
+	// A list of parameters to pass into the alert SQL query statement
+	// containing parameter markers. Static values only.
+	//
+	// Reference a parameter in the query text as `:name`. Each parameter must
+	// have a unique, non-empty name. Each parameter consists of a name, a
+	// value, and optionally a type. To represent a NULL value, the `value`
+	// field may be omitted or set to `null` explicitly. If the `type` field is
+	// omitted, the value is interpreted as a string.
+	//
+	// If the type is given, parameters will be checked for type correctness
+	// according to the given type. A value is correct if the provided string
+	// can be converted to the requested type using the `cast` function. The
+	// exact semantics are described in the section [`cast` function] of the SQL
+	// language reference.
+	//
+	// [`cast` function]: https://docs.databricks.com/sql/language-manual/functions/cast.html
+	Parameters types.Set `tfsdk:"parameters"`
 	// The workspace path of the folder containing the alert. Can only be set on
 	// create, and cannot be updated.
 	ParentPath types.String `tfsdk:"parent_path"`
@@ -1081,6 +1176,12 @@ func (to *AlertV2_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx context.Context, fro
 			}
 		}
 	}
+	if !from.Parameters.IsNull() && !from.Parameters.IsUnknown() && to.Parameters.IsNull() && len(from.Parameters.Elements()) == 0 {
+		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
+		// If a user specified a non-Null, empty list for Parameters, and the deserialized field value is Null,
+		// set the resulting resource state to the empty list to match the planned value.
+		to.Parameters = from.Parameters
+	}
 	if !from.RunAs.IsNull() && !from.RunAs.IsUnknown() {
 		if toRunAs, ok := to.GetRunAs(ctx); ok {
 			if fromRunAs, ok := from.GetRunAs(ctx); ok {
@@ -1118,6 +1219,12 @@ func (to *AlertV2_SdkV2) SyncFieldsDuringRead(ctx context.Context, from AlertV2_
 			}
 		}
 	}
+	if !from.Parameters.IsNull() && !from.Parameters.IsUnknown() && to.Parameters.IsNull() && len(from.Parameters.Elements()) == 0 {
+		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
+		// If a user specified a non-Null, empty list for Parameters, and the deserialized field value is Null,
+		// set the resulting resource state to the empty list to match the planned value.
+		to.Parameters = from.Parameters
+	}
 	if !from.RunAs.IsNull() && !from.RunAs.IsUnknown() {
 		if toRunAs, ok := to.GetRunAs(ctx); ok {
 			if fromRunAs, ok := from.GetRunAs(ctx); ok {
@@ -1140,6 +1247,7 @@ func (m AlertV2_SdkV2) ApplySchemaCustomizations(attrs map[string]tfschema.Attri
 	attrs["create_time"] = attrs["create_time"].SetComputed()
 	attrs["custom_description"] = attrs["custom_description"].SetOptional()
 	attrs["custom_summary"] = attrs["custom_summary"].SetOptional()
+	attrs["custom_template_format"] = attrs["custom_template_format"].SetOptional()
 	attrs["display_name"] = attrs["display_name"].SetRequired()
 	attrs["effective_run_as"] = attrs["effective_run_as"].SetComputed()
 	attrs["effective_run_as"] = attrs["effective_run_as"].(tfschema.ListNestedAttributeBuilder).AddValidator(listvalidator.SizeAtMost(1)).(tfschema.AttributeBuilder)
@@ -1148,6 +1256,7 @@ func (m AlertV2_SdkV2) ApplySchemaCustomizations(attrs map[string]tfschema.Attri
 	attrs["id"] = attrs["id"].SetComputed()
 	attrs["lifecycle_state"] = attrs["lifecycle_state"].SetComputed()
 	attrs["owner_user_name"] = attrs["owner_user_name"].SetComputed()
+	attrs["parameters"] = attrs["parameters"].SetOptional()
 	attrs["parent_path"] = attrs["parent_path"].SetOptional()
 	attrs["query_text"] = attrs["query_text"].SetRequired()
 	attrs["run_as"] = attrs["run_as"].SetOptional()
@@ -1172,6 +1281,7 @@ func (m AlertV2_SdkV2) GetComplexFieldTypes(ctx context.Context) map[string]refl
 	return map[string]reflect.Type{
 		"effective_run_as": reflect.TypeOf(AlertV2RunAs_SdkV2{}),
 		"evaluation":       reflect.TypeOf(AlertV2Evaluation_SdkV2{}),
+		"parameters":       reflect.TypeOf(AlertStatementParameter_SdkV2{}),
 		"run_as":           reflect.TypeOf(AlertV2RunAs_SdkV2{}),
 		"schedule":         reflect.TypeOf(CronSchedule_SdkV2{}),
 	}
@@ -1184,22 +1294,24 @@ func (m AlertV2_SdkV2) ToObjectValue(ctx context.Context) basetypes.ObjectValue 
 	return types.ObjectValueMust(
 		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
 		map[string]attr.Value{
-			"create_time":        m.CreateTime,
-			"custom_description": m.CustomDescription,
-			"custom_summary":     m.CustomSummary,
-			"display_name":       m.DisplayName,
-			"effective_run_as":   m.EffectiveRunAs,
-			"evaluation":         m.Evaluation,
-			"id":                 m.Id,
-			"lifecycle_state":    m.LifecycleState,
-			"owner_user_name":    m.OwnerUserName,
-			"parent_path":        m.ParentPath,
-			"query_text":         m.QueryText,
-			"run_as":             m.RunAs,
-			"run_as_user_name":   m.RunAsUserName,
-			"schedule":           m.Schedule,
-			"update_time":        m.UpdateTime,
-			"warehouse_id":       m.WarehouseId,
+			"create_time":            m.CreateTime,
+			"custom_description":     m.CustomDescription,
+			"custom_summary":         m.CustomSummary,
+			"custom_template_format": m.CustomTemplateFormat,
+			"display_name":           m.DisplayName,
+			"effective_run_as":       m.EffectiveRunAs,
+			"evaluation":             m.Evaluation,
+			"id":                     m.Id,
+			"lifecycle_state":        m.LifecycleState,
+			"owner_user_name":        m.OwnerUserName,
+			"parameters":             m.Parameters,
+			"parent_path":            m.ParentPath,
+			"query_text":             m.QueryText,
+			"run_as":                 m.RunAs,
+			"run_as_user_name":       m.RunAsUserName,
+			"schedule":               m.Schedule,
+			"update_time":            m.UpdateTime,
+			"warehouse_id":           m.WarehouseId,
 		})
 }
 
@@ -1207,10 +1319,11 @@ func (m AlertV2_SdkV2) ToObjectValue(ctx context.Context) basetypes.ObjectValue 
 func (m AlertV2_SdkV2) Type(ctx context.Context) attr.Type {
 	return types.ObjectType{
 		AttrTypes: map[string]attr.Type{
-			"create_time":        types.StringType,
-			"custom_description": types.StringType,
-			"custom_summary":     types.StringType,
-			"display_name":       types.StringType,
+			"create_time":            types.StringType,
+			"custom_description":     types.StringType,
+			"custom_summary":         types.StringType,
+			"custom_template_format": types.StringType,
+			"display_name":           types.StringType,
 			"effective_run_as": basetypes.ListType{
 				ElemType: AlertV2RunAs_SdkV2{}.Type(ctx),
 			},
@@ -1220,8 +1333,11 @@ func (m AlertV2_SdkV2) Type(ctx context.Context) attr.Type {
 			"id":              types.StringType,
 			"lifecycle_state": types.StringType,
 			"owner_user_name": types.StringType,
-			"parent_path":     types.StringType,
-			"query_text":      types.StringType,
+			"parameters": basetypes.SetType{
+				ElemType: AlertStatementParameter_SdkV2{}.Type(ctx),
+			},
+			"parent_path": types.StringType,
+			"query_text":  types.StringType,
 			"run_as": basetypes.ListType{
 				ElemType: AlertV2RunAs_SdkV2{}.Type(ctx),
 			},
@@ -1285,6 +1401,32 @@ func (m *AlertV2_SdkV2) SetEvaluation(ctx context.Context, v AlertV2Evaluation_S
 	vs := []attr.Value{v.ToObjectValue(ctx)}
 	t := m.Type(ctx).(basetypes.ObjectType).AttrTypes["evaluation"]
 	m.Evaluation = types.ListValueMust(t, vs)
+}
+
+// GetParameters returns the value of the Parameters field in AlertV2_SdkV2 as
+// a slice of AlertStatementParameter_SdkV2 values.
+// If the field is unknown or null, the boolean return value is false.
+func (m *AlertV2_SdkV2) GetParameters(ctx context.Context) ([]AlertStatementParameter_SdkV2, bool) {
+	if m.Parameters.IsNull() || m.Parameters.IsUnknown() {
+		return nil, false
+	}
+	var v []AlertStatementParameter_SdkV2
+	d := m.Parameters.ElementsAs(ctx, &v, true)
+	if d.HasError() {
+		panic(pluginfwcommon.DiagToString(d))
+	}
+	return v, true
+}
+
+// SetParameters sets the value of the Parameters field in AlertV2_SdkV2.
+func (m *AlertV2_SdkV2) SetParameters(ctx context.Context, v []AlertStatementParameter_SdkV2) {
+	vs := make([]attr.Value, 0, len(v))
+	for _, e := range v {
+		vs = append(vs, e.ToObjectValue(ctx))
+	}
+	t := m.Type(ctx).(basetypes.ObjectType).AttrTypes["parameters"]
+	t = t.(attr.TypeWithElementType).ElementType()
+	m.Parameters = types.SetValueMust(t, vs)
 }
 
 // GetRunAs returns the value of the RunAs field in AlertV2_SdkV2 as
@@ -3142,6 +3284,19 @@ func (to *CreateQueryRequestQuery_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx cont
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Parameters = from.Parameters
 	}
+	if !from.Parameters.IsNull() && !from.Parameters.IsUnknown() {
+		if toParameters, ok := to.GetParameters(ctx); ok {
+			if fromParameters, ok := from.GetParameters(ctx); ok {
+				// Recursively sync the fields of each Parameters element by position.
+				for i := range toParameters {
+					if i < len(fromParameters) {
+						toParameters[i].SyncFieldsDuringCreateOrUpdate(ctx, fromParameters[i])
+					}
+				}
+				to.SetParameters(ctx, toParameters)
+			}
+		}
+	}
 	if !from.Tags.IsNull() && !from.Tags.IsUnknown() && to.Tags.IsNull() && len(from.Tags.Elements()) == 0 {
 		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
 		// If a user specified a non-Null, empty list for Tags, and the deserialized field value is Null,
@@ -3156,6 +3311,18 @@ func (to *CreateQueryRequestQuery_SdkV2) SyncFieldsDuringRead(ctx context.Contex
 		// If a user specified a non-Null, empty list for Parameters, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Parameters = from.Parameters
+	}
+	if !from.Parameters.IsNull() && !from.Parameters.IsUnknown() {
+		if toParameters, ok := to.GetParameters(ctx); ok {
+			if fromParameters, ok := from.GetParameters(ctx); ok {
+				for i := range toParameters {
+					if i < len(fromParameters) {
+						toParameters[i].SyncFieldsDuringRead(ctx, fromParameters[i])
+					}
+				}
+				to.SetParameters(ctx, toParameters)
+			}
+		}
 	}
 	if !from.Tags.IsNull() && !from.Tags.IsUnknown() && to.Tags.IsNull() && len(from.Tags.Elements()) == 0 {
 		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
@@ -3551,6 +3718,9 @@ type CreateWarehouseRequest_SdkV2 struct {
 	ClusterSize types.String `tfsdk:"cluster_size"`
 	// warehouse creator name
 	CreatorName types.String `tfsdk:"creator_name"`
+	// Compute version label for a REALTIME warehouse. This field is output
+	// only.
+	CustomerVersionLabel types.String `tfsdk:"customer_version_label"`
 	// Configures whether the warehouse should use Photon optimized clusters.
 	//
 	// Defaults to true.
@@ -3559,6 +3729,10 @@ type CreateWarehouseRequest_SdkV2 struct {
 	EnableServerlessCompute types.Bool `tfsdk:"enable_serverless_compute"`
 	// Deprecated. Instance profile used to pass IAM role to the cluster
 	InstanceProfileArn types.String `tfsdk:"instance_profile_arn"`
+	// Maximum compute capacity of a real-time SQL warehouse, in DBU per hour.
+	// Must be a multiple of 3 between 3 and 960. The effective maximum cannot
+	// be lower than the warehouse's minimum capacity.
+	MaxDbu types.Int64 `tfsdk:"max_dbu"`
 	// Maximum number of clusters that the autoscaler will create to handle
 	// concurrent queries.
 	//
@@ -3581,8 +3755,19 @@ type CreateWarehouseRequest_SdkV2 struct {
 	// Supported values: - Must be unique within an org. - Must be less than 100
 	// characters.
 	Name types.String `tfsdk:"name"`
+	// Cluster size multiplier for Reyden warehouses. Scales the effective
+	// compute capacity relative to the nominal virtual cluster size. Only
+	// meaningful when the warehouse is of Reyden type.
+	//
+	// Accepted range: 1.0 to the workspace-configured maximum (decimals
+	// allowed). The default maximum is 100.0. - Values below 1.0 are normalized
+	// to 1.0. - Values above the configured maximum are capped at that maximum.
+	// - When absent, the warehouse is treated as having a multiplier of 1.0.
+	ReydenClusterSizeMultiplier types.Float64 `tfsdk:"reyden_cluster_size_multiplier"`
 	// Configurations whether the endpoint should use spot instances.
 	SpotInstancePolicy types.String `tfsdk:"spot_instance_policy"`
+	// Warehouse statement timeout in seconds.
+	StatementTimeout types.Int64 `tfsdk:"statement_timeout"`
 	// A set of key-value pairs that will be tagged on all resources (e.g., AWS
 	// instances and EBS volumes) associated with this SQL warehouse.
 	//
@@ -3640,13 +3825,17 @@ func (m CreateWarehouseRequest_SdkV2) ApplySchemaCustomizations(attrs map[string
 	attrs["channel"] = attrs["channel"].(tfschema.ListNestedAttributeBuilder).AddValidator(listvalidator.SizeAtMost(1)).(tfschema.AttributeBuilder)
 	attrs["cluster_size"] = attrs["cluster_size"].SetOptional()
 	attrs["creator_name"] = attrs["creator_name"].SetOptional()
+	attrs["customer_version_label"] = attrs["customer_version_label"].SetComputed()
 	attrs["enable_photon"] = attrs["enable_photon"].SetOptional()
 	attrs["enable_serverless_compute"] = attrs["enable_serverless_compute"].SetOptional()
 	attrs["instance_profile_arn"] = attrs["instance_profile_arn"].SetOptional()
+	attrs["max_dbu"] = attrs["max_dbu"].SetOptional()
 	attrs["max_num_clusters"] = attrs["max_num_clusters"].SetOptional()
 	attrs["min_num_clusters"] = attrs["min_num_clusters"].SetOptional()
 	attrs["name"] = attrs["name"].SetOptional()
+	attrs["reyden_cluster_size_multiplier"] = attrs["reyden_cluster_size_multiplier"].SetOptional()
 	attrs["spot_instance_policy"] = attrs["spot_instance_policy"].SetOptional()
+	attrs["statement_timeout"] = attrs["statement_timeout"].SetOptional()
 	attrs["tags"] = attrs["tags"].SetOptional()
 	attrs["tags"] = attrs["tags"].(tfschema.ListNestedAttributeBuilder).AddValidator(listvalidator.SizeAtMost(1)).(tfschema.AttributeBuilder)
 	attrs["warehouse_type"] = attrs["warehouse_type"].SetOptional()
@@ -3675,19 +3864,23 @@ func (m CreateWarehouseRequest_SdkV2) ToObjectValue(ctx context.Context) basetyp
 	return types.ObjectValueMust(
 		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
 		map[string]attr.Value{
-			"auto_stop_mins":            m.AutoStopMins,
-			"channel":                   m.Channel,
-			"cluster_size":              m.ClusterSize,
-			"creator_name":              m.CreatorName,
-			"enable_photon":             m.EnablePhoton,
-			"enable_serverless_compute": m.EnableServerlessCompute,
-			"instance_profile_arn":      m.InstanceProfileArn,
-			"max_num_clusters":          m.MaxNumClusters,
-			"min_num_clusters":          m.MinNumClusters,
-			"name":                      m.Name,
-			"spot_instance_policy":      m.SpotInstancePolicy,
-			"tags":                      m.Tags,
-			"warehouse_type":            m.WarehouseType,
+			"auto_stop_mins":                 m.AutoStopMins,
+			"channel":                        m.Channel,
+			"cluster_size":                   m.ClusterSize,
+			"creator_name":                   m.CreatorName,
+			"customer_version_label":         m.CustomerVersionLabel,
+			"enable_photon":                  m.EnablePhoton,
+			"enable_serverless_compute":      m.EnableServerlessCompute,
+			"instance_profile_arn":           m.InstanceProfileArn,
+			"max_dbu":                        m.MaxDbu,
+			"max_num_clusters":               m.MaxNumClusters,
+			"min_num_clusters":               m.MinNumClusters,
+			"name":                           m.Name,
+			"reyden_cluster_size_multiplier": m.ReydenClusterSizeMultiplier,
+			"spot_instance_policy":           m.SpotInstancePolicy,
+			"statement_timeout":              m.StatementTimeout,
+			"tags":                           m.Tags,
+			"warehouse_type":                 m.WarehouseType,
 		})
 }
 
@@ -3699,15 +3892,19 @@ func (m CreateWarehouseRequest_SdkV2) Type(ctx context.Context) attr.Type {
 			"channel": basetypes.ListType{
 				ElemType: Channel_SdkV2{}.Type(ctx),
 			},
-			"cluster_size":              types.StringType,
-			"creator_name":              types.StringType,
-			"enable_photon":             types.BoolType,
-			"enable_serverless_compute": types.BoolType,
-			"instance_profile_arn":      types.StringType,
-			"max_num_clusters":          types.Int64Type,
-			"min_num_clusters":          types.Int64Type,
-			"name":                      types.StringType,
-			"spot_instance_policy":      types.StringType,
+			"cluster_size":                   types.StringType,
+			"creator_name":                   types.StringType,
+			"customer_version_label":         types.StringType,
+			"enable_photon":                  types.BoolType,
+			"enable_serverless_compute":      types.BoolType,
+			"instance_profile_arn":           types.StringType,
+			"max_dbu":                        types.Int64Type,
+			"max_num_clusters":               types.Int64Type,
+			"min_num_clusters":               types.Int64Type,
+			"name":                           types.StringType,
+			"reyden_cluster_size_multiplier": types.Float64Type,
+			"spot_instance_policy":           types.StringType,
+			"statement_timeout":              types.Int64Type,
 			"tags": basetypes.ListType{
 				ElemType: EndpointTags_SdkV2{}.Type(ctx),
 			},
@@ -4078,6 +4275,19 @@ func (to *Dashboard_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx context.Context, f
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Widgets = from.Widgets
 	}
+	if !from.Widgets.IsNull() && !from.Widgets.IsUnknown() {
+		if toWidgets, ok := to.GetWidgets(ctx); ok {
+			if fromWidgets, ok := from.GetWidgets(ctx); ok {
+				// Recursively sync the fields of each Widgets element by position.
+				for i := range toWidgets {
+					if i < len(fromWidgets) {
+						toWidgets[i].SyncFieldsDuringCreateOrUpdate(ctx, fromWidgets[i])
+					}
+				}
+				to.SetWidgets(ctx, toWidgets)
+			}
+		}
+	}
 }
 
 func (to *Dashboard_SdkV2) SyncFieldsDuringRead(ctx context.Context, from Dashboard_SdkV2) {
@@ -4108,6 +4318,18 @@ func (to *Dashboard_SdkV2) SyncFieldsDuringRead(ctx context.Context, from Dashbo
 		// If a user specified a non-Null, empty list for Widgets, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Widgets = from.Widgets
+	}
+	if !from.Widgets.IsNull() && !from.Widgets.IsUnknown() {
+		if toWidgets, ok := to.GetWidgets(ctx); ok {
+			if fromWidgets, ok := from.GetWidgets(ctx); ok {
+				for i := range toWidgets {
+					if i < len(fromWidgets) {
+						toWidgets[i].SyncFieldsDuringRead(ctx, fromWidgets[i])
+					}
+				}
+				to.SetWidgets(ctx, toWidgets)
+			}
+		}
 	}
 }
 
@@ -5464,6 +5686,9 @@ type EditWarehouseRequest_SdkV2 struct {
 	ClusterSize types.String `tfsdk:"cluster_size"`
 	// warehouse creator name
 	CreatorName types.String `tfsdk:"creator_name"`
+	// Compute version label for a REALTIME warehouse. This field is output
+	// only.
+	CustomerVersionLabel types.String `tfsdk:"customer_version_label"`
 	// Configures whether the warehouse should use Photon optimized clusters.
 	//
 	// Defaults to true.
@@ -5474,6 +5699,10 @@ type EditWarehouseRequest_SdkV2 struct {
 	Id types.String `tfsdk:"-"`
 	// Deprecated. Instance profile used to pass IAM role to the cluster
 	InstanceProfileArn types.String `tfsdk:"instance_profile_arn"`
+	// Maximum compute capacity of a real-time SQL warehouse, in DBU per hour.
+	// Must be a multiple of 3 between 3 and 960. The effective maximum cannot
+	// be lower than the warehouse's minimum capacity.
+	MaxDbu types.Int64 `tfsdk:"max_dbu"`
 	// Maximum number of clusters that the autoscaler will create to handle
 	// concurrent queries.
 	//
@@ -5496,8 +5725,19 @@ type EditWarehouseRequest_SdkV2 struct {
 	// Supported values: - Must be unique within an org. - Must be less than 100
 	// characters.
 	Name types.String `tfsdk:"name"`
+	// Cluster size multiplier for Reyden warehouses. Scales the effective
+	// compute capacity relative to the nominal virtual cluster size. Only
+	// meaningful when the warehouse is of Reyden type.
+	//
+	// Accepted range: 1.0 to the workspace-configured maximum (decimals
+	// allowed). The default maximum is 100.0. - Values below 1.0 are normalized
+	// to 1.0. - Values above the configured maximum are capped at that maximum.
+	// - When absent, the warehouse is treated as having a multiplier of 1.0.
+	ReydenClusterSizeMultiplier types.Float64 `tfsdk:"reyden_cluster_size_multiplier"`
 	// Configurations whether the endpoint should use spot instances.
 	SpotInstancePolicy types.String `tfsdk:"spot_instance_policy"`
+	// Warehouse statement timeout in seconds.
+	StatementTimeout types.Int64 `tfsdk:"statement_timeout"`
 	// A set of key-value pairs that will be tagged on all resources (e.g., AWS
 	// instances and EBS volumes) associated with this SQL warehouse.
 	//
@@ -5555,13 +5795,17 @@ func (m EditWarehouseRequest_SdkV2) ApplySchemaCustomizations(attrs map[string]t
 	attrs["channel"] = attrs["channel"].(tfschema.ListNestedAttributeBuilder).AddValidator(listvalidator.SizeAtMost(1)).(tfschema.AttributeBuilder)
 	attrs["cluster_size"] = attrs["cluster_size"].SetOptional()
 	attrs["creator_name"] = attrs["creator_name"].SetOptional()
+	attrs["customer_version_label"] = attrs["customer_version_label"].SetComputed()
 	attrs["enable_photon"] = attrs["enable_photon"].SetOptional()
 	attrs["enable_serverless_compute"] = attrs["enable_serverless_compute"].SetOptional()
 	attrs["instance_profile_arn"] = attrs["instance_profile_arn"].SetOptional()
+	attrs["max_dbu"] = attrs["max_dbu"].SetOptional()
 	attrs["max_num_clusters"] = attrs["max_num_clusters"].SetOptional()
 	attrs["min_num_clusters"] = attrs["min_num_clusters"].SetOptional()
 	attrs["name"] = attrs["name"].SetOptional()
+	attrs["reyden_cluster_size_multiplier"] = attrs["reyden_cluster_size_multiplier"].SetOptional()
 	attrs["spot_instance_policy"] = attrs["spot_instance_policy"].SetOptional()
+	attrs["statement_timeout"] = attrs["statement_timeout"].SetOptional()
 	attrs["tags"] = attrs["tags"].SetOptional()
 	attrs["tags"] = attrs["tags"].(tfschema.ListNestedAttributeBuilder).AddValidator(listvalidator.SizeAtMost(1)).(tfschema.AttributeBuilder)
 	attrs["warehouse_type"] = attrs["warehouse_type"].SetOptional()
@@ -5591,20 +5835,24 @@ func (m EditWarehouseRequest_SdkV2) ToObjectValue(ctx context.Context) basetypes
 	return types.ObjectValueMust(
 		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
 		map[string]attr.Value{
-			"auto_stop_mins":            m.AutoStopMins,
-			"channel":                   m.Channel,
-			"cluster_size":              m.ClusterSize,
-			"creator_name":              m.CreatorName,
-			"enable_photon":             m.EnablePhoton,
-			"enable_serverless_compute": m.EnableServerlessCompute,
-			"id":                        m.Id,
-			"instance_profile_arn":      m.InstanceProfileArn,
-			"max_num_clusters":          m.MaxNumClusters,
-			"min_num_clusters":          m.MinNumClusters,
-			"name":                      m.Name,
-			"spot_instance_policy":      m.SpotInstancePolicy,
-			"tags":                      m.Tags,
-			"warehouse_type":            m.WarehouseType,
+			"auto_stop_mins":                 m.AutoStopMins,
+			"channel":                        m.Channel,
+			"cluster_size":                   m.ClusterSize,
+			"creator_name":                   m.CreatorName,
+			"customer_version_label":         m.CustomerVersionLabel,
+			"enable_photon":                  m.EnablePhoton,
+			"enable_serverless_compute":      m.EnableServerlessCompute,
+			"id":                             m.Id,
+			"instance_profile_arn":           m.InstanceProfileArn,
+			"max_dbu":                        m.MaxDbu,
+			"max_num_clusters":               m.MaxNumClusters,
+			"min_num_clusters":               m.MinNumClusters,
+			"name":                           m.Name,
+			"reyden_cluster_size_multiplier": m.ReydenClusterSizeMultiplier,
+			"spot_instance_policy":           m.SpotInstancePolicy,
+			"statement_timeout":              m.StatementTimeout,
+			"tags":                           m.Tags,
+			"warehouse_type":                 m.WarehouseType,
 		})
 }
 
@@ -5616,16 +5864,20 @@ func (m EditWarehouseRequest_SdkV2) Type(ctx context.Context) attr.Type {
 			"channel": basetypes.ListType{
 				ElemType: Channel_SdkV2{}.Type(ctx),
 			},
-			"cluster_size":              types.StringType,
-			"creator_name":              types.StringType,
-			"enable_photon":             types.BoolType,
-			"enable_serverless_compute": types.BoolType,
-			"id":                        types.StringType,
-			"instance_profile_arn":      types.StringType,
-			"max_num_clusters":          types.Int64Type,
-			"min_num_clusters":          types.Int64Type,
-			"name":                      types.StringType,
-			"spot_instance_policy":      types.StringType,
+			"cluster_size":                   types.StringType,
+			"creator_name":                   types.StringType,
+			"customer_version_label":         types.StringType,
+			"enable_photon":                  types.BoolType,
+			"enable_serverless_compute":      types.BoolType,
+			"id":                             types.StringType,
+			"instance_profile_arn":           types.StringType,
+			"max_dbu":                        types.Int64Type,
+			"max_num_clusters":               types.Int64Type,
+			"min_num_clusters":               types.Int64Type,
+			"name":                           types.StringType,
+			"reyden_cluster_size_multiplier": types.Float64Type,
+			"spot_instance_policy":           types.StringType,
+			"statement_timeout":              types.Int64Type,
 			"tags": basetypes.ListType{
 				ElemType: EndpointTags_SdkV2{}.Type(ctx),
 			},
@@ -5959,6 +6211,9 @@ type EndpointInfo_SdkV2 struct {
 	ClusterSize types.String `tfsdk:"cluster_size"`
 	// warehouse creator name
 	CreatorName types.String `tfsdk:"creator_name"`
+	// Compute version label for a REALTIME warehouse. This field is output
+	// only.
+	CustomerVersionLabel types.String `tfsdk:"customer_version_label"`
 	// Configures whether the warehouse should use Photon optimized clusters.
 	//
 	// Defaults to true.
@@ -5974,6 +6229,10 @@ type EndpointInfo_SdkV2 struct {
 	InstanceProfileArn types.String `tfsdk:"instance_profile_arn"`
 	// the jdbc connection string for this warehouse
 	JdbcUrl types.String `tfsdk:"jdbc_url"`
+	// Maximum compute capacity of a real-time SQL warehouse, in DBU per hour.
+	// Must be a multiple of 3 between 3 and 960. The effective maximum cannot
+	// be lower than the warehouse's minimum capacity.
+	MaxDbu types.Int64 `tfsdk:"max_dbu"`
 	// Maximum number of clusters that the autoscaler will create to handle
 	// concurrent queries.
 	//
@@ -6002,10 +6261,21 @@ type EndpointInfo_SdkV2 struct {
 	NumClusters types.Int64 `tfsdk:"num_clusters"`
 	// ODBC parameters for the SQL warehouse
 	OdbcParams types.List `tfsdk:"odbc_params"`
+	// Cluster size multiplier for Reyden warehouses. Scales the effective
+	// compute capacity relative to the nominal virtual cluster size. Only
+	// meaningful when the warehouse is of Reyden type.
+	//
+	// Accepted range: 1.0 to the workspace-configured maximum (decimals
+	// allowed). The default maximum is 100.0. - Values below 1.0 are normalized
+	// to 1.0. - Values above the configured maximum are capped at that maximum.
+	// - When absent, the warehouse is treated as having a multiplier of 1.0.
+	ReydenClusterSizeMultiplier types.Float64 `tfsdk:"reyden_cluster_size_multiplier"`
 	// Configurations whether the endpoint should use spot instances.
 	SpotInstancePolicy types.String `tfsdk:"spot_instance_policy"`
 	// state of the endpoint
 	State types.String `tfsdk:"state"`
+	// Warehouse statement timeout in seconds.
+	StatementTimeout types.Int64 `tfsdk:"statement_timeout"`
 	// A set of key-value pairs that will be tagged on all resources (e.g., AWS
 	// instances and EBS volumes) associated with this SQL warehouse.
 	//
@@ -6097,6 +6367,7 @@ func (m EndpointInfo_SdkV2) ApplySchemaCustomizations(attrs map[string]tfschema.
 	attrs["channel"] = attrs["channel"].(tfschema.ListNestedAttributeBuilder).AddValidator(listvalidator.SizeAtMost(1)).(tfschema.AttributeBuilder)
 	attrs["cluster_size"] = attrs["cluster_size"].SetOptional()
 	attrs["creator_name"] = attrs["creator_name"].SetOptional()
+	attrs["customer_version_label"] = attrs["customer_version_label"].SetComputed()
 	attrs["enable_photon"] = attrs["enable_photon"].SetOptional()
 	attrs["enable_serverless_compute"] = attrs["enable_serverless_compute"].SetOptional()
 	attrs["health"] = attrs["health"].SetComputed()
@@ -6105,6 +6376,7 @@ func (m EndpointInfo_SdkV2) ApplySchemaCustomizations(attrs map[string]tfschema.
 	attrs["id"] = attrs["id"].(tfschema.StringAttributeBuilder).AddPlanModifier(stringplanmodifier.RequiresReplace()).(tfschema.AttributeBuilder)
 	attrs["instance_profile_arn"] = attrs["instance_profile_arn"].SetOptional()
 	attrs["jdbc_url"] = attrs["jdbc_url"].SetOptional()
+	attrs["max_dbu"] = attrs["max_dbu"].SetOptional()
 	attrs["max_num_clusters"] = attrs["max_num_clusters"].SetOptional()
 	attrs["min_num_clusters"] = attrs["min_num_clusters"].SetOptional()
 	attrs["name"] = attrs["name"].SetOptional()
@@ -6112,8 +6384,10 @@ func (m EndpointInfo_SdkV2) ApplySchemaCustomizations(attrs map[string]tfschema.
 	attrs["num_clusters"] = attrs["num_clusters"].SetOptional()
 	attrs["odbc_params"] = attrs["odbc_params"].SetOptional()
 	attrs["odbc_params"] = attrs["odbc_params"].(tfschema.ListNestedAttributeBuilder).AddValidator(listvalidator.SizeAtMost(1)).(tfschema.AttributeBuilder)
+	attrs["reyden_cluster_size_multiplier"] = attrs["reyden_cluster_size_multiplier"].SetOptional()
 	attrs["spot_instance_policy"] = attrs["spot_instance_policy"].SetOptional()
 	attrs["state"] = attrs["state"].SetOptional()
+	attrs["statement_timeout"] = attrs["statement_timeout"].SetOptional()
 	attrs["tags"] = attrs["tags"].SetOptional()
 	attrs["tags"] = attrs["tags"].(tfschema.ListNestedAttributeBuilder).AddValidator(listvalidator.SizeAtMost(1)).(tfschema.AttributeBuilder)
 	attrs["warehouse_type"] = attrs["warehouse_type"].SetOptional()
@@ -6144,26 +6418,30 @@ func (m EndpointInfo_SdkV2) ToObjectValue(ctx context.Context) basetypes.ObjectV
 	return types.ObjectValueMust(
 		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
 		map[string]attr.Value{
-			"auto_stop_mins":            m.AutoStopMins,
-			"channel":                   m.Channel,
-			"cluster_size":              m.ClusterSize,
-			"creator_name":              m.CreatorName,
-			"enable_photon":             m.EnablePhoton,
-			"enable_serverless_compute": m.EnableServerlessCompute,
-			"health":                    m.Health,
-			"id":                        m.Id,
-			"instance_profile_arn":      m.InstanceProfileArn,
-			"jdbc_url":                  m.JdbcUrl,
-			"max_num_clusters":          m.MaxNumClusters,
-			"min_num_clusters":          m.MinNumClusters,
-			"name":                      m.Name,
-			"num_active_sessions":       m.NumActiveSessions,
-			"num_clusters":              m.NumClusters,
-			"odbc_params":               m.OdbcParams,
-			"spot_instance_policy":      m.SpotInstancePolicy,
-			"state":                     m.State,
-			"tags":                      m.Tags,
-			"warehouse_type":            m.WarehouseType,
+			"auto_stop_mins":                 m.AutoStopMins,
+			"channel":                        m.Channel,
+			"cluster_size":                   m.ClusterSize,
+			"creator_name":                   m.CreatorName,
+			"customer_version_label":         m.CustomerVersionLabel,
+			"enable_photon":                  m.EnablePhoton,
+			"enable_serverless_compute":      m.EnableServerlessCompute,
+			"health":                         m.Health,
+			"id":                             m.Id,
+			"instance_profile_arn":           m.InstanceProfileArn,
+			"jdbc_url":                       m.JdbcUrl,
+			"max_dbu":                        m.MaxDbu,
+			"max_num_clusters":               m.MaxNumClusters,
+			"min_num_clusters":               m.MinNumClusters,
+			"name":                           m.Name,
+			"num_active_sessions":            m.NumActiveSessions,
+			"num_clusters":                   m.NumClusters,
+			"odbc_params":                    m.OdbcParams,
+			"reyden_cluster_size_multiplier": m.ReydenClusterSizeMultiplier,
+			"spot_instance_policy":           m.SpotInstancePolicy,
+			"state":                          m.State,
+			"statement_timeout":              m.StatementTimeout,
+			"tags":                           m.Tags,
+			"warehouse_type":                 m.WarehouseType,
 		})
 }
 
@@ -6177,6 +6455,7 @@ func (m EndpointInfo_SdkV2) Type(ctx context.Context) attr.Type {
 			},
 			"cluster_size":              types.StringType,
 			"creator_name":              types.StringType,
+			"customer_version_label":    types.StringType,
 			"enable_photon":             types.BoolType,
 			"enable_serverless_compute": types.BoolType,
 			"health": basetypes.ListType{
@@ -6185,6 +6464,7 @@ func (m EndpointInfo_SdkV2) Type(ctx context.Context) attr.Type {
 			"id":                   types.StringType,
 			"instance_profile_arn": types.StringType,
 			"jdbc_url":             types.StringType,
+			"max_dbu":              types.Int64Type,
 			"max_num_clusters":     types.Int64Type,
 			"min_num_clusters":     types.Int64Type,
 			"name":                 types.StringType,
@@ -6193,8 +6473,10 @@ func (m EndpointInfo_SdkV2) Type(ctx context.Context) attr.Type {
 			"odbc_params": basetypes.ListType{
 				ElemType: OdbcParams_SdkV2{}.Type(ctx),
 			},
-			"spot_instance_policy": types.StringType,
-			"state":                types.StringType,
+			"reyden_cluster_size_multiplier": types.Float64Type,
+			"spot_instance_policy":           types.StringType,
+			"state":                          types.StringType,
+			"statement_timeout":              types.Int64Type,
 			"tags": basetypes.ListType{
 				ElemType: EndpointTags_SdkV2{}.Type(ctx),
 			},
@@ -6370,6 +6652,19 @@ func (to *EndpointTags_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx context.Context
 		// set the resulting resource state to the empty list to match the planned value.
 		to.CustomTags = from.CustomTags
 	}
+	if !from.CustomTags.IsNull() && !from.CustomTags.IsUnknown() {
+		if toCustomTags, ok := to.GetCustomTags(ctx); ok {
+			if fromCustomTags, ok := from.GetCustomTags(ctx); ok {
+				// Recursively sync the fields of each CustomTags element by position.
+				for i := range toCustomTags {
+					if i < len(fromCustomTags) {
+						toCustomTags[i].SyncFieldsDuringCreateOrUpdate(ctx, fromCustomTags[i])
+					}
+				}
+				to.SetCustomTags(ctx, toCustomTags)
+			}
+		}
+	}
 }
 
 func (to *EndpointTags_SdkV2) SyncFieldsDuringRead(ctx context.Context, from EndpointTags_SdkV2) {
@@ -6378,6 +6673,18 @@ func (to *EndpointTags_SdkV2) SyncFieldsDuringRead(ctx context.Context, from End
 		// If a user specified a non-Null, empty list for CustomTags, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.CustomTags = from.CustomTags
+	}
+	if !from.CustomTags.IsNull() && !from.CustomTags.IsUnknown() {
+		if toCustomTags, ok := to.GetCustomTags(ctx); ok {
+			if fromCustomTags, ok := from.GetCustomTags(ctx); ok {
+				for i := range toCustomTags {
+					if i < len(fromCustomTags) {
+						toCustomTags[i].SyncFieldsDuringRead(ctx, fromCustomTags[i])
+					}
+				}
+				to.SetCustomTags(ctx, toCustomTags)
+			}
+		}
 	}
 }
 
@@ -6631,8 +6938,9 @@ type ExecuteStatementRequest_SdkV2 struct {
 	// access token, OAuth token, or similar) _must be removed_ when fetching
 	// from these links.
 	//
-	// 2. These are URLs with a specific expiration, indicated in the response.
-	// The behavior when attempting to use an expired link is cloud specific.
+	// 2. These are short-lived cloud-storage URLs with a specific expiration,
+	// indicated in the response. The behavior when attempting to use an expired
+	// link is cloud specific.
 	Disposition types.String `tfsdk:"disposition"`
 	// Statement execution supports three result formats: `JSON_ARRAY`
 	// (default), `ARROW_STREAM`, and `CSV`.
@@ -6764,11 +7072,37 @@ func (to *ExecuteStatementRequest_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx cont
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Parameters = from.Parameters
 	}
+	if !from.Parameters.IsNull() && !from.Parameters.IsUnknown() {
+		if toParameters, ok := to.GetParameters(ctx); ok {
+			if fromParameters, ok := from.GetParameters(ctx); ok {
+				// Recursively sync the fields of each Parameters element by position.
+				for i := range toParameters {
+					if i < len(fromParameters) {
+						toParameters[i].SyncFieldsDuringCreateOrUpdate(ctx, fromParameters[i])
+					}
+				}
+				to.SetParameters(ctx, toParameters)
+			}
+		}
+	}
 	if !from.QueryTags.IsNull() && !from.QueryTags.IsUnknown() && to.QueryTags.IsNull() && len(from.QueryTags.Elements()) == 0 {
 		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
 		// If a user specified a non-Null, empty list for QueryTags, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.QueryTags = from.QueryTags
+	}
+	if !from.QueryTags.IsNull() && !from.QueryTags.IsUnknown() {
+		if toQueryTags, ok := to.GetQueryTags(ctx); ok {
+			if fromQueryTags, ok := from.GetQueryTags(ctx); ok {
+				// Recursively sync the fields of each QueryTags element by position.
+				for i := range toQueryTags {
+					if i < len(fromQueryTags) {
+						toQueryTags[i].SyncFieldsDuringCreateOrUpdate(ctx, fromQueryTags[i])
+					}
+				}
+				to.SetQueryTags(ctx, toQueryTags)
+			}
+		}
 	}
 }
 
@@ -6779,11 +7113,35 @@ func (to *ExecuteStatementRequest_SdkV2) SyncFieldsDuringRead(ctx context.Contex
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Parameters = from.Parameters
 	}
+	if !from.Parameters.IsNull() && !from.Parameters.IsUnknown() {
+		if toParameters, ok := to.GetParameters(ctx); ok {
+			if fromParameters, ok := from.GetParameters(ctx); ok {
+				for i := range toParameters {
+					if i < len(fromParameters) {
+						toParameters[i].SyncFieldsDuringRead(ctx, fromParameters[i])
+					}
+				}
+				to.SetParameters(ctx, toParameters)
+			}
+		}
+	}
 	if !from.QueryTags.IsNull() && !from.QueryTags.IsUnknown() && to.QueryTags.IsNull() && len(from.QueryTags.Elements()) == 0 {
 		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
 		// If a user specified a non-Null, empty list for QueryTags, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.QueryTags = from.QueryTags
+	}
+	if !from.QueryTags.IsNull() && !from.QueryTags.IsUnknown() {
+		if toQueryTags, ok := to.GetQueryTags(ctx); ok {
+			if fromQueryTags, ok := from.GetQueryTags(ctx); ok {
+				for i := range toQueryTags {
+					if i < len(fromQueryTags) {
+						toQueryTags[i].SyncFieldsDuringRead(ctx, fromQueryTags[i])
+					}
+				}
+				to.SetQueryTags(ctx, toQueryTags)
+			}
+		}
 	}
 }
 
@@ -6926,10 +7284,10 @@ type ExternalLink_SdkV2 struct {
 	// becomes invalid, after which point a new `external_link` must be
 	// requested.
 	Expiration types.String `tfsdk:"expiration"`
-	// A URL pointing to a chunk of result data, hosted by an external service,
-	// with a short expiration time (<= 15 minutes). As this URL contains a
-	// temporary credential, it should be considered sensitive and the client
-	// should not expose this URL in a log.
+	// A short-lived cloud-storage URL pointing to a chunk of result data,
+	// hosted by an external service, with a short expiration time (<= 15
+	// minutes). As this URL contains a temporary credential, it should be
+	// considered sensitive and the client should not expose this URL in a log.
 	ExternalLink types.String `tfsdk:"external_link"`
 	// HTTP headers that must be included with a GET request to the
 	// `external_link`. Each header is provided as a key-value pair. Headers are
@@ -7677,6 +8035,19 @@ func (to *GetResponse_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx context.Context,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.AccessControlList = from.AccessControlList
 	}
+	if !from.AccessControlList.IsNull() && !from.AccessControlList.IsUnknown() {
+		if toAccessControlList, ok := to.GetAccessControlList(ctx); ok {
+			if fromAccessControlList, ok := from.GetAccessControlList(ctx); ok {
+				// Recursively sync the fields of each AccessControlList element by position.
+				for i := range toAccessControlList {
+					if i < len(fromAccessControlList) {
+						toAccessControlList[i].SyncFieldsDuringCreateOrUpdate(ctx, fromAccessControlList[i])
+					}
+				}
+				to.SetAccessControlList(ctx, toAccessControlList)
+			}
+		}
+	}
 }
 
 func (to *GetResponse_SdkV2) SyncFieldsDuringRead(ctx context.Context, from GetResponse_SdkV2) {
@@ -7685,6 +8056,18 @@ func (to *GetResponse_SdkV2) SyncFieldsDuringRead(ctx context.Context, from GetR
 		// If a user specified a non-Null, empty list for AccessControlList, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.AccessControlList = from.AccessControlList
+	}
+	if !from.AccessControlList.IsNull() && !from.AccessControlList.IsUnknown() {
+		if toAccessControlList, ok := to.GetAccessControlList(ctx); ok {
+			if fromAccessControlList, ok := from.GetAccessControlList(ctx); ok {
+				for i := range toAccessControlList {
+					if i < len(fromAccessControlList) {
+						toAccessControlList[i].SyncFieldsDuringRead(ctx, fromAccessControlList[i])
+					}
+				}
+				to.SetAccessControlList(ctx, toAccessControlList)
+			}
+		}
 	}
 }
 
@@ -7923,6 +8306,19 @@ func (to *GetWarehousePermissionLevelsResponse_SdkV2) SyncFieldsDuringCreateOrUp
 		// set the resulting resource state to the empty list to match the planned value.
 		to.PermissionLevels = from.PermissionLevels
 	}
+	if !from.PermissionLevels.IsNull() && !from.PermissionLevels.IsUnknown() {
+		if toPermissionLevels, ok := to.GetPermissionLevels(ctx); ok {
+			if fromPermissionLevels, ok := from.GetPermissionLevels(ctx); ok {
+				// Recursively sync the fields of each PermissionLevels element by position.
+				for i := range toPermissionLevels {
+					if i < len(fromPermissionLevels) {
+						toPermissionLevels[i].SyncFieldsDuringCreateOrUpdate(ctx, fromPermissionLevels[i])
+					}
+				}
+				to.SetPermissionLevels(ctx, toPermissionLevels)
+			}
+		}
+	}
 }
 
 func (to *GetWarehousePermissionLevelsResponse_SdkV2) SyncFieldsDuringRead(ctx context.Context, from GetWarehousePermissionLevelsResponse_SdkV2) {
@@ -7931,6 +8327,18 @@ func (to *GetWarehousePermissionLevelsResponse_SdkV2) SyncFieldsDuringRead(ctx c
 		// If a user specified a non-Null, empty list for PermissionLevels, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.PermissionLevels = from.PermissionLevels
+	}
+	if !from.PermissionLevels.IsNull() && !from.PermissionLevels.IsUnknown() {
+		if toPermissionLevels, ok := to.GetPermissionLevels(ctx); ok {
+			if fromPermissionLevels, ok := from.GetPermissionLevels(ctx); ok {
+				for i := range toPermissionLevels {
+					if i < len(fromPermissionLevels) {
+						toPermissionLevels[i].SyncFieldsDuringRead(ctx, fromPermissionLevels[i])
+					}
+				}
+				to.SetPermissionLevels(ctx, toPermissionLevels)
+			}
+		}
 	}
 }
 
@@ -8116,6 +8524,9 @@ type GetWarehouseResponse_SdkV2 struct {
 	ClusterSize types.String `tfsdk:"cluster_size"`
 	// warehouse creator name
 	CreatorName types.String `tfsdk:"creator_name"`
+	// Compute version label for a REALTIME warehouse. This field is output
+	// only.
+	CustomerVersionLabel types.String `tfsdk:"customer_version_label"`
 	// Configures whether the warehouse should use Photon optimized clusters.
 	//
 	// Defaults to true.
@@ -8131,6 +8542,10 @@ type GetWarehouseResponse_SdkV2 struct {
 	InstanceProfileArn types.String `tfsdk:"instance_profile_arn"`
 	// the jdbc connection string for this warehouse
 	JdbcUrl types.String `tfsdk:"jdbc_url"`
+	// Maximum compute capacity of a real-time SQL warehouse, in DBU per hour.
+	// Must be a multiple of 3 between 3 and 960. The effective maximum cannot
+	// be lower than the warehouse's minimum capacity.
+	MaxDbu types.Int64 `tfsdk:"max_dbu"`
 	// Maximum number of clusters that the autoscaler will create to handle
 	// concurrent queries.
 	//
@@ -8159,10 +8574,21 @@ type GetWarehouseResponse_SdkV2 struct {
 	NumClusters types.Int64 `tfsdk:"num_clusters"`
 	// ODBC parameters for the SQL warehouse
 	OdbcParams types.List `tfsdk:"odbc_params"`
+	// Cluster size multiplier for Reyden warehouses. Scales the effective
+	// compute capacity relative to the nominal virtual cluster size. Only
+	// meaningful when the warehouse is of Reyden type.
+	//
+	// Accepted range: 1.0 to the workspace-configured maximum (decimals
+	// allowed). The default maximum is 100.0. - Values below 1.0 are normalized
+	// to 1.0. - Values above the configured maximum are capped at that maximum.
+	// - When absent, the warehouse is treated as having a multiplier of 1.0.
+	ReydenClusterSizeMultiplier types.Float64 `tfsdk:"reyden_cluster_size_multiplier"`
 	// Configurations whether the endpoint should use spot instances.
 	SpotInstancePolicy types.String `tfsdk:"spot_instance_policy"`
 	// state of the endpoint
 	State types.String `tfsdk:"state"`
+	// Warehouse statement timeout in seconds.
+	StatementTimeout types.Int64 `tfsdk:"statement_timeout"`
 	// A set of key-value pairs that will be tagged on all resources (e.g., AWS
 	// instances and EBS volumes) associated with this SQL warehouse.
 	//
@@ -8254,6 +8680,7 @@ func (m GetWarehouseResponse_SdkV2) ApplySchemaCustomizations(attrs map[string]t
 	attrs["channel"] = attrs["channel"].(tfschema.ListNestedAttributeBuilder).AddValidator(listvalidator.SizeAtMost(1)).(tfschema.AttributeBuilder)
 	attrs["cluster_size"] = attrs["cluster_size"].SetOptional()
 	attrs["creator_name"] = attrs["creator_name"].SetOptional()
+	attrs["customer_version_label"] = attrs["customer_version_label"].SetComputed()
 	attrs["enable_photon"] = attrs["enable_photon"].SetOptional()
 	attrs["enable_serverless_compute"] = attrs["enable_serverless_compute"].SetOptional()
 	attrs["health"] = attrs["health"].SetComputed()
@@ -8262,6 +8689,7 @@ func (m GetWarehouseResponse_SdkV2) ApplySchemaCustomizations(attrs map[string]t
 	attrs["id"] = attrs["id"].(tfschema.StringAttributeBuilder).AddPlanModifier(stringplanmodifier.RequiresReplace()).(tfschema.AttributeBuilder)
 	attrs["instance_profile_arn"] = attrs["instance_profile_arn"].SetOptional()
 	attrs["jdbc_url"] = attrs["jdbc_url"].SetOptional()
+	attrs["max_dbu"] = attrs["max_dbu"].SetOptional()
 	attrs["max_num_clusters"] = attrs["max_num_clusters"].SetOptional()
 	attrs["min_num_clusters"] = attrs["min_num_clusters"].SetOptional()
 	attrs["name"] = attrs["name"].SetOptional()
@@ -8269,8 +8697,10 @@ func (m GetWarehouseResponse_SdkV2) ApplySchemaCustomizations(attrs map[string]t
 	attrs["num_clusters"] = attrs["num_clusters"].SetOptional()
 	attrs["odbc_params"] = attrs["odbc_params"].SetOptional()
 	attrs["odbc_params"] = attrs["odbc_params"].(tfschema.ListNestedAttributeBuilder).AddValidator(listvalidator.SizeAtMost(1)).(tfschema.AttributeBuilder)
+	attrs["reyden_cluster_size_multiplier"] = attrs["reyden_cluster_size_multiplier"].SetOptional()
 	attrs["spot_instance_policy"] = attrs["spot_instance_policy"].SetOptional()
 	attrs["state"] = attrs["state"].SetOptional()
+	attrs["statement_timeout"] = attrs["statement_timeout"].SetOptional()
 	attrs["tags"] = attrs["tags"].SetOptional()
 	attrs["tags"] = attrs["tags"].(tfschema.ListNestedAttributeBuilder).AddValidator(listvalidator.SizeAtMost(1)).(tfschema.AttributeBuilder)
 	attrs["warehouse_type"] = attrs["warehouse_type"].SetOptional()
@@ -8301,26 +8731,30 @@ func (m GetWarehouseResponse_SdkV2) ToObjectValue(ctx context.Context) basetypes
 	return types.ObjectValueMust(
 		m.Type(ctx).(basetypes.ObjectType).AttrTypes,
 		map[string]attr.Value{
-			"auto_stop_mins":            m.AutoStopMins,
-			"channel":                   m.Channel,
-			"cluster_size":              m.ClusterSize,
-			"creator_name":              m.CreatorName,
-			"enable_photon":             m.EnablePhoton,
-			"enable_serverless_compute": m.EnableServerlessCompute,
-			"health":                    m.Health,
-			"id":                        m.Id,
-			"instance_profile_arn":      m.InstanceProfileArn,
-			"jdbc_url":                  m.JdbcUrl,
-			"max_num_clusters":          m.MaxNumClusters,
-			"min_num_clusters":          m.MinNumClusters,
-			"name":                      m.Name,
-			"num_active_sessions":       m.NumActiveSessions,
-			"num_clusters":              m.NumClusters,
-			"odbc_params":               m.OdbcParams,
-			"spot_instance_policy":      m.SpotInstancePolicy,
-			"state":                     m.State,
-			"tags":                      m.Tags,
-			"warehouse_type":            m.WarehouseType,
+			"auto_stop_mins":                 m.AutoStopMins,
+			"channel":                        m.Channel,
+			"cluster_size":                   m.ClusterSize,
+			"creator_name":                   m.CreatorName,
+			"customer_version_label":         m.CustomerVersionLabel,
+			"enable_photon":                  m.EnablePhoton,
+			"enable_serverless_compute":      m.EnableServerlessCompute,
+			"health":                         m.Health,
+			"id":                             m.Id,
+			"instance_profile_arn":           m.InstanceProfileArn,
+			"jdbc_url":                       m.JdbcUrl,
+			"max_dbu":                        m.MaxDbu,
+			"max_num_clusters":               m.MaxNumClusters,
+			"min_num_clusters":               m.MinNumClusters,
+			"name":                           m.Name,
+			"num_active_sessions":            m.NumActiveSessions,
+			"num_clusters":                   m.NumClusters,
+			"odbc_params":                    m.OdbcParams,
+			"reyden_cluster_size_multiplier": m.ReydenClusterSizeMultiplier,
+			"spot_instance_policy":           m.SpotInstancePolicy,
+			"state":                          m.State,
+			"statement_timeout":              m.StatementTimeout,
+			"tags":                           m.Tags,
+			"warehouse_type":                 m.WarehouseType,
 		})
 }
 
@@ -8334,6 +8768,7 @@ func (m GetWarehouseResponse_SdkV2) Type(ctx context.Context) attr.Type {
 			},
 			"cluster_size":              types.StringType,
 			"creator_name":              types.StringType,
+			"customer_version_label":    types.StringType,
 			"enable_photon":             types.BoolType,
 			"enable_serverless_compute": types.BoolType,
 			"health": basetypes.ListType{
@@ -8342,6 +8777,7 @@ func (m GetWarehouseResponse_SdkV2) Type(ctx context.Context) attr.Type {
 			"id":                   types.StringType,
 			"instance_profile_arn": types.StringType,
 			"jdbc_url":             types.StringType,
+			"max_dbu":              types.Int64Type,
 			"max_num_clusters":     types.Int64Type,
 			"min_num_clusters":     types.Int64Type,
 			"name":                 types.StringType,
@@ -8350,8 +8786,10 @@ func (m GetWarehouseResponse_SdkV2) Type(ctx context.Context) attr.Type {
 			"odbc_params": basetypes.ListType{
 				ElemType: OdbcParams_SdkV2{}.Type(ctx),
 			},
-			"spot_instance_policy": types.StringType,
-			"state":                types.StringType,
+			"reyden_cluster_size_multiplier": types.Float64Type,
+			"spot_instance_policy":           types.StringType,
+			"state":                          types.StringType,
+			"statement_timeout":              types.Int64Type,
 			"tags": basetypes.ListType{
 				ElemType: EndpointTags_SdkV2{}.Type(ctx),
 			},
@@ -8562,11 +9000,37 @@ func (to *GetWorkspaceWarehouseConfigResponse_SdkV2) SyncFieldsDuringCreateOrUpd
 		// set the resulting resource state to the empty list to match the planned value.
 		to.DataAccessConfig = from.DataAccessConfig
 	}
+	if !from.DataAccessConfig.IsNull() && !from.DataAccessConfig.IsUnknown() {
+		if toDataAccessConfig, ok := to.GetDataAccessConfig(ctx); ok {
+			if fromDataAccessConfig, ok := from.GetDataAccessConfig(ctx); ok {
+				// Recursively sync the fields of each DataAccessConfig element by position.
+				for i := range toDataAccessConfig {
+					if i < len(fromDataAccessConfig) {
+						toDataAccessConfig[i].SyncFieldsDuringCreateOrUpdate(ctx, fromDataAccessConfig[i])
+					}
+				}
+				to.SetDataAccessConfig(ctx, toDataAccessConfig)
+			}
+		}
+	}
 	if !from.EnabledWarehouseTypes.IsNull() && !from.EnabledWarehouseTypes.IsUnknown() && to.EnabledWarehouseTypes.IsNull() && len(from.EnabledWarehouseTypes.Elements()) == 0 {
 		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
 		// If a user specified a non-Null, empty list for EnabledWarehouseTypes, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.EnabledWarehouseTypes = from.EnabledWarehouseTypes
+	}
+	if !from.EnabledWarehouseTypes.IsNull() && !from.EnabledWarehouseTypes.IsUnknown() {
+		if toEnabledWarehouseTypes, ok := to.GetEnabledWarehouseTypes(ctx); ok {
+			if fromEnabledWarehouseTypes, ok := from.GetEnabledWarehouseTypes(ctx); ok {
+				// Recursively sync the fields of each EnabledWarehouseTypes element by position.
+				for i := range toEnabledWarehouseTypes {
+					if i < len(fromEnabledWarehouseTypes) {
+						toEnabledWarehouseTypes[i].SyncFieldsDuringCreateOrUpdate(ctx, fromEnabledWarehouseTypes[i])
+					}
+				}
+				to.SetEnabledWarehouseTypes(ctx, toEnabledWarehouseTypes)
+			}
+		}
 	}
 	if !from.GlobalParam.IsNull() && !from.GlobalParam.IsUnknown() {
 		if toGlobalParam, ok := to.GetGlobalParam(ctx); ok {
@@ -8611,11 +9075,35 @@ func (to *GetWorkspaceWarehouseConfigResponse_SdkV2) SyncFieldsDuringRead(ctx co
 		// set the resulting resource state to the empty list to match the planned value.
 		to.DataAccessConfig = from.DataAccessConfig
 	}
+	if !from.DataAccessConfig.IsNull() && !from.DataAccessConfig.IsUnknown() {
+		if toDataAccessConfig, ok := to.GetDataAccessConfig(ctx); ok {
+			if fromDataAccessConfig, ok := from.GetDataAccessConfig(ctx); ok {
+				for i := range toDataAccessConfig {
+					if i < len(fromDataAccessConfig) {
+						toDataAccessConfig[i].SyncFieldsDuringRead(ctx, fromDataAccessConfig[i])
+					}
+				}
+				to.SetDataAccessConfig(ctx, toDataAccessConfig)
+			}
+		}
+	}
 	if !from.EnabledWarehouseTypes.IsNull() && !from.EnabledWarehouseTypes.IsUnknown() && to.EnabledWarehouseTypes.IsNull() && len(from.EnabledWarehouseTypes.Elements()) == 0 {
 		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
 		// If a user specified a non-Null, empty list for EnabledWarehouseTypes, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.EnabledWarehouseTypes = from.EnabledWarehouseTypes
+	}
+	if !from.EnabledWarehouseTypes.IsNull() && !from.EnabledWarehouseTypes.IsUnknown() {
+		if toEnabledWarehouseTypes, ok := to.GetEnabledWarehouseTypes(ctx); ok {
+			if fromEnabledWarehouseTypes, ok := from.GetEnabledWarehouseTypes(ctx); ok {
+				for i := range toEnabledWarehouseTypes {
+					if i < len(fromEnabledWarehouseTypes) {
+						toEnabledWarehouseTypes[i].SyncFieldsDuringRead(ctx, fromEnabledWarehouseTypes[i])
+					}
+				}
+				to.SetEnabledWarehouseTypes(ctx, toEnabledWarehouseTypes)
+			}
+		}
 	}
 	if !from.GlobalParam.IsNull() && !from.GlobalParam.IsUnknown() {
 		if toGlobalParam, ok := to.GetGlobalParam(ctx); ok {
@@ -9233,6 +9721,19 @@ func (to *LegacyQuery_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx context.Context,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Visualizations = from.Visualizations
 	}
+	if !from.Visualizations.IsNull() && !from.Visualizations.IsUnknown() {
+		if toVisualizations, ok := to.GetVisualizations(ctx); ok {
+			if fromVisualizations, ok := from.GetVisualizations(ctx); ok {
+				// Recursively sync the fields of each Visualizations element by position.
+				for i := range toVisualizations {
+					if i < len(fromVisualizations) {
+						toVisualizations[i].SyncFieldsDuringCreateOrUpdate(ctx, fromVisualizations[i])
+					}
+				}
+				to.SetVisualizations(ctx, toVisualizations)
+			}
+		}
+	}
 }
 
 func (to *LegacyQuery_SdkV2) SyncFieldsDuringRead(ctx context.Context, from LegacyQuery_SdkV2) {
@@ -9271,6 +9772,18 @@ func (to *LegacyQuery_SdkV2) SyncFieldsDuringRead(ctx context.Context, from Lega
 		// If a user specified a non-Null, empty list for Visualizations, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Visualizations = from.Visualizations
+	}
+	if !from.Visualizations.IsNull() && !from.Visualizations.IsUnknown() {
+		if toVisualizations, ok := to.GetVisualizations(ctx); ok {
+			if fromVisualizations, ok := from.GetVisualizations(ctx); ok {
+				for i := range toVisualizations {
+					if i < len(fromVisualizations) {
+						toVisualizations[i].SyncFieldsDuringRead(ctx, fromVisualizations[i])
+					}
+				}
+				to.SetVisualizations(ctx, toVisualizations)
+			}
+		}
 	}
 }
 
@@ -9733,6 +10246,19 @@ func (to *ListAlertsResponse_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx context.C
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Results = from.Results
 	}
+	if !from.Results.IsNull() && !from.Results.IsUnknown() {
+		if toResults, ok := to.GetResults(ctx); ok {
+			if fromResults, ok := from.GetResults(ctx); ok {
+				// Recursively sync the fields of each Results element by position.
+				for i := range toResults {
+					if i < len(fromResults) {
+						toResults[i].SyncFieldsDuringCreateOrUpdate(ctx, fromResults[i])
+					}
+				}
+				to.SetResults(ctx, toResults)
+			}
+		}
+	}
 }
 
 func (to *ListAlertsResponse_SdkV2) SyncFieldsDuringRead(ctx context.Context, from ListAlertsResponse_SdkV2) {
@@ -9741,6 +10267,18 @@ func (to *ListAlertsResponse_SdkV2) SyncFieldsDuringRead(ctx context.Context, fr
 		// If a user specified a non-Null, empty list for Results, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Results = from.Results
+	}
+	if !from.Results.IsNull() && !from.Results.IsUnknown() {
+		if toResults, ok := to.GetResults(ctx); ok {
+			if fromResults, ok := from.GetResults(ctx); ok {
+				for i := range toResults {
+					if i < len(fromResults) {
+						toResults[i].SyncFieldsDuringRead(ctx, fromResults[i])
+					}
+				}
+				to.SetResults(ctx, toResults)
+			}
+		}
 	}
 }
 
@@ -10053,6 +10591,19 @@ func (to *ListAlertsV2Response_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx context
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Alerts = from.Alerts
 	}
+	if !from.Alerts.IsNull() && !from.Alerts.IsUnknown() {
+		if toAlerts, ok := to.GetAlerts(ctx); ok {
+			if fromAlerts, ok := from.GetAlerts(ctx); ok {
+				// Recursively sync the fields of each Alerts element by position.
+				for i := range toAlerts {
+					if i < len(fromAlerts) {
+						toAlerts[i].SyncFieldsDuringCreateOrUpdate(ctx, fromAlerts[i])
+					}
+				}
+				to.SetAlerts(ctx, toAlerts)
+			}
+		}
+	}
 }
 
 func (to *ListAlertsV2Response_SdkV2) SyncFieldsDuringRead(ctx context.Context, from ListAlertsV2Response_SdkV2) {
@@ -10061,6 +10612,18 @@ func (to *ListAlertsV2Response_SdkV2) SyncFieldsDuringRead(ctx context.Context, 
 		// If a user specified a non-Null, empty list for Alerts, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Alerts = from.Alerts
+	}
+	if !from.Alerts.IsNull() && !from.Alerts.IsUnknown() {
+		if toAlerts, ok := to.GetAlerts(ctx); ok {
+			if fromAlerts, ok := from.GetAlerts(ctx); ok {
+				for i := range toAlerts {
+					if i < len(fromAlerts) {
+						toAlerts[i].SyncFieldsDuringRead(ctx, fromAlerts[i])
+					}
+				}
+				to.SetAlerts(ctx, toAlerts)
+			}
+		}
 	}
 }
 
@@ -10273,6 +10836,19 @@ func (to *ListDefaultWarehouseOverridesResponse_SdkV2) SyncFieldsDuringCreateOrU
 		// set the resulting resource state to the empty list to match the planned value.
 		to.DefaultWarehouseOverrides = from.DefaultWarehouseOverrides
 	}
+	if !from.DefaultWarehouseOverrides.IsNull() && !from.DefaultWarehouseOverrides.IsUnknown() {
+		if toDefaultWarehouseOverrides, ok := to.GetDefaultWarehouseOverrides(ctx); ok {
+			if fromDefaultWarehouseOverrides, ok := from.GetDefaultWarehouseOverrides(ctx); ok {
+				// Recursively sync the fields of each DefaultWarehouseOverrides element by position.
+				for i := range toDefaultWarehouseOverrides {
+					if i < len(fromDefaultWarehouseOverrides) {
+						toDefaultWarehouseOverrides[i].SyncFieldsDuringCreateOrUpdate(ctx, fromDefaultWarehouseOverrides[i])
+					}
+				}
+				to.SetDefaultWarehouseOverrides(ctx, toDefaultWarehouseOverrides)
+			}
+		}
+	}
 }
 
 func (to *ListDefaultWarehouseOverridesResponse_SdkV2) SyncFieldsDuringRead(ctx context.Context, from ListDefaultWarehouseOverridesResponse_SdkV2) {
@@ -10281,6 +10857,18 @@ func (to *ListDefaultWarehouseOverridesResponse_SdkV2) SyncFieldsDuringRead(ctx 
 		// If a user specified a non-Null, empty list for DefaultWarehouseOverrides, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.DefaultWarehouseOverrides = from.DefaultWarehouseOverrides
+	}
+	if !from.DefaultWarehouseOverrides.IsNull() && !from.DefaultWarehouseOverrides.IsUnknown() {
+		if toDefaultWarehouseOverrides, ok := to.GetDefaultWarehouseOverrides(ctx); ok {
+			if fromDefaultWarehouseOverrides, ok := from.GetDefaultWarehouseOverrides(ctx); ok {
+				for i := range toDefaultWarehouseOverrides {
+					if i < len(fromDefaultWarehouseOverrides) {
+						toDefaultWarehouseOverrides[i].SyncFieldsDuringRead(ctx, fromDefaultWarehouseOverrides[i])
+					}
+				}
+				to.SetDefaultWarehouseOverrides(ctx, toDefaultWarehouseOverrides)
+			}
+		}
 	}
 }
 
@@ -10498,6 +11086,19 @@ func (to *ListQueriesResponse_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx context.
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Res = from.Res
 	}
+	if !from.Res.IsNull() && !from.Res.IsUnknown() {
+		if toRes, ok := to.GetRes(ctx); ok {
+			if fromRes, ok := from.GetRes(ctx); ok {
+				// Recursively sync the fields of each Res element by position.
+				for i := range toRes {
+					if i < len(fromRes) {
+						toRes[i].SyncFieldsDuringCreateOrUpdate(ctx, fromRes[i])
+					}
+				}
+				to.SetRes(ctx, toRes)
+			}
+		}
+	}
 }
 
 func (to *ListQueriesResponse_SdkV2) SyncFieldsDuringRead(ctx context.Context, from ListQueriesResponse_SdkV2) {
@@ -10506,6 +11107,18 @@ func (to *ListQueriesResponse_SdkV2) SyncFieldsDuringRead(ctx context.Context, f
 		// If a user specified a non-Null, empty list for Res, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Res = from.Res
+	}
+	if !from.Res.IsNull() && !from.Res.IsUnknown() {
+		if toRes, ok := to.GetRes(ctx); ok {
+			if fromRes, ok := from.GetRes(ctx); ok {
+				for i := range toRes {
+					if i < len(fromRes) {
+						toRes[i].SyncFieldsDuringRead(ctx, fromRes[i])
+					}
+				}
+				to.SetRes(ctx, toRes)
+			}
+		}
 	}
 }
 
@@ -10714,6 +11327,19 @@ func (to *ListQueryObjectsResponse_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx con
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Results = from.Results
 	}
+	if !from.Results.IsNull() && !from.Results.IsUnknown() {
+		if toResults, ok := to.GetResults(ctx); ok {
+			if fromResults, ok := from.GetResults(ctx); ok {
+				// Recursively sync the fields of each Results element by position.
+				for i := range toResults {
+					if i < len(fromResults) {
+						toResults[i].SyncFieldsDuringCreateOrUpdate(ctx, fromResults[i])
+					}
+				}
+				to.SetResults(ctx, toResults)
+			}
+		}
+	}
 }
 
 func (to *ListQueryObjectsResponse_SdkV2) SyncFieldsDuringRead(ctx context.Context, from ListQueryObjectsResponse_SdkV2) {
@@ -10722,6 +11348,18 @@ func (to *ListQueryObjectsResponse_SdkV2) SyncFieldsDuringRead(ctx context.Conte
 		// If a user specified a non-Null, empty list for Results, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Results = from.Results
+	}
+	if !from.Results.IsNull() && !from.Results.IsUnknown() {
+		if toResults, ok := to.GetResults(ctx); ok {
+			if fromResults, ok := from.GetResults(ctx); ok {
+				for i := range toResults {
+					if i < len(fromResults) {
+						toResults[i].SyncFieldsDuringRead(ctx, fromResults[i])
+					}
+				}
+				to.SetResults(ctx, toResults)
+			}
+		}
 	}
 }
 
@@ -10839,6 +11477,19 @@ func (to *ListQueryObjectsResponseQuery_SdkV2) SyncFieldsDuringCreateOrUpdate(ct
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Parameters = from.Parameters
 	}
+	if !from.Parameters.IsNull() && !from.Parameters.IsUnknown() {
+		if toParameters, ok := to.GetParameters(ctx); ok {
+			if fromParameters, ok := from.GetParameters(ctx); ok {
+				// Recursively sync the fields of each Parameters element by position.
+				for i := range toParameters {
+					if i < len(fromParameters) {
+						toParameters[i].SyncFieldsDuringCreateOrUpdate(ctx, fromParameters[i])
+					}
+				}
+				to.SetParameters(ctx, toParameters)
+			}
+		}
+	}
 	if !from.Tags.IsNull() && !from.Tags.IsUnknown() && to.Tags.IsNull() && len(from.Tags.Elements()) == 0 {
 		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
 		// If a user specified a non-Null, empty list for Tags, and the deserialized field value is Null,
@@ -10853,6 +11504,18 @@ func (to *ListQueryObjectsResponseQuery_SdkV2) SyncFieldsDuringRead(ctx context.
 		// If a user specified a non-Null, empty list for Parameters, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Parameters = from.Parameters
+	}
+	if !from.Parameters.IsNull() && !from.Parameters.IsUnknown() {
+		if toParameters, ok := to.GetParameters(ctx); ok {
+			if fromParameters, ok := from.GetParameters(ctx); ok {
+				for i := range toParameters {
+					if i < len(fromParameters) {
+						toParameters[i].SyncFieldsDuringRead(ctx, fromParameters[i])
+					}
+				}
+				to.SetParameters(ctx, toParameters)
+			}
+		}
 	}
 	if !from.Tags.IsNull() && !from.Tags.IsUnknown() && to.Tags.IsNull() && len(from.Tags.Elements()) == 0 {
 		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
@@ -11062,6 +11725,19 @@ func (to *ListResponse_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx context.Context
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Results = from.Results
 	}
+	if !from.Results.IsNull() && !from.Results.IsUnknown() {
+		if toResults, ok := to.GetResults(ctx); ok {
+			if fromResults, ok := from.GetResults(ctx); ok {
+				// Recursively sync the fields of each Results element by position.
+				for i := range toResults {
+					if i < len(fromResults) {
+						toResults[i].SyncFieldsDuringCreateOrUpdate(ctx, fromResults[i])
+					}
+				}
+				to.SetResults(ctx, toResults)
+			}
+		}
+	}
 }
 
 func (to *ListResponse_SdkV2) SyncFieldsDuringRead(ctx context.Context, from ListResponse_SdkV2) {
@@ -11070,6 +11746,18 @@ func (to *ListResponse_SdkV2) SyncFieldsDuringRead(ctx context.Context, from Lis
 		// If a user specified a non-Null, empty list for Results, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Results = from.Results
+	}
+	if !from.Results.IsNull() && !from.Results.IsUnknown() {
+		if toResults, ok := to.GetResults(ctx); ok {
+			if fromResults, ok := from.GetResults(ctx); ok {
+				for i := range toResults {
+					if i < len(fromResults) {
+						toResults[i].SyncFieldsDuringRead(ctx, fromResults[i])
+					}
+				}
+				to.SetResults(ctx, toResults)
+			}
+		}
 	}
 }
 
@@ -11219,6 +11907,19 @@ func (to *ListVisualizationsForQueryResponse_SdkV2) SyncFieldsDuringCreateOrUpda
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Results = from.Results
 	}
+	if !from.Results.IsNull() && !from.Results.IsUnknown() {
+		if toResults, ok := to.GetResults(ctx); ok {
+			if fromResults, ok := from.GetResults(ctx); ok {
+				// Recursively sync the fields of each Results element by position.
+				for i := range toResults {
+					if i < len(fromResults) {
+						toResults[i].SyncFieldsDuringCreateOrUpdate(ctx, fromResults[i])
+					}
+				}
+				to.SetResults(ctx, toResults)
+			}
+		}
+	}
 }
 
 func (to *ListVisualizationsForQueryResponse_SdkV2) SyncFieldsDuringRead(ctx context.Context, from ListVisualizationsForQueryResponse_SdkV2) {
@@ -11227,6 +11928,18 @@ func (to *ListVisualizationsForQueryResponse_SdkV2) SyncFieldsDuringRead(ctx con
 		// If a user specified a non-Null, empty list for Results, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Results = from.Results
+	}
+	if !from.Results.IsNull() && !from.Results.IsUnknown() {
+		if toResults, ok := to.GetResults(ctx); ok {
+			if fromResults, ok := from.GetResults(ctx); ok {
+				for i := range toResults {
+					if i < len(fromResults) {
+						toResults[i].SyncFieldsDuringRead(ctx, fromResults[i])
+					}
+				}
+				to.SetResults(ctx, toResults)
+			}
+		}
 	}
 }
 
@@ -11380,6 +12093,19 @@ func (to *ListWarehousesResponse_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx conte
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Warehouses = from.Warehouses
 	}
+	if !from.Warehouses.IsNull() && !from.Warehouses.IsUnknown() {
+		if toWarehouses, ok := to.GetWarehouses(ctx); ok {
+			if fromWarehouses, ok := from.GetWarehouses(ctx); ok {
+				// Recursively sync the fields of each Warehouses element by position.
+				for i := range toWarehouses {
+					if i < len(fromWarehouses) {
+						toWarehouses[i].SyncFieldsDuringCreateOrUpdate(ctx, fromWarehouses[i])
+					}
+				}
+				to.SetWarehouses(ctx, toWarehouses)
+			}
+		}
+	}
 }
 
 func (to *ListWarehousesResponse_SdkV2) SyncFieldsDuringRead(ctx context.Context, from ListWarehousesResponse_SdkV2) {
@@ -11388,6 +12114,18 @@ func (to *ListWarehousesResponse_SdkV2) SyncFieldsDuringRead(ctx context.Context
 		// If a user specified a non-Null, empty list for Warehouses, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Warehouses = from.Warehouses
+	}
+	if !from.Warehouses.IsNull() && !from.Warehouses.IsUnknown() {
+		if toWarehouses, ok := to.GetWarehouses(ctx); ok {
+			if fromWarehouses, ok := from.GetWarehouses(ctx); ok {
+				for i := range toWarehouses {
+					if i < len(fromWarehouses) {
+						toWarehouses[i].SyncFieldsDuringRead(ctx, fromWarehouses[i])
+					}
+				}
+				to.SetWarehouses(ctx, toWarehouses)
+			}
+		}
 	}
 }
 
@@ -11805,6 +12543,19 @@ func (to *Query_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx context.Context, from 
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Parameters = from.Parameters
 	}
+	if !from.Parameters.IsNull() && !from.Parameters.IsUnknown() {
+		if toParameters, ok := to.GetParameters(ctx); ok {
+			if fromParameters, ok := from.GetParameters(ctx); ok {
+				// Recursively sync the fields of each Parameters element by position.
+				for i := range toParameters {
+					if i < len(fromParameters) {
+						toParameters[i].SyncFieldsDuringCreateOrUpdate(ctx, fromParameters[i])
+					}
+				}
+				to.SetParameters(ctx, toParameters)
+			}
+		}
+	}
 	if !from.Tags.IsNull() && !from.Tags.IsUnknown() && to.Tags.IsNull() && len(from.Tags.Elements()) == 0 {
 		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
 		// If a user specified a non-Null, empty list for Tags, and the deserialized field value is Null,
@@ -11819,6 +12570,18 @@ func (to *Query_SdkV2) SyncFieldsDuringRead(ctx context.Context, from Query_SdkV
 		// If a user specified a non-Null, empty list for Parameters, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Parameters = from.Parameters
+	}
+	if !from.Parameters.IsNull() && !from.Parameters.IsUnknown() {
+		if toParameters, ok := to.GetParameters(ctx); ok {
+			if fromParameters, ok := from.GetParameters(ctx); ok {
+				for i := range toParameters {
+					if i < len(fromParameters) {
+						toParameters[i].SyncFieldsDuringRead(ctx, fromParameters[i])
+					}
+				}
+				to.SetParameters(ctx, toParameters)
+			}
+		}
 	}
 	if !from.Tags.IsNull() && !from.Tags.IsUnknown() && to.Tags.IsNull() && len(from.Tags.Elements()) == 0 {
 		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
@@ -12641,6 +13404,19 @@ func (to *QueryInfo_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx context.Context, f
 		// set the resulting resource state to the empty list to match the planned value.
 		to.QueryTags = from.QueryTags
 	}
+	if !from.QueryTags.IsNull() && !from.QueryTags.IsUnknown() {
+		if toQueryTags, ok := to.GetQueryTags(ctx); ok {
+			if fromQueryTags, ok := from.GetQueryTags(ctx); ok {
+				// Recursively sync the fields of each QueryTags element by position.
+				for i := range toQueryTags {
+					if i < len(fromQueryTags) {
+						toQueryTags[i].SyncFieldsDuringCreateOrUpdate(ctx, fromQueryTags[i])
+					}
+				}
+				to.SetQueryTags(ctx, toQueryTags)
+			}
+		}
+	}
 }
 
 func (to *QueryInfo_SdkV2) SyncFieldsDuringRead(ctx context.Context, from QueryInfo_SdkV2) {
@@ -12673,6 +13449,18 @@ func (to *QueryInfo_SdkV2) SyncFieldsDuringRead(ctx context.Context, from QueryI
 		// If a user specified a non-Null, empty list for QueryTags, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.QueryTags = from.QueryTags
+	}
+	if !from.QueryTags.IsNull() && !from.QueryTags.IsUnknown() {
+		if toQueryTags, ok := to.GetQueryTags(ctx); ok {
+			if fromQueryTags, ok := from.GetQueryTags(ctx); ok {
+				for i := range toQueryTags {
+					if i < len(fromQueryTags) {
+						toQueryTags[i].SyncFieldsDuringRead(ctx, fromQueryTags[i])
+					}
+				}
+				to.SetQueryTags(ctx, toQueryTags)
+			}
+		}
 	}
 }
 
@@ -12929,6 +13717,19 @@ func (to *QueryList_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx context.Context, f
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Results = from.Results
 	}
+	if !from.Results.IsNull() && !from.Results.IsUnknown() {
+		if toResults, ok := to.GetResults(ctx); ok {
+			if fromResults, ok := from.GetResults(ctx); ok {
+				// Recursively sync the fields of each Results element by position.
+				for i := range toResults {
+					if i < len(fromResults) {
+						toResults[i].SyncFieldsDuringCreateOrUpdate(ctx, fromResults[i])
+					}
+				}
+				to.SetResults(ctx, toResults)
+			}
+		}
+	}
 }
 
 func (to *QueryList_SdkV2) SyncFieldsDuringRead(ctx context.Context, from QueryList_SdkV2) {
@@ -12937,6 +13738,18 @@ func (to *QueryList_SdkV2) SyncFieldsDuringRead(ctx context.Context, from QueryL
 		// If a user specified a non-Null, empty list for Results, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Results = from.Results
+	}
+	if !from.Results.IsNull() && !from.Results.IsUnknown() {
+		if toResults, ok := to.GetResults(ctx); ok {
+			if fromResults, ok := from.GetResults(ctx); ok {
+				for i := range toResults {
+					if i < len(fromResults) {
+						toResults[i].SyncFieldsDuringRead(ctx, fromResults[i])
+					}
+				}
+				to.SetResults(ctx, toResults)
+			}
+		}
 	}
 }
 
@@ -13294,6 +14107,19 @@ func (to *QueryOptions_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx context.Context
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Parameters = from.Parameters
 	}
+	if !from.Parameters.IsNull() && !from.Parameters.IsUnknown() {
+		if toParameters, ok := to.GetParameters(ctx); ok {
+			if fromParameters, ok := from.GetParameters(ctx); ok {
+				// Recursively sync the fields of each Parameters element by position.
+				for i := range toParameters {
+					if i < len(fromParameters) {
+						toParameters[i].SyncFieldsDuringCreateOrUpdate(ctx, fromParameters[i])
+					}
+				}
+				to.SetParameters(ctx, toParameters)
+			}
+		}
+	}
 }
 
 func (to *QueryOptions_SdkV2) SyncFieldsDuringRead(ctx context.Context, from QueryOptions_SdkV2) {
@@ -13302,6 +14128,18 @@ func (to *QueryOptions_SdkV2) SyncFieldsDuringRead(ctx context.Context, from Que
 		// If a user specified a non-Null, empty list for Parameters, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Parameters = from.Parameters
+	}
+	if !from.Parameters.IsNull() && !from.Parameters.IsUnknown() {
+		if toParameters, ok := to.GetParameters(ctx); ok {
+			if fromParameters, ok := from.GetParameters(ctx); ok {
+				for i := range toParameters {
+					if i < len(fromParameters) {
+						toParameters[i].SyncFieldsDuringRead(ctx, fromParameters[i])
+					}
+				}
+				to.SetParameters(ctx, toParameters)
+			}
+		}
 	}
 }
 
@@ -13953,11 +14791,37 @@ func (to *RepeatedEndpointConfPairs_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx co
 		// set the resulting resource state to the empty list to match the planned value.
 		to.ConfigPair = from.ConfigPair
 	}
+	if !from.ConfigPair.IsNull() && !from.ConfigPair.IsUnknown() {
+		if toConfigPair, ok := to.GetConfigPair(ctx); ok {
+			if fromConfigPair, ok := from.GetConfigPair(ctx); ok {
+				// Recursively sync the fields of each ConfigPair element by position.
+				for i := range toConfigPair {
+					if i < len(fromConfigPair) {
+						toConfigPair[i].SyncFieldsDuringCreateOrUpdate(ctx, fromConfigPair[i])
+					}
+				}
+				to.SetConfigPair(ctx, toConfigPair)
+			}
+		}
+	}
 	if !from.ConfigurationPairs.IsNull() && !from.ConfigurationPairs.IsUnknown() && to.ConfigurationPairs.IsNull() && len(from.ConfigurationPairs.Elements()) == 0 {
 		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
 		// If a user specified a non-Null, empty list for ConfigurationPairs, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.ConfigurationPairs = from.ConfigurationPairs
+	}
+	if !from.ConfigurationPairs.IsNull() && !from.ConfigurationPairs.IsUnknown() {
+		if toConfigurationPairs, ok := to.GetConfigurationPairs(ctx); ok {
+			if fromConfigurationPairs, ok := from.GetConfigurationPairs(ctx); ok {
+				// Recursively sync the fields of each ConfigurationPairs element by position.
+				for i := range toConfigurationPairs {
+					if i < len(fromConfigurationPairs) {
+						toConfigurationPairs[i].SyncFieldsDuringCreateOrUpdate(ctx, fromConfigurationPairs[i])
+					}
+				}
+				to.SetConfigurationPairs(ctx, toConfigurationPairs)
+			}
+		}
 	}
 }
 
@@ -13968,11 +14832,35 @@ func (to *RepeatedEndpointConfPairs_SdkV2) SyncFieldsDuringRead(ctx context.Cont
 		// set the resulting resource state to the empty list to match the planned value.
 		to.ConfigPair = from.ConfigPair
 	}
+	if !from.ConfigPair.IsNull() && !from.ConfigPair.IsUnknown() {
+		if toConfigPair, ok := to.GetConfigPair(ctx); ok {
+			if fromConfigPair, ok := from.GetConfigPair(ctx); ok {
+				for i := range toConfigPair {
+					if i < len(fromConfigPair) {
+						toConfigPair[i].SyncFieldsDuringRead(ctx, fromConfigPair[i])
+					}
+				}
+				to.SetConfigPair(ctx, toConfigPair)
+			}
+		}
+	}
 	if !from.ConfigurationPairs.IsNull() && !from.ConfigurationPairs.IsUnknown() && to.ConfigurationPairs.IsNull() && len(from.ConfigurationPairs.Elements()) == 0 {
 		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
 		// If a user specified a non-Null, empty list for ConfigurationPairs, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.ConfigurationPairs = from.ConfigurationPairs
+	}
+	if !from.ConfigurationPairs.IsNull() && !from.ConfigurationPairs.IsUnknown() {
+		if toConfigurationPairs, ok := to.GetConfigurationPairs(ctx); ok {
+			if fromConfigurationPairs, ok := from.GetConfigurationPairs(ctx); ok {
+				for i := range toConfigurationPairs {
+					if i < len(fromConfigurationPairs) {
+						toConfigurationPairs[i].SyncFieldsDuringRead(ctx, fromConfigurationPairs[i])
+					}
+				}
+				to.SetConfigurationPairs(ctx, toConfigurationPairs)
+			}
+		}
 	}
 }
 
@@ -14212,10 +15100,10 @@ func (m RestoreResponse_SdkV2) Type(ctx context.Context) attr.Type {
 
 // Contains the result data of a single chunk when using `INLINE` disposition.
 // When using `EXTERNAL_LINKS` disposition, the array `external_links` is used
-// instead to provide URLs to the result data in cloud storage. Exactly one of
-// these alternatives is used. (While the `external_links` array prepares the
-// API to return multiple links in a single response. Currently only a single
-// link is returned.)
+// instead to provide short-lived cloud-storage URLs to the result data in cloud
+// storage. Exactly one of these alternatives is used. (While the
+// `external_links` array prepares the API to return multiple links in a single
+// response. Currently only a single link is returned.)
 type ResultData_SdkV2 struct {
 	// The number of bytes in the result chunk. This field is not available when
 	// using `INLINE` disposition.
@@ -14256,6 +15144,19 @@ func (to *ResultData_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx context.Context, 
 		// set the resulting resource state to the empty list to match the planned value.
 		to.ExternalLinks = from.ExternalLinks
 	}
+	if !from.ExternalLinks.IsNull() && !from.ExternalLinks.IsUnknown() {
+		if toExternalLinks, ok := to.GetExternalLinks(ctx); ok {
+			if fromExternalLinks, ok := from.GetExternalLinks(ctx); ok {
+				// Recursively sync the fields of each ExternalLinks element by position.
+				for i := range toExternalLinks {
+					if i < len(fromExternalLinks) {
+						toExternalLinks[i].SyncFieldsDuringCreateOrUpdate(ctx, fromExternalLinks[i])
+					}
+				}
+				to.SetExternalLinks(ctx, toExternalLinks)
+			}
+		}
+	}
 }
 
 func (to *ResultData_SdkV2) SyncFieldsDuringRead(ctx context.Context, from ResultData_SdkV2) {
@@ -14270,6 +15171,18 @@ func (to *ResultData_SdkV2) SyncFieldsDuringRead(ctx context.Context, from Resul
 		// If a user specified a non-Null, empty list for ExternalLinks, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.ExternalLinks = from.ExternalLinks
+	}
+	if !from.ExternalLinks.IsNull() && !from.ExternalLinks.IsUnknown() {
+		if toExternalLinks, ok := to.GetExternalLinks(ctx); ok {
+			if fromExternalLinks, ok := from.GetExternalLinks(ctx); ok {
+				for i := range toExternalLinks {
+					if i < len(fromExternalLinks) {
+						toExternalLinks[i].SyncFieldsDuringRead(ctx, fromExternalLinks[i])
+					}
+				}
+				to.SetExternalLinks(ctx, toExternalLinks)
+			}
+		}
 	}
 }
 
@@ -14419,6 +15332,19 @@ func (to *ResultManifest_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx context.Conte
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Chunks = from.Chunks
 	}
+	if !from.Chunks.IsNull() && !from.Chunks.IsUnknown() {
+		if toChunks, ok := to.GetChunks(ctx); ok {
+			if fromChunks, ok := from.GetChunks(ctx); ok {
+				// Recursively sync the fields of each Chunks element by position.
+				for i := range toChunks {
+					if i < len(fromChunks) {
+						toChunks[i].SyncFieldsDuringCreateOrUpdate(ctx, fromChunks[i])
+					}
+				}
+				to.SetChunks(ctx, toChunks)
+			}
+		}
+	}
 	if !from.Schema.IsNull() && !from.Schema.IsUnknown() {
 		if toSchema, ok := to.GetSchema(ctx); ok {
 			if fromSchema, ok := from.GetSchema(ctx); ok {
@@ -14436,6 +15362,18 @@ func (to *ResultManifest_SdkV2) SyncFieldsDuringRead(ctx context.Context, from R
 		// If a user specified a non-Null, empty list for Chunks, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Chunks = from.Chunks
+	}
+	if !from.Chunks.IsNull() && !from.Chunks.IsUnknown() {
+		if toChunks, ok := to.GetChunks(ctx); ok {
+			if fromChunks, ok := from.GetChunks(ctx); ok {
+				for i := range toChunks {
+					if i < len(fromChunks) {
+						toChunks[i].SyncFieldsDuringRead(ctx, fromChunks[i])
+					}
+				}
+				to.SetChunks(ctx, toChunks)
+			}
+		}
 	}
 	if !from.Schema.IsNull() && !from.Schema.IsUnknown() {
 		if toSchema, ok := to.GetSchema(ctx); ok {
@@ -14576,6 +15514,19 @@ func (to *ResultSchema_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx context.Context
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Columns = from.Columns
 	}
+	if !from.Columns.IsNull() && !from.Columns.IsUnknown() {
+		if toColumns, ok := to.GetColumns(ctx); ok {
+			if fromColumns, ok := from.GetColumns(ctx); ok {
+				// Recursively sync the fields of each Columns element by position.
+				for i := range toColumns {
+					if i < len(fromColumns) {
+						toColumns[i].SyncFieldsDuringCreateOrUpdate(ctx, fromColumns[i])
+					}
+				}
+				to.SetColumns(ctx, toColumns)
+			}
+		}
+	}
 }
 
 func (to *ResultSchema_SdkV2) SyncFieldsDuringRead(ctx context.Context, from ResultSchema_SdkV2) {
@@ -14584,6 +15535,18 @@ func (to *ResultSchema_SdkV2) SyncFieldsDuringRead(ctx context.Context, from Res
 		// If a user specified a non-Null, empty list for Columns, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Columns = from.Columns
+	}
+	if !from.Columns.IsNull() && !from.Columns.IsUnknown() {
+		if toColumns, ok := to.GetColumns(ctx); ok {
+			if fromColumns, ok := from.GetColumns(ctx); ok {
+				for i := range toColumns {
+					if i < len(fromColumns) {
+						toColumns[i].SyncFieldsDuringRead(ctx, fromColumns[i])
+					}
+				}
+				to.SetColumns(ctx, toColumns)
+			}
+		}
 	}
 }
 
@@ -14726,6 +15689,19 @@ func (to *SetRequest_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx context.Context, 
 		// set the resulting resource state to the empty list to match the planned value.
 		to.AccessControlList = from.AccessControlList
 	}
+	if !from.AccessControlList.IsNull() && !from.AccessControlList.IsUnknown() {
+		if toAccessControlList, ok := to.GetAccessControlList(ctx); ok {
+			if fromAccessControlList, ok := from.GetAccessControlList(ctx); ok {
+				// Recursively sync the fields of each AccessControlList element by position.
+				for i := range toAccessControlList {
+					if i < len(fromAccessControlList) {
+						toAccessControlList[i].SyncFieldsDuringCreateOrUpdate(ctx, fromAccessControlList[i])
+					}
+				}
+				to.SetAccessControlList(ctx, toAccessControlList)
+			}
+		}
+	}
 }
 
 func (to *SetRequest_SdkV2) SyncFieldsDuringRead(ctx context.Context, from SetRequest_SdkV2) {
@@ -14734,6 +15710,18 @@ func (to *SetRequest_SdkV2) SyncFieldsDuringRead(ctx context.Context, from SetRe
 		// If a user specified a non-Null, empty list for AccessControlList, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.AccessControlList = from.AccessControlList
+	}
+	if !from.AccessControlList.IsNull() && !from.AccessControlList.IsUnknown() {
+		if toAccessControlList, ok := to.GetAccessControlList(ctx); ok {
+			if fromAccessControlList, ok := from.GetAccessControlList(ctx); ok {
+				for i := range toAccessControlList {
+					if i < len(fromAccessControlList) {
+						toAccessControlList[i].SyncFieldsDuringRead(ctx, fromAccessControlList[i])
+					}
+				}
+				to.SetAccessControlList(ctx, toAccessControlList)
+			}
+		}
 	}
 }
 
@@ -14825,6 +15813,19 @@ func (to *SetResponse_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx context.Context,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.AccessControlList = from.AccessControlList
 	}
+	if !from.AccessControlList.IsNull() && !from.AccessControlList.IsUnknown() {
+		if toAccessControlList, ok := to.GetAccessControlList(ctx); ok {
+			if fromAccessControlList, ok := from.GetAccessControlList(ctx); ok {
+				// Recursively sync the fields of each AccessControlList element by position.
+				for i := range toAccessControlList {
+					if i < len(fromAccessControlList) {
+						toAccessControlList[i].SyncFieldsDuringCreateOrUpdate(ctx, fromAccessControlList[i])
+					}
+				}
+				to.SetAccessControlList(ctx, toAccessControlList)
+			}
+		}
+	}
 }
 
 func (to *SetResponse_SdkV2) SyncFieldsDuringRead(ctx context.Context, from SetResponse_SdkV2) {
@@ -14833,6 +15834,18 @@ func (to *SetResponse_SdkV2) SyncFieldsDuringRead(ctx context.Context, from SetR
 		// If a user specified a non-Null, empty list for AccessControlList, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.AccessControlList = from.AccessControlList
+	}
+	if !from.AccessControlList.IsNull() && !from.AccessControlList.IsUnknown() {
+		if toAccessControlList, ok := to.GetAccessControlList(ctx); ok {
+			if fromAccessControlList, ok := from.GetAccessControlList(ctx); ok {
+				for i := range toAccessControlList {
+					if i < len(fromAccessControlList) {
+						toAccessControlList[i].SyncFieldsDuringRead(ctx, fromAccessControlList[i])
+					}
+				}
+				to.SetAccessControlList(ctx, toAccessControlList)
+			}
+		}
 	}
 }
 
@@ -14970,11 +15983,37 @@ func (to *SetWorkspaceWarehouseConfigRequest_SdkV2) SyncFieldsDuringCreateOrUpda
 		// set the resulting resource state to the empty list to match the planned value.
 		to.DataAccessConfig = from.DataAccessConfig
 	}
+	if !from.DataAccessConfig.IsNull() && !from.DataAccessConfig.IsUnknown() {
+		if toDataAccessConfig, ok := to.GetDataAccessConfig(ctx); ok {
+			if fromDataAccessConfig, ok := from.GetDataAccessConfig(ctx); ok {
+				// Recursively sync the fields of each DataAccessConfig element by position.
+				for i := range toDataAccessConfig {
+					if i < len(fromDataAccessConfig) {
+						toDataAccessConfig[i].SyncFieldsDuringCreateOrUpdate(ctx, fromDataAccessConfig[i])
+					}
+				}
+				to.SetDataAccessConfig(ctx, toDataAccessConfig)
+			}
+		}
+	}
 	if !from.EnabledWarehouseTypes.IsNull() && !from.EnabledWarehouseTypes.IsUnknown() && to.EnabledWarehouseTypes.IsNull() && len(from.EnabledWarehouseTypes.Elements()) == 0 {
 		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
 		// If a user specified a non-Null, empty list for EnabledWarehouseTypes, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.EnabledWarehouseTypes = from.EnabledWarehouseTypes
+	}
+	if !from.EnabledWarehouseTypes.IsNull() && !from.EnabledWarehouseTypes.IsUnknown() {
+		if toEnabledWarehouseTypes, ok := to.GetEnabledWarehouseTypes(ctx); ok {
+			if fromEnabledWarehouseTypes, ok := from.GetEnabledWarehouseTypes(ctx); ok {
+				// Recursively sync the fields of each EnabledWarehouseTypes element by position.
+				for i := range toEnabledWarehouseTypes {
+					if i < len(fromEnabledWarehouseTypes) {
+						toEnabledWarehouseTypes[i].SyncFieldsDuringCreateOrUpdate(ctx, fromEnabledWarehouseTypes[i])
+					}
+				}
+				to.SetEnabledWarehouseTypes(ctx, toEnabledWarehouseTypes)
+			}
+		}
 	}
 	if !from.GlobalParam.IsNull() && !from.GlobalParam.IsUnknown() {
 		if toGlobalParam, ok := to.GetGlobalParam(ctx); ok {
@@ -15019,11 +16058,35 @@ func (to *SetWorkspaceWarehouseConfigRequest_SdkV2) SyncFieldsDuringRead(ctx con
 		// set the resulting resource state to the empty list to match the planned value.
 		to.DataAccessConfig = from.DataAccessConfig
 	}
+	if !from.DataAccessConfig.IsNull() && !from.DataAccessConfig.IsUnknown() {
+		if toDataAccessConfig, ok := to.GetDataAccessConfig(ctx); ok {
+			if fromDataAccessConfig, ok := from.GetDataAccessConfig(ctx); ok {
+				for i := range toDataAccessConfig {
+					if i < len(fromDataAccessConfig) {
+						toDataAccessConfig[i].SyncFieldsDuringRead(ctx, fromDataAccessConfig[i])
+					}
+				}
+				to.SetDataAccessConfig(ctx, toDataAccessConfig)
+			}
+		}
+	}
 	if !from.EnabledWarehouseTypes.IsNull() && !from.EnabledWarehouseTypes.IsUnknown() && to.EnabledWarehouseTypes.IsNull() && len(from.EnabledWarehouseTypes.Elements()) == 0 {
 		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
 		// If a user specified a non-Null, empty list for EnabledWarehouseTypes, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.EnabledWarehouseTypes = from.EnabledWarehouseTypes
+	}
+	if !from.EnabledWarehouseTypes.IsNull() && !from.EnabledWarehouseTypes.IsUnknown() {
+		if toEnabledWarehouseTypes, ok := to.GetEnabledWarehouseTypes(ctx); ok {
+			if fromEnabledWarehouseTypes, ok := from.GetEnabledWarehouseTypes(ctx); ok {
+				for i := range toEnabledWarehouseTypes {
+					if i < len(fromEnabledWarehouseTypes) {
+						toEnabledWarehouseTypes[i].SyncFieldsDuringRead(ctx, fromEnabledWarehouseTypes[i])
+					}
+				}
+				to.SetEnabledWarehouseTypes(ctx, toEnabledWarehouseTypes)
+			}
+		}
 	}
 	if !from.GlobalParam.IsNull() && !from.GlobalParam.IsUnknown() {
 		if toGlobalParam, ok := to.GetGlobalParam(ctx); ok {
@@ -15953,6 +17016,19 @@ func (to *TaskTimeOverRange_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx context.Co
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Entries = from.Entries
 	}
+	if !from.Entries.IsNull() && !from.Entries.IsUnknown() {
+		if toEntries, ok := to.GetEntries(ctx); ok {
+			if fromEntries, ok := from.GetEntries(ctx); ok {
+				// Recursively sync the fields of each Entries element by position.
+				for i := range toEntries {
+					if i < len(fromEntries) {
+						toEntries[i].SyncFieldsDuringCreateOrUpdate(ctx, fromEntries[i])
+					}
+				}
+				to.SetEntries(ctx, toEntries)
+			}
+		}
+	}
 }
 
 func (to *TaskTimeOverRange_SdkV2) SyncFieldsDuringRead(ctx context.Context, from TaskTimeOverRange_SdkV2) {
@@ -15961,6 +17037,18 @@ func (to *TaskTimeOverRange_SdkV2) SyncFieldsDuringRead(ctx context.Context, fro
 		// If a user specified a non-Null, empty list for Entries, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Entries = from.Entries
+	}
+	if !from.Entries.IsNull() && !from.Entries.IsUnknown() {
+		if toEntries, ok := to.GetEntries(ctx); ok {
+			if fromEntries, ok := from.GetEntries(ctx); ok {
+				for i := range toEntries {
+					if i < len(fromEntries) {
+						toEntries[i].SyncFieldsDuringRead(ctx, fromEntries[i])
+					}
+				}
+				to.SetEntries(ctx, toEntries)
+			}
+		}
 	}
 }
 
@@ -16838,7 +17926,7 @@ func (m *UpdateAlertRequestAlert_SdkV2) SetCondition(ctx context.Context, v Aler
 
 type UpdateAlertV2Request_SdkV2 struct {
 	Alert types.List `tfsdk:"alert"`
-	// UUID identifying the alert.
+	// The canonical identifier of the alert to retrieve information about.
 	Id types.String `tfsdk:"-"`
 	// The field mask must be a single string, with multiple fields separated by
 	// commas (no spaces). The field path is relative to the resource object,
@@ -17228,6 +18316,19 @@ func (to *UpdateQueryRequestQuery_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx cont
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Parameters = from.Parameters
 	}
+	if !from.Parameters.IsNull() && !from.Parameters.IsUnknown() {
+		if toParameters, ok := to.GetParameters(ctx); ok {
+			if fromParameters, ok := from.GetParameters(ctx); ok {
+				// Recursively sync the fields of each Parameters element by position.
+				for i := range toParameters {
+					if i < len(fromParameters) {
+						toParameters[i].SyncFieldsDuringCreateOrUpdate(ctx, fromParameters[i])
+					}
+				}
+				to.SetParameters(ctx, toParameters)
+			}
+		}
+	}
 	if !from.Tags.IsNull() && !from.Tags.IsUnknown() && to.Tags.IsNull() && len(from.Tags.Elements()) == 0 {
 		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
 		// If a user specified a non-Null, empty list for Tags, and the deserialized field value is Null,
@@ -17242,6 +18343,18 @@ func (to *UpdateQueryRequestQuery_SdkV2) SyncFieldsDuringRead(ctx context.Contex
 		// If a user specified a non-Null, empty list for Parameters, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.Parameters = from.Parameters
+	}
+	if !from.Parameters.IsNull() && !from.Parameters.IsUnknown() {
+		if toParameters, ok := to.GetParameters(ctx); ok {
+			if fromParameters, ok := from.GetParameters(ctx); ok {
+				for i := range toParameters {
+					if i < len(fromParameters) {
+						toParameters[i].SyncFieldsDuringRead(ctx, fromParameters[i])
+					}
+				}
+				to.SetParameters(ctx, toParameters)
+			}
+		}
 	}
 	if !from.Tags.IsNull() && !from.Tags.IsUnknown() && to.Tags.IsNull() && len(from.Tags.Elements()) == 0 {
 		// The default representation of an empty list for TF autogenerated resources in the resource state is Null.
@@ -17950,6 +19063,19 @@ func (to *WarehouseAccessControlResponse_SdkV2) SyncFieldsDuringCreateOrUpdate(c
 		// set the resulting resource state to the empty list to match the planned value.
 		to.AllPermissions = from.AllPermissions
 	}
+	if !from.AllPermissions.IsNull() && !from.AllPermissions.IsUnknown() {
+		if toAllPermissions, ok := to.GetAllPermissions(ctx); ok {
+			if fromAllPermissions, ok := from.GetAllPermissions(ctx); ok {
+				// Recursively sync the fields of each AllPermissions element by position.
+				for i := range toAllPermissions {
+					if i < len(fromAllPermissions) {
+						toAllPermissions[i].SyncFieldsDuringCreateOrUpdate(ctx, fromAllPermissions[i])
+					}
+				}
+				to.SetAllPermissions(ctx, toAllPermissions)
+			}
+		}
+	}
 }
 
 func (to *WarehouseAccessControlResponse_SdkV2) SyncFieldsDuringRead(ctx context.Context, from WarehouseAccessControlResponse_SdkV2) {
@@ -17958,6 +19084,18 @@ func (to *WarehouseAccessControlResponse_SdkV2) SyncFieldsDuringRead(ctx context
 		// If a user specified a non-Null, empty list for AllPermissions, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.AllPermissions = from.AllPermissions
+	}
+	if !from.AllPermissions.IsNull() && !from.AllPermissions.IsUnknown() {
+		if toAllPermissions, ok := to.GetAllPermissions(ctx); ok {
+			if fromAllPermissions, ok := from.GetAllPermissions(ctx); ok {
+				for i := range toAllPermissions {
+					if i < len(fromAllPermissions) {
+						toAllPermissions[i].SyncFieldsDuringRead(ctx, fromAllPermissions[i])
+					}
+				}
+				to.SetAllPermissions(ctx, toAllPermissions)
+			}
+		}
 	}
 }
 
@@ -18154,6 +19292,19 @@ func (to *WarehousePermissions_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx context
 		// set the resulting resource state to the empty list to match the planned value.
 		to.AccessControlList = from.AccessControlList
 	}
+	if !from.AccessControlList.IsNull() && !from.AccessControlList.IsUnknown() {
+		if toAccessControlList, ok := to.GetAccessControlList(ctx); ok {
+			if fromAccessControlList, ok := from.GetAccessControlList(ctx); ok {
+				// Recursively sync the fields of each AccessControlList element by position.
+				for i := range toAccessControlList {
+					if i < len(fromAccessControlList) {
+						toAccessControlList[i].SyncFieldsDuringCreateOrUpdate(ctx, fromAccessControlList[i])
+					}
+				}
+				to.SetAccessControlList(ctx, toAccessControlList)
+			}
+		}
+	}
 }
 
 func (to *WarehousePermissions_SdkV2) SyncFieldsDuringRead(ctx context.Context, from WarehousePermissions_SdkV2) {
@@ -18162,6 +19313,18 @@ func (to *WarehousePermissions_SdkV2) SyncFieldsDuringRead(ctx context.Context, 
 		// If a user specified a non-Null, empty list for AccessControlList, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.AccessControlList = from.AccessControlList
+	}
+	if !from.AccessControlList.IsNull() && !from.AccessControlList.IsUnknown() {
+		if toAccessControlList, ok := to.GetAccessControlList(ctx); ok {
+			if fromAccessControlList, ok := from.GetAccessControlList(ctx); ok {
+				for i := range toAccessControlList {
+					if i < len(fromAccessControlList) {
+						toAccessControlList[i].SyncFieldsDuringRead(ctx, fromAccessControlList[i])
+					}
+				}
+				to.SetAccessControlList(ctx, toAccessControlList)
+			}
+		}
 	}
 }
 
@@ -18303,6 +19466,19 @@ func (to *WarehousePermissionsRequest_SdkV2) SyncFieldsDuringCreateOrUpdate(ctx 
 		// set the resulting resource state to the empty list to match the planned value.
 		to.AccessControlList = from.AccessControlList
 	}
+	if !from.AccessControlList.IsNull() && !from.AccessControlList.IsUnknown() {
+		if toAccessControlList, ok := to.GetAccessControlList(ctx); ok {
+			if fromAccessControlList, ok := from.GetAccessControlList(ctx); ok {
+				// Recursively sync the fields of each AccessControlList element by position.
+				for i := range toAccessControlList {
+					if i < len(fromAccessControlList) {
+						toAccessControlList[i].SyncFieldsDuringCreateOrUpdate(ctx, fromAccessControlList[i])
+					}
+				}
+				to.SetAccessControlList(ctx, toAccessControlList)
+			}
+		}
+	}
 }
 
 func (to *WarehousePermissionsRequest_SdkV2) SyncFieldsDuringRead(ctx context.Context, from WarehousePermissionsRequest_SdkV2) {
@@ -18311,6 +19487,18 @@ func (to *WarehousePermissionsRequest_SdkV2) SyncFieldsDuringRead(ctx context.Co
 		// If a user specified a non-Null, empty list for AccessControlList, and the deserialized field value is Null,
 		// set the resulting resource state to the empty list to match the planned value.
 		to.AccessControlList = from.AccessControlList
+	}
+	if !from.AccessControlList.IsNull() && !from.AccessControlList.IsUnknown() {
+		if toAccessControlList, ok := to.GetAccessControlList(ctx); ok {
+			if fromAccessControlList, ok := from.GetAccessControlList(ctx); ok {
+				for i := range toAccessControlList {
+					if i < len(fromAccessControlList) {
+						toAccessControlList[i].SyncFieldsDuringRead(ctx, fromAccessControlList[i])
+					}
+				}
+				to.SetAccessControlList(ctx, toAccessControlList)
+			}
+		}
 	}
 }
 

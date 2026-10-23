@@ -3,7 +3,6 @@ package tfschema
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 	"strconv"
 
@@ -40,7 +39,7 @@ type Namespace_SdkV2 struct {
 // across resources onboarded to plugin framework.
 // When adding new fields, update ToObjectValue, Type, and all functions that
 // construct or inspect ProviderConfig (e.g. PopulateProviderConfigInState,
-// WorkspaceDriftDetection, ValidateWorkspaceID).
+// WorkspaceDriftDetection).
 type ProviderConfig struct {
 	WorkspaceID types.String `tfsdk:"workspace_id"`
 }
@@ -298,8 +297,7 @@ func WorkspaceDriftDetection(ctx context.Context, client UnifiedProviderClient, 
 
 	if oldWsID != "" && newWsID == "" {
 		resp.Diagnostics.AddError("Missing workspace_id",
-			fmt.Sprintf("resource has provider_config.workspace_id = %s in state but no workspace_id is configured. "+
-				"Set workspace_id in the provider configuration or in the resource's provider_config block", oldWsID))
+			"managing a workspace-level resource requires a workspace_id, but the previously configured workspace_id was removed")
 		return
 	}
 
@@ -309,28 +307,6 @@ func WorkspaceDriftDetection(ctx context.Context, client UnifiedProviderClient, 
 		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("provider_config"),
 			ProviderConfig{WorkspaceID: types.StringValue(newWsID)}.ToObjectValue(ctx))...)
 	}
-}
-
-// ValidateWorkspaceID validates that the workspace client for the planned
-// workspace_id is reachable. Runs for both create and update.
-// Call this from any PF resource's ModifyPlan that has a provider_config block.
-func ValidateWorkspaceID(ctx context.Context, client UnifiedProviderClient, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
-	var planPC types.Object
-	// Read from resp.Plan (not req.Plan) because WorkspaceDriftDetection may
-	// have updated provider_config in the plan to reflect a new workspace_id.
-	resp.Diagnostics.Append(resp.Plan.GetAttribute(ctx, path.Root("provider_config"), &planPC)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	workspaceID, diags := GetWorkspaceIDResource(ctx, planPC)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	if workspaceID == "" {
-		workspaceID = client.GetProviderWorkspaceID()
-	}
-	resp.Diagnostics.Append(client.ValidateWorkspaceAccess(ctx, workspaceID)...)
 }
 
 // PopulateProviderConfigInState resolves the effective workspace ID and sets it

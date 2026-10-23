@@ -138,7 +138,9 @@ func TestAccWorkspaceID_WS_RemoveProviderConfig(t *testing.T) {
 // to a different workspace on a workspace-level provider produces an error.
 // Step 1: Create with workspace_id matching current workspace.
 // Step 2: Change to different workspace_id -> error (workspace-level provider
-// cannot target a different workspace).
+// cannot target a different workspace). The mismatch is now reported at apply
+// time (workspace_id reachability validation was removed from the plan phase);
+// the error text is unchanged.
 func TestAccWorkspaceID_WS_ChangeProviderConfig(t *testing.T) {
 	WorkspaceLevel(t,
 		Step{
@@ -156,7 +158,6 @@ func TestAccWorkspaceID_WS_ChangeProviderConfig(t *testing.T) {
 				}
 			`),
 			ExpectError: regexp.MustCompile(`workspace_id mismatch`),
-			PlanOnly:    true,
 		},
 	)
 }
@@ -544,13 +545,14 @@ func TestMwsAccWorkspaceID_ChangeDefaultWithOverride(t *testing.T) {
 // Set workspace_id on Workspace-Level Provider
 // ==========================================
 //
-// workspace_id on a workspace-level provider is validated during CustomizeDiff.
-// If it matches the host's workspace ID, no error. If it doesn't, workspace_id mismatch.
+// A provider-level workspace_id on a workspace-level provider is validated when
+// a workspace client is acquired during CRUD (apply). If it matches the host's
+// workspace ID, no error. If it doesn't, workspace_id mismatch.
 
 func TestAccWorkspaceID_DefaultOnWorkspaceProvider_Same(t *testing.T) {
 	WorkspaceLevel(t, Step{
 		Template: directoryWithProviderBlock(
-			fmt.Sprintf(`workspace_id = "%s"`, os.Getenv("THIS_WORKSPACE_ID")),
+			`workspace_id = "{env.THIS_WORKSPACE_ID}"`,
 			"",
 		),
 		Check: checkProviderConfigWSIDFromEnv(directoryResource, "THIS_WORKSPACE_ID"),
@@ -560,7 +562,6 @@ func TestAccWorkspaceID_DefaultOnWorkspaceProvider_Same(t *testing.T) {
 func TestAccWorkspaceID_DefaultOnWorkspaceProvider_Diff(t *testing.T) {
 	WorkspaceLevel(t, Step{
 		Template:    directoryWithProviderBlock(`workspace_id = "12345"`, ""),
-		PlanOnly:    true,
 		ExpectError: regexp.MustCompile(`workspace_id mismatch`),
 	})
 }
@@ -570,15 +571,14 @@ func TestAccWorkspaceID_DefaultOnWorkspaceProvider_Diff(t *testing.T) {
 // ==========================================
 //
 // Account-level provider with no workspace_id. Resource has no provider_config.
-// Expected: error during CRUD — no workspace_id available for routing.
+// Expected: error during CRUD (apply) — no workspace_id available for routing.
 
 func TestMwsAccWorkspaceID_NoDefaultNoOverride(t *testing.T) {
 	AccountLevel(t, Step{
 		Template: directoryWithProviderBlock("", ""),
 		ExpectError: regexp.MustCompile(
-			`managing workspace-level resources requires a workspace_id, but none was found in the resource's provider_config block or the provider's workspace_id attribute`,
+			`(?s)managing a workspace-level resource requires a workspace_id.*none\s+was\s+found`,
 		),
-		PlanOnly: true,
 	})
 }
 
@@ -634,7 +634,7 @@ func TestMwsAccWorkspaceID_RemoveDefault(t *testing.T) {
 		Step{
 			Template: directoryWithProviderBlock("", ""),
 			ExpectError: regexp.MustCompile(
-				`resource has provider_config.workspace_id = .* in state, but managing workspace-level resources requires a workspace_id`,
+				`(?s)managing a workspace-level resource requires a workspace_id.*previously\s+configured\s+workspace_id\s+was\s+removed`,
 			),
 			PlanOnly: true,
 		},
@@ -666,7 +666,7 @@ func TestMwsAccWorkspaceID_RemoveOverrideNoFallback(t *testing.T) {
 		Step{
 			Template: directoryWithProviderBlock("", ""),
 			ExpectError: regexp.MustCompile(
-				`resource has provider_config.workspace_id = .* in state, but managing workspace-level resources requires a workspace_id`,
+				`(?s)managing a workspace-level resource requires a workspace_id.*previously\s+configured\s+workspace_id\s+was\s+removed`,
 			),
 			PlanOnly: true,
 		},

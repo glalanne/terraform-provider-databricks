@@ -22,6 +22,9 @@ The following arguments are supported:
 
 ## Attributes
 The following attributes are exported:
+* `assume_group_id` (string) - The group whose permissions users assume via Role Authorization for apps in this space. When
+  set, user tokens assume the role of this group instead of doing regular obo token downscoping.
+  Set only at space creation
 * `create_time` (string) - The creation time of the app space. Formatted timestamp in ISO 6801
 * `creator` (string) - The email of the user that created the app space
 * `description` (string) - The description of the app space
@@ -99,7 +102,7 @@ The following attributes are exported:
 * `securable_full_name` (string)
 * `securable_kind` (string) - The securable kind from Unity Catalog.
   See https://docs.databricks.com/api/workspace/tables/get#securable_kind_manifest-securable_kind
-* `securable_type` (string) - Possible values are: `CONNECTION`, `FUNCTION`, `TABLE`, `VOLUME`
+* `securable_type` (string) - Possible values are: `CONNECTION`, `FUNCTION`, `MODEL_SERVICE`, `TABLE`, `VOLUME`
 
 ### SpaceStatus
 * `message` (string) - Message providing context about the current state

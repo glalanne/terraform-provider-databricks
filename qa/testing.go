@@ -240,8 +240,9 @@ func (f ResourceFixture) setupClient(t *testing.T) (*common.DatabricksClient, se
 			if wsID, parseErr := strconv.ParseInt(f.ProviderWorkspaceID, 10, 64); parseErr == nil {
 				client.SetCachedWorkspaceID(wsID)
 			}
-			// Pre-populate workspace client cache so that NamespaceValidateWorkspaceID
-			// and getDatabricksClientForUnifiedProvider find it without making API calls.
+			// Pre-populate workspace client cache so that the apply-time
+			// GetWorkspaceClientForUnifiedProvider / getDatabricksClientForUnifiedProvider
+			// routing finds it without making API calls.
 			// Create a workspace-scoped config (no AccountID) so NewWorkspaceClient
 			// accepts it without treating the host as an account host.
 			wsCfg, cfgErr := client.Config.NewWithWorkspaceHost(s.URL)
@@ -282,8 +283,9 @@ func (f ResourceFixture) setupClient(t *testing.T) (*common.DatabricksClient, se
 	if f.ProviderWorkspaceID != "" {
 		c.Config.WorkspaceID = f.ProviderWorkspaceID
 		// Pre-populate the workspace client cache for this workspace ID so that
-		// NamespaceValidateWorkspaceID and getDatabricksClientForUnifiedProvider
-		// find the mock workspace client without making API calls.
+		// the apply-time GetWorkspaceClientForUnifiedProvider /
+		// getDatabricksClientForUnifiedProvider routing finds the mock workspace
+		// client without making API calls.
 		mw.WorkspaceClient.Config = (*config.Config)(c.DatabricksClient.Config)
 		c.SetWorkspaceClientForWorkspace(f.ProviderWorkspaceID, mw.WorkspaceClient)
 	}
@@ -375,6 +377,11 @@ func (f ResourceFixture) Apply(t *testing.T) (*schema.ResourceData, error) {
 	// TODO: f.Resource.Data(is) - check why it doesn't work
 	if err != nil {
 		return nil, err
+	}
+	// Populate diff.RawConfig to allow d.GetRawConfigAt() works in tests
+	// In actual runs terraform's gRPC pipeline will populate this
+	if diff != nil {
+		diff.RawConfig = makeResourceRawConfig(resourceConfig, resource)
 	}
 	if f.Update {
 		err = f.requiresNew(diff)
